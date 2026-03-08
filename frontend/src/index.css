@@ -1,0 +1,197 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* AgentID Dark — editorial crypto */
+    --background: 220 20% 4%;
+    --foreground: 210 15% 92%;
+
+    --card: 220 18% 6%;
+    --card-foreground: 210 15% 92%;
+
+    --popover: 220 18% 6%;
+    --popover-foreground: 210 15% 92%;
+
+    /* Electric green primary */
+    --primary: 152 100% 50%;
+    --primary-foreground: 220 20% 4%;
+
+    --secondary: 220 15% 9%;
+    --secondary-foreground: 210 15% 70%;
+
+    --muted: 220 15% 8%;
+    --muted-foreground: 215 12% 45%;
+
+    --accent: 220 15% 10%;
+    --accent-foreground: 210 15% 92%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 15% 13%;
+    --input: 220 15% 9%;
+    --ring: 152 100% 50%;
+
+    /* Square — editorial radius */
+    --radius: 0.125rem;
+
+    /* Custom tokens */
+    --green: 152 100% 50%;
+    --green-dim: 152 100% 40%;
+    --amber: 38 92% 50%;
+    --amber-dim: 38 70% 40%;
+    --blue-accent: 211 100% 60%;
+    --purple-accent: 265 89% 67%;
+
+    --sidebar-background: 220 18% 5%;
+    --sidebar-foreground: 210 15% 70%;
+    --sidebar-primary: 152 100% 50%;
+    --sidebar-primary-foreground: 220 20% 4%;
+    --sidebar-accent: 220 15% 8%;
+    --sidebar-accent-foreground: 210 15% 92%;
+    --sidebar-border: 220 15% 10%;
+    --sidebar-ring: 152 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+    cursor: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  a, button, [role="button"], input, select, textarea {
+    cursor: none;
+  }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .font-serif {
+    font-family: Georgia, 'Times New Roman', serif;
+  }
+
+  /* Hairline separator */
+  hr {
+    @apply border-border;
+  }
+}
+
+@layer utilities {
+  /* ── Typography ── */
+  .label-meta {
+    @apply text-[11px] uppercase tracking-[0.12em] text-muted-foreground font-medium select-none;
+  }
+
+  .display-serif {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-style: italic;
+    letter-spacing: -0.02em;
+  }
+
+  /* ── Colors ── */
+  .text-green { color: hsl(var(--green)); }
+  .text-amber { color: hsl(var(--amber)); }
+  .text-blue-accent { color: hsl(var(--blue-accent)); }
+  .text-purple-accent { color: hsl(var(--purple-accent)); }
+  .bg-green { background-color: hsl(var(--green)); }
+  .border-green { border-color: hsl(var(--green)); }
+
+  /* ── Glows ── */
+  .glow-green {
+    box-shadow: 0 0 20px hsl(var(--green) / 0.2), 0 0 40px hsl(var(--green) / 0.07);
+  }
+  .glow-green-sm {
+    box-shadow: 0 0 10px hsl(var(--green) / 0.3);
+  }
+
+  /* ── Gradients ── */
+  .gradient-hero {
+    background: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(var(--green) / 0.08), transparent);
+  }
+  .gradient-card {
+    background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(220 16% 7%) 100%);
+  }
+  .text-gradient-green {
+    background: linear-gradient(135deg, hsl(var(--green)), hsl(var(--blue-accent)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Hairline link underline (reference style) ── */
+  .link-underline {
+    position: relative;
+    display: inline-block;
+  }
+  .link-underline::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.45s cubic-bezier(0.19, 1, 0.22, 1);
+  }
+  .link-underline:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 bg-green text-primary-foreground text-sm font-medium tracking-wide transition-all;
+    letter-spacing: 0.02em;
+  }
+  .btn-primary:hover {
+    background-color: hsl(var(--green) / 0.85);
+  }
+  .btn-outline {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 border border-border text-foreground text-sm font-medium tracking-wide transition-colors;
+    letter-spacing: 0.02em;
+  }
+  .btn-outline:hover {
+    border-color: hsl(var(--green) / 0.5);
+    color: hsl(var(--green));
+  }
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors;
+  }
+  .btn-ghost:hover {
+    color: hsl(var(--foreground));
+  }
+
+  /* ── Input / form ── */
+  .input-editorial {
+    @apply w-full px-0 py-2 bg-transparent border-0 border-b border-border text-sm font-mono text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-green/50 transition-colors;
+  }
+
+  /* ── Card / section ── */
+  .panel {
+    @apply border-b border-border py-6;
+  }
+  .hairline-card {
+    @apply border border-border bg-card/50;
+  }
+
+  /* ── ASCII scan ── */
+  .scan-line {
+    background: linear-gradient(transparent 50%, hsl(var(--green) / 0.02) 50%);
+    background-size: 100% 4px;
+  }
+}

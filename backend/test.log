@@ -1,0 +1,47 @@
+--- Running Anchor Tests ---
+WARNING: Adding `solana-program` as a separate dependency might cause conflicts.
+To solve, remove the `solana-program` dependency and use the exported crate from `anchor-lang`.
+`use solana_program` becomes `use anchor_lang::solana_program`.
+Program name: `agentid-program`
+
+warning: ambiguous glob re-exports
+  --> programs/agentid-program/src/instructions/mod.rs:9:9
+   |
+9  | pub use init_config::*;
+   |         ^^^^^^^^^^^^^^ the name `handler` in the value namespace is first re-exported here
+...
+15 | pub use verify::*;
+   |         --------- but the name `handler` in the value namespace is also re-exported here
+   |
+   = note: `#[warn(ambiguous_glob_reexports)]` on by default
+
+warning: `agentid-program` (lib) generated 1 warning
+    Finished `release` profile [optimized] target(s) in 2.55s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.85s
+     Running unittests src/lib.rs (/mnt/c/Users/vg890/OneDrive/Desktop/agentid-kya-solana/agentid-program/target/debug/deps/agentid_program-407620079c773190)
+
+Found a 'test' script in the Anchor.toml. Running it as a test suite!
+
+Running test suite: "/mnt/c/Users/vg890/OneDrive/Desktop/agentid-kya-solana/agentid-program/Anchor.toml"
+
+yarn run v1.22.22
+warning ../../../../package.json: No license field
+$ /mnt/c/Users/vg890/OneDrive/Desktop/agentid-kya-solana/agentid-program/node_modules/.bin/ts-mocha -p ./tsconfig.json -t 1000000 'tests/**/*.ts'
+(node:1564) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///mnt/c/Users/vg890/OneDrive/Desktop/agentid-kya-solana/agentid-program/tests/agentid-program.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /mnt/c/Users/vg890/OneDrive/Desktop/agentid-kya-solana/agentid-program/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+  agentid-program
+    ✔ Initializes the program config (268ms)
+    ✔ Registers a new agent (424ms)
+    ✔ Updates capabilities (422ms)
+    ✔ Logs an action (429ms)
+    ✔ Rates an agent (424ms)
+    ✔ Updates reputation by oracle (421ms)
+
+
+  6 passing (3s)
+
+Done in 17.07s.

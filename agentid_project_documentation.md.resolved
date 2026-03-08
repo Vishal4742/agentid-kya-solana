@@ -1,0 +1,447 @@
+# 🤖 AgentID — KYA Protocol on Solana
+## Complete Project Documentation
+
+> **Repo:** [exactly-as-seen](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen) (GitHub: `Vishal4742/exactly-as-seen`)
+> **Idea Doc:** [idea-2-agentid-kya-solana.md](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/idea-2-agentid-kya-solana.md)
+> **Date:** March 8, 2026
+> **Grant Target:** Solana Foundation via Superteam Earn — up to $10,000
+> **Timeline:** 5-week MVP
+
+---
+
+## 1. Vision & Problem Statement
+
+**AgentID** is the first Solana-native "Know Your Agent" (KYA) protocol. It gives every AI agent:
+
+- A **verifiable on-chain identity** (soul-bound cNFT credential)
+- A **reputation score** (0–1000) from tx history, uptime & human ratings
+- **Autonomous payment capability** via x402 + USDC treasury
+- An **immutable audit trail** of every action on Solana
+
+### Why it matters
+
+Every major player (Stripe, Visa, OpenAI, Google) launched AI agent identity frameworks in 2025 — but all are off-chain & Web2-native. ERC-8004 exists on Ethereum only. Solana (home of ai16z/ELIZA with 50k+ GitHub stars) has **zero on-chain agent identity layer**. AgentID fills this gap.
+
+### India-specific angle
+
+Indian AI freelance agencies need TDS (Tax Deducted at Source) compliance for agent-generated payments. AgentID stores GSTIN and PAN hash on-chain and auto-generates compliant invoices — a killer feature for the Superteam India grant.
+
+---
+
+## 2. Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         AGENTID STACK                            │
+│                                                                  │
+│  L1 IDENTITY     → Soul-bound cNFT via Metaplex Bubblegum       │
+│  L2 REPUTATION   → Oracle-computed score (0–1000), on-chain      │
+│  L3 PAYMENT      → x402 micropayments + USDC Treasury program   │
+│  L4 SDK          → ELIZA plugin + TypeScript SDK + CPI calls     │
+│                                                                  │
+│  Stack: Anchor (Rust) | Next.js/Vite (React+TS) | Tailwind      │
+│         Metaplex cNFT | Helius DAS | Arweave | Supabase         │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 3. Current Repo Audit — What's Built
+
+### 3.1 Tech Stack (Frontend)
+
+| Technology | Version | Purpose |
+|---|---|---|
+| Vite | 5.x | Build tool |
+| React | 18.3 | UI framework |
+| TypeScript | 5.8 | Type safety |
+| Tailwind CSS | 3.4 | Styling |
+| shadcn/ui (Radix) | Latest | Component library (49 UI primitives) |
+| Framer Motion | 11.x | Animations |
+| React Router | 6.x | Client-side routing |
+| Recharts | 2.x | Charts (imported but not heavily used yet) |
+| Sonner | 1.x | Toast notifications |
+| Tanstack Query | 5.x | Data fetching (ready but unused) |
+
+### 3.2 Page-by-Page Breakdown
+
+#### ✅ [Index.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/pages/Index.tsx) — Landing Page (519 lines)
+
+A polished, editorial-style landing page with:
+- **Hero section** — full-viewport with ASCII canvas background, animated scramble text headline, live clock
+- **Problem section** — 3 editorial rows (No Identity / No Reputation / No Audit Trail)
+- **Protocol stack** — L1–L4 layers with tags and descriptions
+- **Live agents** — List of 4 mock registered agents with reputation scores
+- **Comparison table** — AgentID vs Trulioo/Visa/ERC-8004/AgentFacts
+- **India spotlight** — TDS compliance calculator demo
+- **Roadmap** — 5-week milestone timeline (W1–W2 marked "Done", W3 "Active", W4–W5 "Soon")
+- **CTA + Footer**
+
+#### ✅ [Register.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/pages/Register.tsx) — Agent Registration Wizard (377 lines)
+
+4-step multi-step form:
+1. **Basic Info** — Agent name, Framework (ELIZA/AutoGen/CrewAI/LangGraph/Custom), LLM Model
+2. **Capabilities** — Toggle DeFi Trading, Payments, Content, Data Analysis + USDC limit slider
+3. **India Compliance** — Optional GSTIN input, service category selector, auto TDS rate calculation
+4. **Mint Credential** — cNFT preview card + simulated mint transaction (fake tx hash, 2.8s delay)
+
+> ⚠️ **Mock only** — [handleMint()](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/pages/Register.tsx#42-51) generates a random fake tx hash. No real Solana transaction.
+
+#### ✅ [AgentProfile.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/pages/AgentProfile.tsx) — Agent Identity Card (291 lines)
+
+- Animated **SVG reputation gauge** (0–1000 arc)
+- Reputation breakdown (Transactions / Uptime / Ratings)
+- Owner wallet, registration date, last active, total tx value
+- **Activity feed** with icons per type (trade/payment/content/audit)
+- **Capabilities list** with enabled/disabled states
+- **India compliance** section (GSTIN, TDS rate)
+- **Star rating widget** (simulated on-chain submission)
+- Links to other agents
+
+#### ✅ [Dashboard.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/pages/Dashboard.tsx) — Owner Dashboard (221 lines)
+
+- Wallet-gated (shows connect prompt if not connected)
+- **Stats row** — Total Agents, Avg Reputation, Total Tx Value, Active Alerts
+- **Agent list** — Journal-style rows with mini reputation gauges, pause/resume buttons
+- **Treasury widget** — USDC balance display, daily spend limit slider, per-tx limit slider
+- **Active alerts** — Spending threshold warning
+- **Quick actions** — Links to verify, browse, register
+
+#### ✅ [Verify.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/pages/Verify.tsx) — Agent Verification (219 lines)
+
+- Search by wallet/agent ID/name (searches mock data)
+- **Verification report** — Shows credential status, framework, model, reputation, capabilities
+- **India compliance** verification display
+- **Embed widget** — Copy-paste HTML snippet for DeFi protocol integration
+
+#### ✅ [Agents.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/pages/Agents.tsx) — Agent Explorer (≈100 lines)
+
+- Browse all registered agents in journal-style list
+
+#### ✅ [NotFound.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/pages/NotFound.tsx) — 404 Page
+
+### 3.3 Components
+
+| Component | Purpose |
+|---|---|
+| [Navbar.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/components/Navbar.tsx) | Fixed nav with wallet connect/disconnect dropdown, mobile menu |
+| [AsciiCanvas.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/components/AsciiCanvas.tsx) | Animated ASCII art background for hero section |
+| [ScrambleText.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/components/ScrambleText.tsx) | Text scramble/decode animation effect |
+| [CustomCursor.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/components/CustomCursor.tsx) | Custom cursor trail effect |
+| [CornerTelemetry.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/components/CornerTelemetry.tsx) | Decorative corner data display |
+| `ui/` (49 files) | Full shadcn/ui component library |
+
+### 3.4 Data & Hooks
+
+| File | Status | Details |
+|---|---|---|
+| [mockAgents.ts](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/data/mockAgents.ts) | ⚠️ Mock | 4 hardcoded agents with full type definitions ([Agent](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/data/mockAgents.ts#19-45), [AgentCapabilities](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/data/mockAgents.ts#1-8), [AgentActivity](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/data/mockAgents.ts#9-18)) + helper functions |
+| [useWallet.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/hooks/useWallet.tsx) | ⚠️ Mock | Simulated wallet connection with 1.2s delay, hardcoded demo addresses |
+| [useTextScramble.ts](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/hooks/useTextScramble.ts) | ✅ | Text animation hook |
+| [use-mobile.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/hooks/use-mobile.tsx) | ✅ | Mobile breakpoint detection |
+| [use-toast.ts](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/hooks/use-toast.ts) | ✅ | Toast notification hook |
+
+---
+
+## 4. Project Status Matrix
+
+### Overall Progress
+
+| Layer | UI | Smart Contract | Backend | SDK | Overall |
+|---|---|---|---|---|---|
+| **L1 — Identity Registry** | ✅ 90% | ❌ 0% | ❌ 0% | ❌ 0% | **~20%** |
+| **L2 — Reputation Engine** | ✅ 85% | ❌ 0% | ❌ 0% | ❌ 0% | **~20%** |
+| **L3 — Payment Layer** | ✅ 80% | ❌ 0% | ❌ 0% | ❌ 0% | **~20%** |
+| **L4 — SDK & Plugins** | ✅ 70% | — | — | ❌ 0% | **~15%** |
+| **India Compliance** | ✅ 85% | ❌ 0% | ❌ 0% | ❌ 0% | **~20%** |
+
+### What Exists vs What's Missing
+
+| ✅ Completed | ❌ Not Started |
+|---|---|
+| Landing page with all sections | Anchor/Rust smart contracts |
+| Agent registration wizard UI | Metaplex Bubblegum cNFT minting |
+| Agent profile with reputation gauge | On-chain AgentIdentity account |
+| Owner dashboard with treasury controls | Reputation oracle (Helius webhook) |
+| Verification page + embed widget | Agent Treasury program |
+| Wallet connect/disconnect UI | x402 payment middleware |
+| India TDS compliance calculator UI | ELIZA plugin npm package |
+| 49 shadcn/ui components | Real wallet integration (Phantom/Solflare SDK) |
+| Framer Motion animations | Supabase backend |
+| Responsive mobile design | Arweave audit log storage |
+| Mock data with full type system | API routes / backend logic |
+
+---
+
+## 5. Upcoming Build Plan
+
+### Phase 1: Solana Smart Contracts (Week 1–2)
+
+> **Goal:** Deploy `AgentIdentity` account program on devnet and mint real cNFTs
+
+#### Steps to build:
+
+1. **Initialize Anchor project**
+   ```bash
+   # Inside exactly-as-seen/ or a new programs/ directory
+   anchor init agentid --javascript
+   ```
+
+2. **Create `AgentIdentity` account struct** (Rust)
+   - Fields: `agent_id`, `owner`, `agent_wallet`, `name`, `framework`, `model`, `credential_nft`, `verified_level`, `reputation_score`, `capabilities`, `gstin`, `pan_hash`
+   - Size: ~500 bytes per account
+
+3. **Implement core instructions**
+   - `register_agent` — Init PDA account + CPI to Bubblegum for cNFT mint
+   - `update_capabilities` — Owner-only capability updates
+   - `verify_agent` — Cross-program invocation (CPI) for other programs to check credentials
+   - `log_action` — Audit trail for every agent action
+   - `rate_agent` — Human star rating (1–5)
+
+4. **Integrate Metaplex Bubblegum** for compressed NFTs
+   - Set up Merkle tree account
+   - Mint non-transferable cNFTs as identity credentials
+   - Store metadata URI pointing to agent profile
+
+5. **Deploy to devnet**
+   ```bash
+   anchor build && anchor deploy --provider.cluster devnet
+   ```
+
+6. **Wire frontend**
+   - Replace [useWallet](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/hooks/useWallet.tsx#56-59) mock with `@solana/wallet-adapter-react`
+   - Replace [handleMint()](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/pages/Register.tsx#42-51) fake tx with real `program.methods.registerAgent()` call
+   - Replace mock data with on-chain account reads via `program.account.agentIdentity.fetch()`
+
+#### Key dependencies:
+```
+@coral-xyz/anchor
+@solana/web3.js
+@solana/wallet-adapter-react
+@solana/wallet-adapter-wallets
+@metaplex-foundation/mpl-bubblegum
+@metaplex-foundation/umi
+```
+
+---
+
+### Phase 2: Reputation Engine (Week 3)
+
+> **Goal:** Live reputation scores computed from on-chain activity
+
+#### Steps to build:
+
+1. **Set up Helius webhook** to listen for agent transaction events
+2. **Build reputation oracle** (TypeScript service)
+   - Fetch agent tx history from Helius DAS API
+   - Compute weighted score: success rate (40%) + human rating (20%) + longevity (15%) + tx volume (15%) + verification level (10%)
+   - Penalty for consecutive failures
+3. **Add `update_reputation` instruction** (oracle-only signer)
+4. **Build oracle cron job** — Update scores every hour
+5. **Wire frontend** — Replace hardcoded `reputationScore` with live on-chain reads
+
+---
+
+### Phase 3: Payment Layer + Treasury (Week 4)
+
+> **Goal:** Agents can receive x402 micropayments and manage USDC autonomously
+
+#### Steps to build:
+
+1. **Create `AgentTreasury` account** (Rust)
+   - USDC balance, spending limits (per-tx, daily), emergency pause
+2. **Implement `autonomous_payment` instruction**
+   - Safety checks: pause status, spending limits, reputation threshold
+   - Daily limit reset logic
+   - Human multisig for large amounts
+3. **Add x402 payment server** (Express middleware)
+   - Agent gates API calls behind USDC micropayments
+4. **Wire dashboard** — Real spending limit updates, real USDC balance reads
+
+---
+
+### Phase 4: ELIZA Plugin + SDK (Week 5)
+
+> **Goal:** One-line integration for any ELIZA agent
+
+#### Steps to build:
+
+1. **Create `@agentid/eliza-plugin` npm package**
+   ```typescript
+   // Usage: import { agentIdPlugin } from '@agentid/eliza-plugin'
+   // const agent = new AgentRuntime({ plugins: [agentIdPlugin] })
+   ```
+2. **Implement plugin actions:**
+   - `GET_MY_REPUTATION` — Returns agent's credential details
+   - `VERIFY_COUNTERPARTY_AGENT` — Check another agent before transacting
+3. **Create `@agentid/sdk`** — TypeScript SDK for programmatic access
+4. **Build CPI integration guide** — How DeFi protocols call `verify_agent`
+5. **Deploy to mainnet**
+6. **Publish npm packages**
+
+---
+
+## 6. Grant Milestones
+
+| Milestone | Deliverable | Amount |
+|---|---|---|
+| **M1** ($3,000) | Identity Registry live on mainnet + 5 registered agents | $3,000 |
+| **M2** ($4,000) | ELIZA plugin published with 50+ downloads + reputation engine live | $4,000 |
+| **M3** ($3,000) | 1 DeFi protocol CPI integration + India compliance module + docs | $3,000 |
+
+**Success metric:** 10 registered agents on mainnet + 1 DeFi protocol integration + `@agentid/eliza-plugin` on npm with 100+ downloads.
+
+---
+
+## 7. File Tree Reference
+
+```
+agentid-kya-solana/
+├── idea-2-agentid-kya-solana.md          # 800-line full architecture & grant blueprint
+└── exactly-as-seen/                       # Frontend prototype (Vite + React)
+    ├── src/
+    │   ├── App.tsx                        # Router with 6 routes + providers
+    │   ├── main.tsx                       # Entry point
+    │   ├── index.css                      # Global styles + custom CSS variables
+    │   ├── pages/
+    │   │   ├── Index.tsx                  # Landing page (519 lines)
+    │   │   ├── Register.tsx              # 4-step registration wizard (377 lines)
+    │   │   ├── AgentProfile.tsx          # Agent identity card (291 lines)
+    │   │   ├── Dashboard.tsx             # Owner dashboard (221 lines)
+    │   │   ├── Verify.tsx                # Agent verification (219 lines)
+    │   │   ├── Agents.tsx                # Agent explorer list
+    │   │   └── NotFound.tsx              # 404 page
+    │   ├── components/
+    │   │   ├── Navbar.tsx                # Fixed nav + wallet UI (190 lines)
+    │   │   ├── AsciiCanvas.tsx           # Animated background
+    │   │   ├── ScrambleText.tsx          # Text animation
+    │   │   ├── CustomCursor.tsx          # Cursor effect
+    │   │   ├── CornerTelemetry.tsx       # Corner data display
+    │   │   └── ui/ (49 files)            # Full shadcn/ui library
+    │   ├── data/
+    │   │   └── mockAgents.ts             # 4 mock agents + types + helpers
+    │   ├── hooks/
+    │   │   ├── useWallet.tsx             # Mock wallet provider
+    │   │   ├── useTextScramble.ts        # Text animation hook
+    │   │   ├── use-mobile.tsx            # Mobile detection
+    │   │   └── use-toast.ts              # Toast hook
+    │   └── lib/
+    │       └── utils.ts                  # Tailwind merge utility
+    ├── package.json                       # Dependencies
+    ├── tailwind.config.ts                # Custom theme (green/amber/blue accents)
+    ├── vite.config.ts                    # Vite configuration
+    └── index.html                         # HTML entry
+```
+
+---
+
+## 8. How to Run Locally
+
+```bash
+cd exactly-as-seen
+npm install        # or bun install
+npm run dev        # Starts at localhost:5173
+```
+
+---
+
+## 9. Key Decisions & Notes
+
+1. **Lovable-generated** — The frontend was scaffolded via [Lovable](https://lovable.dev), a no-code builder. The output is clean and production-quality.
+
+2. **Design language** — Editorial/journal-inspired dark theme with monospace accents, green/amber/blue/purple color palette, serif italic headlines, Framer Motion animations.
+
+3. **No backend exists** — All data is hardcoded in [mockAgents.ts](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/data/mockAgents.ts). The frontend is a pure static SPA.
+
+4. **Wallet is simulated** — [useWallet.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/hooks/useWallet.tsx) uses `setTimeout` to fake connection. Real Phantom/Solflare integration needed.
+
+5. **Landing page roadmap is aspirational** — W1–W2 shown as "Done" in the UI, but no actual smart contracts exist yet.
+
+6. **TypeScript types are well-defined** — [Agent](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/data/mockAgents.ts#19-45), [AgentCapabilities](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/data/mockAgents.ts#1-8), [AgentActivity](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/data/mockAgents.ts#9-18) interfaces are comprehensive and match the Rust struct design from the idea doc. This makes frontend→backend wiring straightforward.
+
+---
+
+## 10. Tool Allocation — What to Build Where
+
+You have 4 powerful tools. Here's exactly what each one is best at for this project:
+
+### 🟣 Lovable — UI Pages & Polish (push to `exactly-as-seen` repo)
+
+Lovable is ideal for **new frontend pages, UI iteration, and visual polish**. Everything below can be prompted directly:
+
+| Task | Lovable Prompt Idea |
+|---|---|
+| **Docs page** (`/docs`) | "Create a developer documentation page with sidebar nav, code blocks for Anchor CPI examples, and SDK quickstart sections" |
+| **Settings page** | "Add an account settings page with email verification, notification preferences, and API key management" |
+| **Analytics dashboard** | "Add a recharts-based analytics view to the Dashboard showing agent transaction volume over time, reputation trend line, and daily spend bar chart" |
+| **Mobile responsiveness fixes** | "Make the comparison table on Index.tsx scroll horizontally on mobile with a fade edge indicator" |
+| **Agent search/filter** | "Add framework and verification level filter dropdowns to the Agents page, with a search bar that filters in real-time" |
+| **Onboarding flow** | "Create a first-time user onboarding modal that explains what AgentID is in 3 animated steps" |
+| **Dark/light theme toggle** | "Add a theme toggle button to the Navbar using next-themes" |
+| **Loading states** | "Add skeleton loading states to AgentProfile and Dashboard pages" |
+| **Error boundaries** | "Add error boundary components with retry buttons for failed data fetches" |
+| **Toast improvements** | "Add persistent notification banners for wallet connection status and pending transactions" |
+
+### 🔵 Codex (OpenAI) — Smart Contract & Backend Scaffolding
+
+Codex excels at **generating boilerplate Rust/Anchor code and TypeScript backend services**:
+
+| Task | Why Codex |
+|---|---|
+| Scaffold full Anchor program with all 5 instructions | Generates Rust boilerplate fast |
+| Generate `AgentIdentity` account struct + derive macros | Structural Rust code |
+| Build Helius webhook listener (Node.js) | API integration boilerplate |
+| Generate reputation computation function | Algorithmic TypeScript |
+| Create `@agentid/eliza-plugin` package structure | NPM package scaffolding |
+| Write Anchor test suite | Test boilerplate generation |
+| Generate x402 Express middleware | API middleware pattern |
+
+### 🟢 Gemini + Antigravity — Integration, Wiring & Complex Logic
+
+Use **Antigravity** (me) for tasks that require **codebase context, multi-file edits, debugging, and integration work**:
+
+| Task | Why Antigravity |
+|---|---|
+| Replace mock [useWallet](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/hooks/useWallet.tsx#56-59) with real `@solana/wallet-adapter-react` | Multi-file integration across App.tsx, hooks, Navbar, all pages |
+| Wire Register.tsx [handleMint()](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/pages/Register.tsx#42-51) to real Anchor program call | Needs context of both frontend form state AND program IDL |
+| Replace [mockAgents.ts](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/data/mockAgents.ts) with on-chain data fetching via Tanstack Query | Rewrite data layer across all pages |
+| Set up Supabase for off-chain metadata + human ratings | Schema design + API routes + frontend hooks |
+| Debug Anchor deploy issues | Terminal access + error diagnosis |
+| Add Metaplex Bubblegum CPI to register instruction | Complex cross-program invocation |
+| India compliance oracle integration | Multi-service wiring |
+| CI/CD + GitHub Actions | Config file generation |
+
+### ⚡ Recommended Workflow
+
+```
+Step 1: Lovable   → Build /docs page, add analytics charts, polish UI
+Step 2: Codex     → Generate Anchor program skeleton + test suite
+Step 3: Antigravity → Wire frontend to real smart contracts
+Step 4: Lovable   → Iterate on UI based on real data
+Step 5: Codex     → Generate ELIZA plugin + reputation oracle
+Step 6: Antigravity → Integration test everything, deploy to devnet
+Step 7: Lovable   → Final polish, loading states, error handling
+```
+
+---
+
+## 11. Immediate Next Actions
+
+| Priority | Task | Best Tool | Effort |
+|---|---|---|---|
+| 🔴 P0 | Set up Anchor project & deploy `register_agent` to devnet | Codex + Antigravity | 3–5 days |
+| 🔴 P0 | Replace mock wallet with `@solana/wallet-adapter-react` | Antigravity | 1 day |
+| 🟡 P1 | Build /docs page with SDK reference | Lovable | 1 day |
+| 🟡 P1 | Integrate Metaplex Bubblegum for real cNFT minting | Codex + Antigravity | 2–3 days |
+| 🟡 P1 | Add analytics charts to Dashboard | Lovable | 1 day |
+| 🟡 P1 | Replace mock data with on-chain account reads | Antigravity | 1–2 days |
+| 🟢 P2 | Build reputation oracle + Helius webhook | Codex | 3–4 days |
+| 🟢 P2 | ELIZA plugin npm package | Codex | 3–4 days |
+| 🟢 P2 | Agent search/filter on Agents page | Lovable | 0.5 day |
+| 🔵 P3 | Treasury program + x402 middleware | Codex + Antigravity | 3–5 days |
+| 🔵 P3 | India compliance module (GSTIN oracle) | Antigravity | 2–3 days |
+| 🔵 P3 | Loading states + error boundaries | Lovable | 0.5 day |
+
+---
+
+*Generated by project audit on March 8, 2026*
