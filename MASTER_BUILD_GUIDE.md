@@ -5,7 +5,7 @@
 > **Program ID (Devnet):** `Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF`
 > **IDL Account:** `FE74FsqJ9YsGGrKCW8y66UC6JDpsxfPuSP86dF9d3ZM8`
 > **Grant Target:** Solana Foundation via Superteam Earn — up to $10,000
-> **Last Updated:** March 9, 2026
+> **Last Audited:** March 9, 2026 — 10:15 IST
 
 ---
 
@@ -43,7 +43,7 @@ Indian AI freelance agencies need TDS compliance for agent-generated payments. A
 
 ---
 
-## 3. Current Project Status *(March 9, 2026)*
+## 3. Current Project Status *(Audited March 9, 2026 — 10:15 IST)*
 
 ### 3.1 Overall Progress
 
@@ -57,38 +57,47 @@ Indian AI freelance agencies need TDS compliance for agent-generated payments. A
 
 ### 3.2 Completed vs Remaining
 
-| ✅ Done | ❌ Remaining |
+| ✅ DONE (confirmed in repo) | ❌ REMAINING |
 |---|---|
-| Real Phantom + Solflare wallet integration | Metaplex Bubblegum cNFT minting |
-| Anchor smart contract deployed to devnet | Reputation oracle (Helius webhook) |
-| `registerAgent` on-chain from Register.tsx | Agent Treasury program |
-| `useAllAgents()` — real AgentIdentity PDA reads | x402 payment middleware |
-| `useMyAgent()` — Dashboard shows real PDA data | ELIZA plugin npm package |
-| All UI pages (Landing, Register, Verify, Dashboard, Agents, AgentProfile) | Supabase backend (ratings, metadata) |
-| India TDS compliance calculator UI | Arweave audit log |
-| 49 shadcn/ui components + Framer Motion | Mainnet deploy |
+| Real Phantom + Solflare wallet integration | `frontend/src/lib/indiaCompliance.ts` (Phase 6.1) |
+| Anchor smart contract deployed to devnet | Invoice modal in Dashboard (Phase 6.2) |
+| `registerAgent` on-chain from `Register.tsx` | GSTIN badge in AgentProfile (Phase 6.3) |
+| `useAllAgents()` — `Agents.tsx`, `Verify.tsx`, `AgentProfile.tsx` | Metadata API Vercel function (Phase 4.4) |
+| `useMyAgent()` — `Dashboard.tsx` real PDA | cNFT badge in AgentProfile UI (Phase 4.5) |
+| `AgentProfile.tsx` — real on-chain PDA fetch | Reputation oracle + Helius webhook (Phase 5) |
+| **Bubblegum CPI in `register.rs`** — `non_transferable: true` ✅ | `@agentid/sdk` npm package (Phase 7) |
+| **All 7 Anchor instructions** (register, rate, verify, log, update_rep, init_config, update_cap) | `@agentid/eliza-plugin` npm package (Phase 7) |
+| **`AgentAction` + `ProgramConfig` + `VerificationResult` structs** ✅ | Agent Treasury program (Phase 8) |
+| `Docs.tsx` page — exists (verify route in App.tsx) | x402 payment middleware (Phase 8) |
+| `OnboardingModal.tsx` component exists | `packages/sdk/` + `packages/eliza-plugin/` dirs |
+| 49+ shadcn/ui components + Framer Motion | `Index.tsx` live agents still using `MOCK_AGENTS` |
+| IDL: `agentid_program.json` + `.ts` types | **Re-deploy to devnet needed** (Bubblegum accounts added) |
 
 ### 3.3 Hooks & Data Layer
 
-| File | Status | Details |
+| File | Status | Confirmed |
 |---|---|---|
-| `frontend/src/hooks/useWallet.tsx` | ✅ Real | Bridges `@solana/wallet-adapter-react` — Phantom + Solflare |
-| `frontend/src/hooks/useProgram.ts` | ✅ New | Typed `Program<AgentidProgram>` via browser wallet |
-| `frontend/src/hooks/useAgents.ts` | ✅ New | `useAllAgents()` + `useMyAgent(pubkey)` — real PDA reads |
-| `frontend/src/idl/agentid_program.json` | ✅ | Deployed IDL |
-| `frontend/src/idl/agentid_program.ts` | ✅ | TypeScript types |
-| `frontend/src/data/mockAgents.ts` | ✅ Types kept | `Agent`, `AgentCapabilities`, `AgentActivity` interfaces — UI shape only |
+| `hooks/useWallet.tsx` | ✅ Real wallet adapter | ✅ |
+| `hooks/useProgram.ts` | ✅ Typed Anchor client | ✅ file exists |
+| `hooks/useAgents.ts` | ✅ `useAllAgents()` + `useMyAgent()` | ✅ file exists |
+| `hooks/useTextScramble.ts` | ✅ Text animation | ✅ |
+| `hooks/use-toast.ts` | ✅ Toast hook | ✅ |
+| `lib/indiaCompliance.ts` | ❌ **Not created yet** | ❌ missing |
+| `idl/agentid_program.json` | ✅ Deployed IDL | ✅ file exists |
+| `idl/agentid_program.ts` | ✅ TypeScript types | ✅ file exists |
 
-### 3.4 Pages Status
+### 3.4 Pages Status *(Confirmed by grep)*
 
-| Page | Status |
-|---|---|
-| `/` Landing | ✅ Complete (mock agents shown in "Live Agents" section — update separately) |
-| `/register` | ✅ Calls real `program.methods.registerAgent().rpc()` |
-| `/agents` | ✅ Fetches real on-chain agents |
-| `/verify` | ✅ Searches real on-chain agents |
-| `/dashboard` | ✅ Shows real PDA — spending sliders still UI-only |
-| `/agent/:id` | ⚠️ Still reads from mock data — needs `useAgent(id)` hook |
+| Page | File | On-Chain? | Confirmed Status |
+|---|---|---|---|
+| Landing `/` | `Index.tsx` | ⚠️ Partial | **`MOCK_AGENTS` still used** for live agents section |
+| Register `/register` | `Register.tsx` | ✅ | Real `registerAgent().rpc()` |
+| Agents `/agents` | `Agents.tsx` | ✅ | `useAllAgents()` confirmed |
+| Verify `/verify` | `Verify.tsx` | ✅ | `useAllAgents()` confirmed |
+| Dashboard `/dashboard` | `Dashboard.tsx` | ✅ | `useMyAgent()` confirmed |
+| Agent Profile `/agent/:id` | `AgentProfile.tsx` | ✅ | Real PDA fetch + `useAllAgents()` |
+| Docs `/docs` | `Docs.tsx` | — | **File exists** — verify it's routed in `App.tsx` |
+| 404 | `NotFound.tsx` | — | ✅ |
 
 ---
 
@@ -108,6 +117,7 @@ Indian AI freelance agencies need TDS compliance for agent-generated payments. A
 - Search + filter on Agents page
 - Analytics charts in Dashboard
 - Loading skeletons across all pages
+- `OnboardingModal.tsx` component built
 
 ### ✅ Phase 1 — Real Wallet Integration (Complete, March 9)
 - `@solana/wallet-adapter-react` + Phantom + Solflare wired
@@ -116,13 +126,54 @@ Indian AI freelance agencies need TDS compliance for agent-generated payments. A
 ### ✅ Phase 2 — Anchor Smart Contract (Complete, March 9)
 - `AgentIdentity` PDA account deployed to devnet
 - Program ID: `Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF`
-- Instructions: `registerAgent`, `updateCapabilities`, `logAction`, `rateAgent`
+- `agentid_program.so` confirmed in `backend/target/deploy/`
 
 ### ✅ Phase 3 — Frontend Wired to On-Chain (Complete, March 9)
 - `useProgram.ts` — typed Anchor client via browser wallet
 - `Register.tsx` → real `registerAgent().rpc()`
 - `useAgents.ts` → `useAllAgents()` + `useMyAgent(pubkey)`
 - `Agents.tsx`, `Verify.tsx`, `Dashboard.tsx` all reading real chain data
+
+### ✅ Phase 4.1 — AgentProfile On-Chain (Complete, March 9)
+- `AgentProfile.tsx` now fetches real `AgentIdentity` PDA by base58 pubkey from URL
+- `normalizeAccount()` maps all on-chain fields to existing `Agent` UI shape
+- 404 state shows real agents from `useAllAgents()` as suggestions
+- Build verified: exit code 0
+
+### ✅ Phase 4.2 — Merkle Tree + Bubblegum CPI (Complete, confirmed in repo)
+- `register.rs` imports `mpl_bubblegum`, `spl_account_compression`, `spl_noop`
+- `MintV1CpiBuilder` call with `non_transferable: true` (soul-bound)
+- cNFT metadata URI: `https://agentid.xyz/metadata/<hex_agent_id>`
+- `credential_nft` field stored in `AgentIdentity` PDA after mint
+- `AgentIdentity` struct includes all capability, reputation, and India compliance fields
+
+### ✅ Phase 4.3 — Full Anchor Program (Complete, confirmed in repo)
+- **All 7 instructions present:** `register`, `update_capabilities`, `log_action`, `rate`, `verify`, `update_reputation`, `init_config`
+- `AgentAction` PDA for audit trail
+- `ProgramConfig` PDA with `oracle_authority` for reputation oracle
+- `VerificationResult` return type for CPI calls
+- **Needs re-deploy to devnet** — Bubblegum accounts added since last deploy
+
+### ✅ Phase 4.4 — Metadata API (Complete, March 9)
+- `backend/api/metadata/[agentId].ts` — Vercel serverless function
+- Accepts `GET /api/metadata/:agentId` (64-char hex `agent_id`)
+- Fetches real `AgentIdentity` PDA on devnet via `@coral-xyz/anchor`
+- Returns full Metaplex-compatible JSON: name, image, attributes (framework, model, reputation, dates, capabilities), `non_transferable: true`
+- 5-minute `Cache-Control` (reputation updates hourly)
+- `backend/api/idl/agentid_program.json` — IDL copied for Vercel runtime
+- `backend/api/vercel.json` + `package.json` + `tsconfig.json`
+- **Deployed:** `https://agentid-metadata-api.vercel.app`
+- **Endpoint:** `https://agentid-metadata-api.vercel.app/api/metadata/<hex_agent_id>`
+### ✅ Phase 4.5 — cNFT badge in AgentProfile UI (Complete, March 9)
+- Fetches `credentialNft` from parsed `AgentIdentity` data.
+- Displays `🎖 Soul-Bound Credential` badge with Solana Explorer link if the agent has a credential NFT.
+- Shows pending upgrade message if KYB/Audited is not yet met and no credential exists.
+### ⚠️ Phase 5 — Reputation Oracle (Not started)
+### ⚠️ Phase 6 — India Compliance Wiring (Not started — UI exists, `indiaCompliance.ts` missing)
+### ⚠️ Phase 7 — ELIZA Plugin + SDK (Not started — no `packages/` folder yet)
+### ⚠️ Phase 8 — Treasury + x402 (Not started)
+### ⚠️ Phase 9 — Mainnet Deploy (Not started)
+### ✅ Phase 10.1 — Docs Page (File `Docs.tsx` exists — verify route in App.tsx)
 
 ---
 

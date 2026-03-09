@@ -17,7 +17,7 @@ export default function Verify() {
   const { agents } = useAllAgents();
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
-  const [result, setResult] = useState<typeof agents[0] | null | "not-found">(null);
+  const [result, setResult] = useState<typeof agents[number] | null | "not-found">(null);
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -94,8 +94,8 @@ export default function Verify() {
                 <CheckCircle2 className="w-4 h-4 text-green" />
                 <p className="text-sm text-green font-medium">Verified AgentID Credential · Solana devnet</p>
                 <div className={`ml-auto px-2.5 py-1 border text-xs font-mono ${result.verifiedLevel === "Audited" ? "border-green/30 text-green" :
-                    result.verifiedLevel === "KYB" ? "border-blue-accent/30 text-blue-accent" :
-                      "border-border text-muted-foreground"
+                  result.verifiedLevel === "KYB" ? "border-blue-accent/30 text-blue-accent" :
+                    "border-border text-muted-foreground"
                   }`}>{result.verifiedLevel}</div>
               </div>
 
@@ -120,7 +120,7 @@ export default function Verify() {
                   <div key={item.label} className="flex justify-between items-baseline py-3 border-b border-border last:border-0">
                     <span className="label-meta">{item.label}</span>
                     <span className={`text-sm ${item.mono ? "font-mono" : ""} ${item.color === "green" ? "text-green font-semibold" :
-                        item.color === "amber" ? "text-amber font-semibold" : "text-foreground"
+                      item.color === "amber" ? "text-amber font-semibold" : "text-foreground"
                       }`}>{item.value}</span>
                   </div>
                 ))}
