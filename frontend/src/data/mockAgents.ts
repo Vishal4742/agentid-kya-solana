@@ -41,6 +41,7 @@ export interface Agent {
   activity: AgentActivity[];
   paused: boolean;
   avatarSeed: string;
+  credentialNft?: string;
 }
 
 export const MOCK_AGENTS: Agent[] = [

@@ -143,6 +143,7 @@ function normalizeAccount(pubkey: string, acc: Record<string, unknown>): Agent {
     maxTxSizeUsdc: { toNumber(): number };
     canTradeDefi: boolean; canSendPayments: boolean;
     name: string; gstin: string;
+    credentialNft: { toBase58(): string } | null;
   };
   return {
     id: pubkey,
@@ -168,6 +169,8 @@ function normalizeAccount(pubkey: string, acc: Record<string, unknown>): Agent {
     indiaCompliance: caps.gstin
       ? { gstin: caps.gstin, tdsRate: 10, serviceCategory: "Information Technology Services" }
       : null,
+    avatarSeed: caps.name,
+    credentialNft: caps.credentialNft ? caps.credentialNft.toBase58() : undefined,
   } as Agent;
 }
 
@@ -186,6 +189,8 @@ export default function AgentProfile() {
 
   useEffect(() => {
     if (!program || !id) return;
+
+    let active = true;
     setLoading(true);
     setNotFound(false);
     setAgent(null);
@@ -195,13 +200,15 @@ export default function AgentProfile() {
         const pubkey = new PublicKey(id);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const acc = await (program.account as any).agentIdentity.fetch(pubkey);
-        setAgent(normalizeAccount(id, acc as Record<string, unknown>));
+        if (active) setAgent(normalizeAccount(id, acc as Record<string, unknown>));
       } catch {
-        setNotFound(true);
+        if (active) setNotFound(true);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     })();
+
+    return () => { active = false; };
   }, [program, id]);
 
   if (notFound || (!loading && !agent)) {
@@ -263,8 +270,8 @@ export default function AgentProfile() {
             <div className="lg:col-span-2 py-10 lg:pr-10 lg:border-r border-border">
               <div className="flex items-start gap-4 mb-6">
                 <div className={`px-2.5 py-1 text-xs font-mono border ${agent.verifiedLevel === "Audited" ? "border-green/30 text-green bg-green/5" :
-                    agent.verifiedLevel === "KYB" ? "border-blue-accent/30 text-blue-accent bg-blue-accent/5" :
-                      "border-border text-muted-foreground"
+                  agent.verifiedLevel === "KYB" ? "border-blue-accent/30 text-blue-accent bg-blue-accent/5" :
+                    "border-border text-muted-foreground"
                   }`}>{agent.verifiedLevel}</div>
                 {agent.paused && <div className="px-2.5 py-1 text-xs font-mono border border-destructive/30 text-destructive">PAUSED</div>}
               </div>
@@ -419,6 +426,25 @@ export default function AgentProfile() {
                   </div>
                 </div>
               )}
+
+              <div className="border-b border-border pb-8 mb-8">
+                {agent.credentialNft ? (
+                  <div className="border border-border p-4 bg-background">
+                    <p className="label-meta mb-2 flex items-center gap-2">🎖 Soul-Bound Credential</p>
+                    <a href={`https://explorer.solana.com/address/${agent.credentialNft}?cluster=devnet`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="font-mono text-sm text-green hover:text-green/80 flex items-center gap-1.5 mb-2 w-fit link-underline pb-0.5">
+                      {truncateWallet(agent.credentialNft)} <ExternalLink className="w-3 h-3" />
+                    </a>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-3">Non-transferable • Minted on registration</p>
+                  </div>
+                ) : (
+                  <div className="border border-border p-4 bg-foreground/5 opacity-60 grayscale">
+                    <p className="label-meta mb-2">🎖 Soul-Bound Credential</p>
+                    <p className="text-xs text-muted-foreground font-mono mt-3">✅ Pending — upgrade to KYB</p>
+                  </div>
+                )}
+              </div>
 
               <div>
                 <p className="label-meta mb-5">Rate This Agent</p>
