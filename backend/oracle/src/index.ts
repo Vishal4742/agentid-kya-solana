@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import bs58 from "bs58";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { Program, AnchorProvider, Idl, Wallet } from "@coral-xyz/anchor";
-import idl from "../../programs/agentid-program/target/idl/agentid_program.json";
+import idl from "../../target/idl/agentid_program.json";
 
 dotenv.config();
 
