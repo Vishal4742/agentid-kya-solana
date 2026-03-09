@@ -1,11 +1,12 @@
 # 🤖 AgentID — KYA Protocol on Solana
 ## Complete Project Documentation
 
-> **Repo:** [exactly-as-seen](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen) (GitHub: `Vishal4742/exactly-as-seen`)
+> **Repo:** [agentid-kya-solana](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana) (GitHub: `Vishal4742/agentid-kya-solana`)
 > **Idea Doc:** [idea-2-agentid-kya-solana.md](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/idea-2-agentid-kya-solana.md)
-> **Date:** March 8, 2026
+> **Date:** March 9, 2026 *(Updated from March 8)*
 > **Grant Target:** Solana Foundation via Superteam Earn — up to $10,000
 > **Timeline:** 5-week MVP
+> **Program ID (Devnet):** `Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF`
 
 ---
 
@@ -77,15 +78,15 @@ A polished, editorial-style landing page with:
 - **Roadmap** — 5-week milestone timeline (W1–W2 marked "Done", W3 "Active", W4–W5 "Soon")
 - **CTA + Footer**
 
-#### ✅ [Register.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/pages/Register.tsx) — Agent Registration Wizard (377 lines)
+#### ✅ [Register.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/frontend/src/pages/Register.tsx) — Agent Registration Wizard
 
 4-step multi-step form:
 1. **Basic Info** — Agent name, Framework (ELIZA/AutoGen/CrewAI/LangGraph/Custom), LLM Model
 2. **Capabilities** — Toggle DeFi Trading, Payments, Content, Data Analysis + USDC limit slider
 3. **India Compliance** — Optional GSTIN input, service category selector, auto TDS rate calculation
-4. **Mint Credential** — cNFT preview card + simulated mint transaction (fake tx hash, 2.8s delay)
+4. **Mint Credential** — cNFT preview card + **real `program.methods.registerAgent().rpc()` call**
 
-> ⚠️ **Mock only** — [handleMint()](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/pages/Register.tsx#42-51) generates a random fake tx hash. No real Solana transaction.
+> ✅ **Live on devnet** — [handleMint()](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/frontend/src/pages/Register.tsx) calls the deployed Anchor program. Phantom/Solflare pops up for signing.
 
 #### ✅ [AgentProfile.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/pages/AgentProfile.tsx) — Agent Identity Card (291 lines)
 
@@ -135,47 +136,70 @@ A polished, editorial-style landing page with:
 
 | File | Status | Details |
 |---|---|---|
-| [mockAgents.ts](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/data/mockAgents.ts) | ⚠️ Mock | 4 hardcoded agents with full type definitions ([Agent](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/data/mockAgents.ts#19-45), [AgentCapabilities](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/data/mockAgents.ts#1-8), [AgentActivity](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/data/mockAgents.ts#9-18)) + helper functions |
-| [useWallet.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/hooks/useWallet.tsx) | ⚠️ Mock | Simulated wallet connection with 1.2s delay, hardcoded demo addresses |
-| [useTextScramble.ts](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/hooks/useTextScramble.ts) | ✅ | Text animation hook |
-| [use-mobile.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/hooks/use-mobile.tsx) | ✅ | Mobile breakpoint detection |
-| [use-toast.ts](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/exactly-as-seen/src/hooks/use-toast.ts) | ✅ | Toast notification hook |
+| [mockAgents.ts](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/frontend/src/data/mockAgents.ts) | ✅ Types kept | `Agent`, `AgentCapabilities`, `AgentActivity` interfaces + helpers — still used as the UI shape. Mock array no longer consumed by pages. |
+| [useWallet.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/frontend/src/hooks/useWallet.tsx) | ✅ Real | Bridges real `@solana/wallet-adapter-react`. Supports Phantom + Solflare. |
+| [useProgram.ts](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/frontend/src/hooks/useProgram.ts) | ✅ New | Returns typed `Program<AgentidProgram>` Anchor client backed by the browser wallet. |
+| [useAgents.ts](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/frontend/src/hooks/useAgents.ts) | ✅ New | `useAllAgents()` + `useMyAgent(pubkey)` — fetch real `AgentIdentity` PDAs from devnet. |
+| [useTextScramble.ts](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/frontend/src/hooks/useTextScramble.ts) | ✅ | Text animation hook |
+| [use-mobile.tsx](file:///c:/Users/vg890/OneDrive/Desktop/agentid-kya-solana/frontend/src/hooks/use-mobile.tsx) | ✅ | Mobile breakpoint detection |
 
 ---
 
-## 4. Project Status Matrix
+## 4. Project Status Matrix *(Updated March 9, 2026)*
 
 ### Overall Progress
 
 | Layer | UI | Smart Contract | Backend | SDK | Overall |
 |---|---|---|---|---|---|
-| **L1 — Identity Registry** | ✅ 90% | ❌ 0% | ❌ 0% | ❌ 0% | **~20%** |
+| **L1 — Identity Registry** | ✅ 100% | ✅ 100% | ✅ 100% | ❌ 0% | **~75%** |
 | **L2 — Reputation Engine** | ✅ 85% | ❌ 0% | ❌ 0% | ❌ 0% | **~20%** |
 | **L3 — Payment Layer** | ✅ 80% | ❌ 0% | ❌ 0% | ❌ 0% | **~20%** |
 | **L4 — SDK & Plugins** | ✅ 70% | — | — | ❌ 0% | **~15%** |
-| **India Compliance** | ✅ 85% | ❌ 0% | ❌ 0% | ❌ 0% | **~20%** |
+| **India Compliance** | ✅ 85% | ✅ 60% | ❌ 0% | ❌ 0% | **~40%** |
 
 ### What Exists vs What's Missing
 
 | ✅ Completed | ❌ Not Started |
 |---|---|
-| Landing page with all sections | Anchor/Rust smart contracts |
-| Agent registration wizard UI | Metaplex Bubblegum cNFT minting |
-| Agent profile with reputation gauge | On-chain AgentIdentity account |
-| Owner dashboard with treasury controls | Reputation oracle (Helius webhook) |
-| Verification page + embed widget | Agent Treasury program |
-| Wallet connect/disconnect UI | x402 payment middleware |
-| India TDS compliance calculator UI | ELIZA plugin npm package |
-| 49 shadcn/ui components | Real wallet integration (Phantom/Solflare SDK) |
-| Framer Motion animations | Supabase backend |
-| Responsive mobile design | Arweave audit log storage |
-| Mock data with full type system | API routes / backend logic |
+| Landing page with all sections | Metaplex Bubblegum cNFT minting |
+| Agent registration wizard UI | Reputation oracle (Helius webhook) |
+| Agent profile with reputation gauge | Agent Treasury program |
+| Owner dashboard with treasury controls | x402 payment middleware |
+| Verification page + embed widget | ELIZA plugin npm package |
+| **Real Phantom/Solflare wallet integration** | Supabase backend |
+| **Anchor smart contract deployed to devnet** | Arweave audit log storage |
+| **`registerAgent` on-chain call from Register.tsx** | API routes / backend logic |
+| **`useAllAgents()` — real AgentIdentity PDA reads** | Helius DAS integration |
+| **`useMyAgent()` — dashboard shows real PDA data** | Mainnet deploy |
+| India TDS compliance calculator UI | GSTIN oracle / CA node verification |
+| 49 shadcn/ui components | — |
+| Framer Motion animations | — |
 
 ---
 
 ## 5. Upcoming Build Plan
 
-### Phase 1: Solana Smart Contracts (Week 1–2)
+### ✅ Phases 1–3: COMPLETED (March 9, 2026)
+
+**Phase 1 — Real Wallet Integration** ✅
+- `@solana/wallet-adapter-react` + Phantom + Solflare fully wired
+- `vite.config.ts` + `main.tsx` polyfills (`Buffer`, `global`, `process.env`)
+- All pages gate correctly on wallet connection
+
+**Phase 2 — Anchor Smart Contract Deployment** ✅
+- Contract deployed to devnet: `Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF`
+- IDL copied to `frontend/src/idl/agentid_program.json` + TypeScript types
+- `useProgram.ts` hook — typed `Program<AgentidProgram>` via browser wallet
+
+**Phase 3 — Frontend Wired to On-Chain** ✅
+- `Register.tsx` → real `program.methods.registerAgent().rpc()` (Phantom signs)
+- `Agents.tsx` → `useAllAgents()` — `program.account.agentIdentity.all()`
+- `Verify.tsx` → searches real on-chain agents by name / owner wallet
+- `Dashboard.tsx` → `useMyAgent(pubkey)` — derives PDA, shows real data
+
+---
+
+### Phase 4: Metaplex cNFT Credential (Next)
 
 > **Goal:** Deploy `AgentIdentity` account program on devnet and mint real cNFTs
 

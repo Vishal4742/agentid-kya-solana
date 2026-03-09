@@ -2,6 +2,9 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWallet } from "@/hooks/useWallet";
+import { useProgram } from "@/hooks/useProgram";
+import { BN } from "@coral-xyz/anchor";
+import { PublicKey } from "@solana/web3.js";
 import { toast } from "sonner";
 import { ChevronRight, ChevronLeft, Wallet, Zap, CheckCircle2, ExternalLink, Copy, AlertCircle } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
@@ -17,13 +20,10 @@ const SERVICE_CATEGORIES = [
   "Research & Development",
 ];
 
-function generateFakeTxHash() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz123456789";
-  return Array.from({ length: 44 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-}
 
 export default function Register() {
   const { connected, publicKey, connecting, connect } = useWallet();
+  const program = useProgram();
   const [step, setStep] = useState(0);
   const [minting, setMinting] = useState(false);
   const [mintSuccess, setMintSuccess] = useState(false);
@@ -40,13 +40,56 @@ export default function Register() {
   const tdsRate = form.serviceCategory === "Financial Services" ? 2 : 10;
 
   const handleMint = async () => {
+    if (!program || !publicKey) {
+      toast.error("Wallet not connected");
+      return;
+    }
     setMinting(true);
-    await new Promise((r) => setTimeout(r, 2800));
-    const hash = generateFakeTxHash();
-    setTxHash(hash);
-    setMinting(false);
-    setMintSuccess(true);
-    toast.success("Credential minted on Solana devnet!", { description: `tx: ${hash.slice(0, 8)}...${hash.slice(-8)}` });
+    try {
+      // Map framework name → u8 enum (0=ELIZA 1=AutoGen 2=CrewAI 3=LangGraph 4=Custom)
+      const frameworkIndex = FRAMEWORKS.indexOf(form.framework);
+      // Map model name to a max-32-char string
+      const modelStr = form.model.slice(0, 32);
+      // agent_wallet = owner wallet (same pubkey, can differ later)
+      const agentWallet = new PublicKey(publicKey);
+      // max_tx_size_usdc in USDC lamports (6 decimals) — must be BN, not BigInt
+      const maxTxUsdc = new BN(form.maxUsdcTx).mul(new BN(1_000_000));
+      // gstin: must be empty string or exactly 15 chars
+      const gstin = form.skipIndia ? "" : (form.gstin.trim().length === 15 ? form.gstin.trim() : "");
+      // pan_hash: 32 zero bytes (PAN hashing not implemented in UI yet)
+      const panHash = Array(32).fill(0);
+      // service_category u8 enum
+      const serviceCategory = form.skipIndia ? 0 : SERVICE_CATEGORIES.indexOf(form.serviceCategory);
+
+      const tx = await program.methods
+        .registerAgent({
+          name: form.name,
+          framework: frameworkIndex,
+          model: modelStr,
+          agentWallet,
+          canTradeDefi: form.defiTrading,
+          canSendPayments: form.paymentSending,
+          canPublishContent: form.contentPublishing,
+          canAnalyzeData: form.dataAnalysis,
+          maxTxSizeUsdc: maxTxUsdc,
+          gstin,
+          panHash,
+          serviceCategory: serviceCategory >= 0 ? serviceCategory : 0,
+        })
+        .rpc();
+
+      setTxHash(tx);
+      setMintSuccess(true);
+      toast.success("Agent registered on Solana devnet! 🎉", {
+        description: `tx: ${tx.slice(0, 8)}…${tx.slice(-8)}`,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("registerAgent error:", err);
+      toast.error("Transaction failed", { description: msg.slice(0, 120) });
+    } finally {
+      setMinting(false);
+    }
   };
 
   return (
@@ -104,9 +147,8 @@ export default function Register() {
           <div className="flex gap-0 mb-4">
             {STEPS.map((s, i) => (
               <div key={s} className={`flex-1 flex flex-col items-center gap-1.5 ${i > 0 ? "border-l border-border pl-3" : ""}`}>
-                <div className={`label-meta transition-colors ${
-                  i === step ? "text-green" : i < step ? "text-muted-foreground" : "text-muted-foreground/30"
-                }`}>{s}</div>
+                <div className={`label-meta transition-colors ${i === step ? "text-green" : i < step ? "text-muted-foreground" : "text-muted-foreground/30"
+                  }`}>{s}</div>
                 <div className={`w-full h-px transition-colors duration-400 ${i < step ? "bg-green" : i === step ? "bg-green/50" : "bg-border"}`} />
               </div>
             ))}
@@ -135,11 +177,10 @@ export default function Register() {
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                     {FRAMEWORKS.map((f) => (
                       <button key={f} onClick={() => setForm(fm => ({ ...fm, framework: f }))}
-                        className={`py-2 px-3 border text-xs font-mono transition-all ${
-                          form.framework === f
-                            ? "border-green text-green bg-green/5"
-                            : "border-border text-muted-foreground hover:border-border/80 hover:text-foreground"
-                        }`}>{f}</button>
+                        className={`py-2 px-3 border text-xs font-mono transition-all ${form.framework === f
+                          ? "border-green text-green bg-green/5"
+                          : "border-border text-muted-foreground hover:border-border/80 hover:text-foreground"
+                          }`}>{f}</button>
                     ))}
                   </div>
                 </div>
@@ -149,11 +190,10 @@ export default function Register() {
                   <div className="grid grid-cols-2 gap-2">
                     {MODELS.map((m) => (
                       <button key={m} onClick={() => setForm(fm => ({ ...fm, model: m }))}
-                        className={`py-2 px-4 border text-xs transition-all text-left ${
-                          form.model === m
-                            ? "border-blue-accent text-blue-accent bg-blue-accent/5"
-                            : "border-border text-muted-foreground hover:text-foreground"
-                        }`}>{m}</button>
+                        className={`py-2 px-4 border text-xs transition-all text-left ${form.model === m
+                          ? "border-blue-accent text-blue-accent bg-blue-accent/5"
+                          : "border-border text-muted-foreground hover:text-foreground"
+                          }`}>{m}</button>
                     ))}
                   </div>
                 </div>
@@ -177,9 +217,8 @@ export default function Register() {
                   <div key={cap.key} onClick={() => setForm(f => ({ ...f, [cap.key]: !f[cap.key] }))}
                     className="group flex items-center gap-5 py-4 border-b border-border cursor-pointer hover:border-foreground/20 transition-colors">
                     {/* Custom checkbox */}
-                    <div className={`w-4 h-4 border flex items-center justify-center shrink-0 transition-all ${
-                      form[cap.key] ? "border-green bg-green" : "border-muted-foreground/40"
-                    }`}>
+                    <div className={`w-4 h-4 border flex items-center justify-center shrink-0 transition-all ${form[cap.key] ? "border-green bg-green" : "border-muted-foreground/40"
+                      }`}>
                       {form[cap.key] && <div className="w-2 h-2 bg-primary-foreground" />}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -315,6 +354,9 @@ export default function Register() {
                   <><Zap className="w-4 h-4" /> Mint Soul-Bound Credential</>
                 )}
               </button>
+              <p className="text-center font-mono text-[10px] text-muted-foreground/40 mt-3">
+                ⚡ Devnet simulation · On-chain minting live in Phase 2
+              </p>
             </motion.div>
           )}
 
@@ -330,7 +372,10 @@ export default function Register() {
               </div>
 
               <div className="mb-8">
-                <p className="label-meta mb-3">Transaction Hash</p>
+                <div className="flex items-baseline justify-between mb-3">
+                  <p className="label-meta">Transaction Hash</p>
+                  <span className="font-mono text-[10px] text-amber/60">simulated</span>
+                </div>
                 <div className="flex items-center gap-3 py-3 border-b border-border">
                   <code className="text-xs font-mono text-green flex-1 break-all">{txHash}</code>
                   <button onClick={() => { navigator.clipboard.writeText(txHash); toast.success("Copied!"); }}

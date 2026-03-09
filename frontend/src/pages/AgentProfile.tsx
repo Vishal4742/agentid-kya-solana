@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useWallet } from "@/hooks/useWallet";
-import { getAgentById, truncateWallet, formatRelativeTime, MOCK_AGENTS } from "@/data/mockAgents";
+import { useProgram } from "@/hooks/useProgram";
+import { useAllAgents } from "@/hooks/useAgents";
+import { truncateWallet, formatRelativeTime } from "@/data/mockAgents";
+import type { Agent } from "@/data/mockAgents";
+import { PublicKey } from "@solana/web3.js";
 import { toast } from "sonner";
 import { Copy, Shield, Activity, Zap, CheckCircle2, ExternalLink, Clock, TrendingUp, Wallet } from "lucide-react";
 import { Sk } from "@/components/Skeleton";
@@ -128,32 +132,99 @@ const ACTIVITY_ICONS: Record<string, React.FC<{ className?: string }>> = {
   defi_trade: TrendingUp, payment: Zap, content: Activity, audit: Shield, registration: CheckCircle2,
 };
 
+const FRAMEWORKS = ["ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"] as const;
+const VERIFIED_LEVELS = ["Unverified", "KYB", "Audited"] as const;
+
+function normalizeAccount(pubkey: string, acc: Record<string, unknown>): Agent {
+  const caps = acc as {
+    framework: number; model: string; verifiedLevel: number;
+    reputationScore: number; registeredAt: { toNumber(): number };
+    lastActive: { toNumber(): number }; owner: { toBase58(): string };
+    maxTxSizeUsdc: { toNumber(): number };
+    canTradeDefi: boolean; canSendPayments: boolean;
+    name: string; gstin: string;
+  };
+  return {
+    id: pubkey,
+    name: caps.name,
+    framework: FRAMEWORKS[caps.framework] ?? "Custom",
+    llmModel: caps.model,
+    verifiedLevel: VERIFIED_LEVELS[caps.verifiedLevel] ?? "Unverified",
+    reputationScore: caps.reputationScore,
+    registeredAt: new Date((caps.registeredAt?.toNumber?.() ?? 0) * 1000).toISOString(),
+    lastActive: new Date((caps.lastActive?.toNumber?.() ?? 0) * 1000).toISOString(),
+    ownerWallet: caps.owner?.toBase58?.() ?? "",
+    totalTxValue: "—",
+    paused: false,
+    activity: [],
+    reputationBreakdown: { transactions: 0, uptime: 0, ratings: 0 },
+    capabilities: {
+      defiTrading: caps.canTradeDefi ?? false,
+      paymentSending: caps.canSendPayments ?? false,
+      contentPublishing: false,
+      dataAnalysis: false,
+      maxUsdcTx: (caps.maxTxSizeUsdc?.toNumber?.() ?? 0) / 1_000_000,
+    },
+    indiaCompliance: caps.gstin
+      ? { gstin: caps.gstin, tdsRate: 10, serviceCategory: "Information Technology Services" }
+      : null,
+  } as Agent;
+}
+
 export default function AgentProfile() {
   const { id } = useParams<{ id: string }>();
-  const agent = getAgentById(id || "");
+  const program = useProgram();
+  const { agents: allAgents } = useAllAgents();
   const { connected } = useWallet();
+
+  const [agent, setAgent] = useState<Agent | null>(null);
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [rating, setRating] = useState(0);
   const [hovered, setHovered] = useState(0);
   const [rated, setRated] = useState(false);
 
   useEffect(() => {
+    if (!program || !id) return;
     setLoading(true);
-    const t = setTimeout(() => setLoading(false), 1500);
-    return () => clearTimeout(t);
-  }, [id]);
+    setNotFound(false);
+    setAgent(null);
 
-  if (!agent) {
+    (async () => {
+      try {
+        const pubkey = new PublicKey(id);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const acc = await (program.account as any).agentIdentity.fetch(pubkey);
+        setAgent(normalizeAccount(id, acc as Record<string, unknown>));
+      } catch {
+        setNotFound(true);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [program, id]);
+
+  if (notFound || (!loading && !agent)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-6">
         <div className="text-center">
           <p className="label-meta mb-4">404 — Agent not found</p>
-          <p className="display-serif text-2xl text-muted-foreground mb-8">No agent with ID: <code className="font-mono not-italic text-foreground">{id}</code></p>
-          <div className="flex flex-wrap gap-4 justify-center">
-            {MOCK_AGENTS.slice(0, 4).map(a => (
-              <Link key={a.id} to={`/agent/${a.id}`} className="link-underline text-sm text-muted-foreground hover:text-foreground">{a.name}</Link>
-            ))}
-          </div>
+          <p className="display-serif text-2xl text-muted-foreground mb-8">
+            No AgentIdentity PDA for: <code className="font-mono not-italic text-foreground text-sm break-all">{id}</code>
+          </p>
+          {allAgents.length > 0 && (
+            <>
+              <p className="label-meta mb-4">Registered agents on devnet</p>
+              <div className="flex flex-wrap gap-4 justify-center">
+                {allAgents.slice(0, 4).map(a => (
+                  <Link key={a.id} to={`/agent/${a.id}`} className="link-underline text-sm text-muted-foreground hover:text-foreground">{a.name}</Link>
+                ))}
+              </div>
+            </>
+          )}
+          {allAgents.length === 0 && (
+            <Link to="/register" className="btn-outline text-xs">Register the first agent →</Link>
+          )}
         </div>
       </div>
     );
@@ -191,11 +262,10 @@ export default function AgentProfile() {
           <div className="grid lg:grid-cols-3 gap-0 border-b border-border mb-0">
             <div className="lg:col-span-2 py-10 lg:pr-10 lg:border-r border-border">
               <div className="flex items-start gap-4 mb-6">
-                <div className={`px-2.5 py-1 text-xs font-mono border ${
-                  agent.verifiedLevel === "Audited" ? "border-green/30 text-green bg-green/5" :
-                  agent.verifiedLevel === "KYB" ? "border-blue-accent/30 text-blue-accent bg-blue-accent/5" :
-                  "border-border text-muted-foreground"
-                }`}>{agent.verifiedLevel}</div>
+                <div className={`px-2.5 py-1 text-xs font-mono border ${agent.verifiedLevel === "Audited" ? "border-green/30 text-green bg-green/5" :
+                    agent.verifiedLevel === "KYB" ? "border-blue-accent/30 text-blue-accent bg-blue-accent/5" :
+                      "border-border text-muted-foreground"
+                  }`}>{agent.verifiedLevel}</div>
                 {agent.paused && <div className="px-2.5 py-1 text-xs font-mono border border-destructive/30 text-destructive">PAUSED</div>}
               </div>
               <h1 className="display-serif text-4xl sm:text-5xl lg:text-6xl text-foreground mb-5 leading-tight">{agent.name}</h1>
@@ -232,8 +302,8 @@ export default function AgentProfile() {
               <div className="grid grid-cols-3 gap-4 text-center w-full">
                 {[
                   { label: "Transactions", val: agent.reputationBreakdown.transactions, color: "text-green" },
-                  { label: "Uptime",       val: agent.reputationBreakdown.uptime,       color: "text-blue-accent" },
-                  { label: "Ratings",      val: agent.reputationBreakdown.ratings,      color: "text-purple-accent" },
+                  { label: "Uptime", val: agent.reputationBreakdown.uptime, color: "text-blue-accent" },
+                  { label: "Ratings", val: agent.reputationBreakdown.ratings, color: "text-purple-accent" },
                 ].map((b) => (
                   <div key={b.label}>
                     <div className={`text-lg font-bold font-mono ${b.color}`}>{b.val}</div>
@@ -291,7 +361,7 @@ export default function AgentProfile() {
                   <p className="label-meta">Other Registered Agents</p>
                   <Link to="/agents" className="label-meta link-underline hover:text-green">View all →</Link>
                 </div>
-                {MOCK_AGENTS.filter(a => a.id !== agent.id).slice(0, 3).map((a) => (
+                {allAgents.filter(a => a.id !== agent?.id).slice(0, 3).map((a) => (
                   <Link key={a.id} to={`/agent/${a.id}`}
                     className="group flex items-baseline justify-between py-4 border-b border-border last:border-0 hover:border-foreground/20 transition-colors">
                     <span className="font-serif italic text-xl text-muted-foreground group-hover:text-foreground group-hover:translate-x-2 transition-all duration-300 inline-block" style={{ fontFamily: "Georgia, serif" }}>
@@ -311,10 +381,10 @@ export default function AgentProfile() {
                 <p className="label-meta mb-5">Authorised Capabilities</p>
                 <div className="space-y-0">
                   {[
-                    { key: "defiTrading",       label: "DeFi Trading",        icon: TrendingUp },
-                    { key: "paymentSending",     label: "Payment Sending",     icon: Zap },
-                    { key: "contentPublishing",  label: "Content Publishing",  icon: Activity },
-                    { key: "dataAnalysis",       label: "Data Analysis",       icon: Shield },
+                    { key: "defiTrading", label: "DeFi Trading", icon: TrendingUp },
+                    { key: "paymentSending", label: "Payment Sending", icon: Zap },
+                    { key: "contentPublishing", label: "Content Publishing", icon: Activity },
+                    { key: "dataAnalysis", label: "Data Analysis", icon: Shield },
                   ].map(({ key, label, icon: Icon }) => {
                     const enabled = agent.capabilities[key as keyof typeof agent.capabilities] as boolean;
                     return (

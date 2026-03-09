@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useWallet } from "@/hooks/useWallet";
-import { MOCK_AGENTS, truncateWallet, formatRelativeTime } from "@/data/mockAgents";
+import { useMyAgent } from "@/hooks/useAgents";
+import { truncateWallet, formatRelativeTime } from "@/data/mockAgents";
 import { toast } from "sonner";
 import { Shield, Activity, AlertTriangle, Wallet, ExternalLink, Play, Pause, Plus } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
@@ -140,21 +141,17 @@ const CHART_TOOLTIP_STYLE = {
 
 export default function Dashboard() {
   const { connected, publicKey, connect, connecting } = useWallet();
-  const [loading, setLoading] = useState(true);
+  const { agent, loading } = useMyAgent(publicKey);
   const [pausedAgents, setPausedAgents] = useState<Set<string>>(new Set());
   const [spendingLimit, setSpendingLimit] = useState(5000);
   const [perTxLimit, setPerTxLimit] = useState(1000);
 
-  const reputationData  = useMemo(() => REPUTATION_DATA, []);
-  const transactionData = useMemo(() => TRANSACTIONS_DATA, []);
-  const volumeData      = useMemo(() => VOLUME_DATA, []);
-
+  // seed per-tx limit from on-chain max_tx_size_usdc when loaded
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 1500);
-    return () => clearTimeout(t);
-  }, []);
+    if (agent) setPerTxLimit(Math.min(agent.capabilities.maxUsdcTx, 10000));
+  }, [agent]);
 
-  const userAgents = MOCK_AGENTS.slice(0, 3);
+  const userAgents = agent ? [agent] : [];
 
   if (!connected) {
     return (
@@ -183,7 +180,11 @@ export default function Dashboard() {
     setPausedAgents(newSet);
   };
 
-  const avgReputation = Math.round(userAgents.reduce((s, a) => s + a.reputationScore, 0) / userAgents.length);
+  const avgReputation = agent ? agent.reputationScore : 0;
+
+  const reputationData = useMemo(() => REPUTATION_DATA, []);
+  const transactionData = useMemo(() => TRANSACTIONS_DATA, []);
+  const volumeData = useMemo(() => VOLUME_DATA, []);
 
   return (
     <div className="min-h-screen bg-background px-6 lg:px-10 pb-16">
@@ -202,10 +203,10 @@ export default function Dashboard() {
         {loading ? <StatsSkeleton /> : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-b border-border mb-0">
             {[
-              { label: "Total Agents",   value: `${userAgents.length}`, sub: "on Solana devnet",       color: "text-green" },
-              { label: "Avg Reputation", value: `${avgReputation}`,     sub: "out of 1,000",           color: "text-blue-accent" },
-              { label: "Total Tx Value", value: "$10.2M",               sub: "all-time attested",      color: "text-purple-accent" },
-              { label: "Active Alerts",  value: "1",                    sub: "spending limit warning", color: "text-amber" },
+              { label: "Total Agents", value: `${userAgents.length}`, sub: "registered on devnet", color: "text-green" },
+              { label: "Avg Reputation", value: `${avgReputation}`, sub: "out of 1,000", color: "text-blue-accent" },
+              { label: "Max Tx Size", value: agent ? `$${agent.capabilities.maxUsdcTx.toLocaleString()}` : "—", sub: "per transaction", color: "text-purple-accent" },
+              { label: "Framework", value: agent?.framework ?? "—", sub: agent?.llmModel ?? "not registered", color: "text-amber" },
             ].map((s, i) => (
               <div key={s.label} className={`py-6 ${i > 0 ? "border-l border-border pl-6" : ""}`}>
                 <p className="label-meta mb-2">{s.label}</p>
@@ -255,7 +256,7 @@ export default function Dashboard() {
                   <AreaChart data={volumeData} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
                     <defs>
                       <linearGradient id="volumeGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%"  stopColor="hsl(265 89% 67%)" stopOpacity={0.25} />
+                        <stop offset="5%" stopColor="hsl(265 89% 67%)" stopOpacity={0.25} />
                         <stop offset="95%" stopColor="hsl(265 89% 67%)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
@@ -279,7 +280,12 @@ export default function Dashboard() {
                 <Plus className="w-3 h-3 inline mr-1" /> Register New
               </Link>
             </div>
-            {loading ? <AgentListSkeleton /> : (
+            {loading ? <AgentListSkeleton /> : userAgents.length === 0 ? (
+              <div className="py-16 text-center">
+                <p className="font-serif italic text-2xl text-foreground/20 mb-3">No agent registered yet.</p>
+                <Link to="/register" className="btn-outline text-xs">Register Now →</Link>
+              </div>
+            ) : (
               <ul>
                 {userAgents.map((agent, i) => {
                   const isPaused = pausedAgents.has(agent.id);
@@ -371,9 +377,9 @@ export default function Dashboard() {
                   <p className="label-meta mb-4">Quick Actions</p>
                   <div className="space-y-0">
                     {[
-                      { label: "Verify an agent",    icon: Shield,   href: "/verify" },
-                      { label: "Browse all agents",  icon: Activity, href: "/agents" },
-                      { label: "Register new agent", icon: Plus,     href: "/register" },
+                      { label: "Verify an agent", icon: Shield, href: "/verify" },
+                      { label: "Browse all agents", icon: Activity, href: "/agents" },
+                      { label: "Register new agent", icon: Plus, href: "/register" },
                     ].map((a) => (
                       <Link key={a.label} to={a.href}
                         className="group flex items-center gap-3 py-3 border-b border-border last:border-0 hover:border-foreground/20 transition-colors">

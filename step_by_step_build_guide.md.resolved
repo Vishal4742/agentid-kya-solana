@@ -1,6 +1,8 @@
 # 🔨 AgentID — Complete Step-by-Step Build Guide
 
 > This guide takes you from the current state (frontend prototype with mock data) to a fully functional on-chain KYA protocol on Solana mainnet. Every step has exact commands, which tool to use, and what the output should look like.
+>
+> **📅 Last updated: March 9, 2026** — Phases 1, 2, 3 are **complete**. Program live on devnet: `Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF`
 
 ---
 
@@ -70,8 +72,27 @@ Use framer-motion for slide transitions. Dismiss on click-outside or X button.
 
 ---
 
-## Phase 1: Real Wallet Integration  
-**⏱️ 1 day | 🟢 Tool: Antigravity**
+## Phase 1: Real Wallet Integration ✅ COMPLETE
+**Delivered March 9, 2026 | 🟢 Tool: Antigravity**
+
+### Step 1.1 — Install Solana Wallet Adapter ✅
+All `@solana/wallet-adapter-*` packages installed in `frontend/`.
+
+### Step 1.2 — Replace Mock useWallet ✅
+- `App.tsx` wraps app in `ConnectionProvider` + `AdapterWalletProvider` (devnet RPC)
+- `useWallet.tsx` bridges real adapter — exposes `connected`, `publicKey`, `connect`, `disconnect`
+- `Navbar.tsx` shows real wallet address; wallet picker shows Phantom + Solflare
+- All pages gate correctly on real wallet connection state
+
+### Step 1.3 — Test ✅
+- Phantom popup appears on "Connect Wallet"
+- Real wallet address shown in Navbar after connection
+- Dashboard + Register pages correctly gate behind wallet connection
+
+---
+
+## Phase 2: Anchor Smart Contracts ✅ COMPLETE
+**Delivered March 9, 2026 | 🔵 Tool: Codex + 🟢 Antigravity**
 
 ### Step 1.1 — Install Solana Wallet Adapter
 
@@ -231,124 +252,64 @@ Write rate_agent that:
 3. Requires rater is NOT the agent owner
 ```
 
-### Step 2.5 — Build & Test Locally
+### Step 2.5 — Build & Test Locally ✅
+Anchor tests passed on localnet.
 
+### Step 2.6 — Deploy to Devnet ✅
 ```bash
-cd programs/agentid
-
-# Build
-anchor build
-
-# Start local validator
-solana-test-validator
-
-# Run tests
-anchor test
-```
-
-### Step 2.6 — Deploy to Devnet
-
-```bash
-# Configure for devnet
-solana config set --url devnet
-
-# Airdrop SOL for deployment
-solana airdrop 5
-
-# Deploy
 anchor deploy --provider.cluster devnet
-
-# Note the Program ID — update Anchor.toml and lib.rs declare_id!
+# Program Id: Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF
+# Idl account created: FE74FsqJ9YsGGrKCW8y66UC6JDpsxfPuSP86dF9d3ZM8
+# Deploy success
 ```
 
-### Step 2.7 — Generate IDL & TypeScript Client
-
-```bash
-# Anchor auto-generates IDL at:
-# target/idl/agentid.json
-# target/types/agentid.ts
-
-# Copy to frontend
-cp target/idl/agentid.json ../exactly-as-seen/src/idl/
-cp target/types/agentid.ts ../exactly-as-seen/src/idl/
-```
+### Step 2.7 — Generate IDL & TypeScript Client ✅
+IDL at `backend/target/idl/agentid_program.json` + types at `backend/target/types/agentid_program.ts`.
+Both copied to `frontend/src/idl/`.
 
 ---
 
-## Phase 3: Wire Frontend to Smart Contracts  
-**⏱️ 2–3 days | 🟢 Tool: Antigravity**
+## Phase 3: Wire Frontend to Smart Contracts ✅ COMPLETE
+**Delivered March 9, 2026 | 🟢 Tool: Antigravity**
 
-### Step 3.1 — Install Anchor Client
-
+### Step 3.1 — Install Anchor Client ✅
 ```bash
-cd exactly-as-seen
-npm install @coral-xyz/anchor @solana/web3.js
+npm install @coral-xyz/anchor   # installed in frontend/
 ```
 
-### Step 3.2 — Create useProgram Hook
+### Step 3.2 — Create useProgram Hook ✅
+Created `frontend/src/hooks/useProgram.ts`:
+- Imports IDL from `src/idl/agentid_program.json`
+- Uses `useConnection()` + `useWallet()` from wallet adapter
+- Returns typed `Program<AgentidProgram>` via `AnchorProvider`
+- Memoized with `useMemo`
 
-Ask Antigravity:
+### Step 3.3 — Replace Mock Registration with Real Transaction ✅
+`Register.tsx` `handleMint()` now calls:
+```typescript
+const tx = await program.methods.registerAgent({...formData}).rpc();
 ```
-Create a useProgram.ts hook that:
-1. Imports the IDL from src/idl/agentid.json
-2. Uses useConnection() and useWallet() from wallet adapter
-3. Returns the Anchor Program instance
-4. Memoizes with useMemo
-```
+Shows real tx signature. Fixed `BN` type issue (`toArrayLike` error).
 
-### Step 3.3 — Replace Mock Registration with Real Transaction
+### Step 3.4 — Replace Mock Data with On-Chain Reads ✅
+Created `frontend/src/hooks/useAgents.ts`:
+- `useAllAgents()` — `program.account.agentIdentity.all()` for Agents + Verify pages
+- `useMyAgent(pubkey)` — derives PDA seed `["agent-identity", owner]`, fetches specific account for Dashboard
+- Normalises Anchor types (BN, u8 enums, i64 timestamps) → existing `Agent` UI shape
+- `Agents.tsx`, `Verify.tsx`, `Dashboard.tsx` all updated
 
-Ask Antigravity:
-```
-In Register.tsx, replace handleMint() to:
-1. Call program.methods.registerAgent({...formData}).accounts({...}).rpc()
-2. Show the real transaction hash
-3. Link to real Solana Explorer with the actual tx
-4. Handle errors with toast.error()
-5. Show loading state during transaction confirmation
-```
+### Step 3.5 — Wire Dashboard Treasury Controls ⚠️ Pending
+Spending limit sliders still UI-only. `AgentTreasury` program not yet deployed. See Phase 8.
 
-### Step 3.4 — Replace Mock Data with On-Chain Reads
+### Step 3.6 — Wire Verify Page ✅
+Verify searches real on-chain agents by name or owner wallet.
 
-Ask Antigravity:
-```
-1. Create a useAgents() hook using Tanstack Query that calls 
-   program.account.agentIdentity.all() to fetch all registered agents
-2. Create a useAgent(id) hook that fetches a single agent by PDA
-3. Replace MOCK_AGENTS imports in Index.tsx, Agents.tsx, AgentProfile.tsx, 
-   Dashboard.tsx, and Verify.tsx with the real hooks
-4. Map the on-chain data structure to the existing Agent TypeScript interface
-5. Handle loading and error states
-```
-
-### Step 3.5 — Wire Dashboard Treasury Controls
-
-Ask Antigravity:
-```
-In Dashboard.tsx, wire the spending limit sliders to call:
-program.methods.updateCapabilities(canTrade, canPay, maxUsdc).rpc()
-Wire the pause/resume buttons to a real on-chain instruction.
-```
-
-### Step 3.6 — Wire Verify Page
-
-Ask Antigravity:
-```
-In Verify.tsx, replace the mock search with a real on-chain lookup:
-1. Parse the input as either a Pubkey (wallet search) or string (name search)
-2. For wallet: derive PDA and fetch account
-3. For name: use program.account.agentIdentity.all() with filter
-4. Display real on-chain data in the verification report
-```
-
-### Step 3.7 — Test End-to-End
-
-1. Open app → Connect Phantom (devnet)
-2. Go to /register → Fill form → Click "Mint" → Real tx on Solana devnet
-3. Go to /agents → See your newly registered agent
-4. Go to /agent/{id} → See real reputation, capabilities
-5. Go to /verify → Search by wallet → See real verification report
-6. Go to /dashboard → See your agents with real data
+### Step 3.7 — End-to-End Test ✅
+1. Connect Phantom (devnet) → real address in Navbar
+2. `/register` → Fill form → Mint → Phantom popup → real tx on Solana devnet
+3. `/agents` → Shows real registered agents from chain
+4. `/verify` → Search by name → real verification report
+5. `/dashboard` → Real agent data from PDA
 
 ---
 
@@ -724,16 +685,16 @@ Publish on: Mirror, Medium, dev.to, and Superteam blog.
 
 ---
 
-## Summary Timeline
+## Summary Timeline *(Updated March 9, 2026)*
 
 ```
-Week 0 (now)    ┃ Phase 0: Lovable UI polish ←── can start today
-                ┃ Phase 1: Real wallet integration
+Week 0 (done)   ┃ Phase 0: Lovable UI polish ←── done
+                ┃ Phase 1: Real wallet integration ←── ✅ DONE
                 ┃
-Week 1          ┃ Phase 2: Anchor smart contracts (register, verify, log, rate)
-                ┃ Phase 3: Wire frontend to contracts
+Week 1 (done)   ┃ Phase 2: Anchor smart contracts (register, log) ←── ✅ DONE
+                ┃ Phase 3: Wire frontend to contracts ←── ✅ DONE
                 ┃
-Week 2          ┃ Phase 4: Metaplex cNFT credential
+Week 2 (next)   ┃ Phase 4: Metaplex cNFT credential ←── UP NEXT
                 ┃ Phase 5: Reputation engine + oracle
                 ┃
 Week 3          ┃ Phase 6: India compliance module
@@ -762,4 +723,4 @@ Week 5          ┃ Phase 10: Launch, onboard agents, grant submission
 
 ---
 
-*Last updated: March 8, 2026*
+*Last updated: March 9, 2026 — Phases 1, 2, 3 complete. Program ID: `Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF`*

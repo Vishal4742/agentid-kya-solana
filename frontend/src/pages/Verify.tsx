@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { MOCK_AGENTS, truncateWallet } from "@/data/mockAgents";
+import { useAllAgents } from "@/hooks/useAgents";
+import { truncateWallet } from "@/data/mockAgents";
 import { Search, Shield, CheckCircle2, XCircle, Activity, TrendingUp, Zap, Copy, Code2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
@@ -13,18 +14,20 @@ const EMBED_SNIPPET = `<script src="https://cdn.agentid.xyz/widget.js"></script>
 ></div>`;
 
 export default function Verify() {
+  const { agents } = useAllAgents();
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
-  const [result, setResult] = useState<typeof MOCK_AGENTS[0] | null | "not-found">(null);
+  const [result, setResult] = useState<typeof agents[0] | null | "not-found">(null);
 
   const handleSearch = async () => {
     if (!query.trim()) return;
     setSearching(true);
-    await new Promise((r) => setTimeout(r, 800));
-    const found = MOCK_AGENTS.find(
+    await new Promise((r) => setTimeout(r, 400));
+    const q = query.trim().toLowerCase();
+    const found = agents.find(
       (a) => a.id === query.trim() ||
-        a.ownerWallet.toLowerCase() === query.trim().toLowerCase() ||
-        a.name.toLowerCase().includes(query.toLowerCase())
+        a.ownerWallet.toLowerCase() === q ||
+        a.name.toLowerCase().includes(q)
     );
     setResult(found ?? "not-found");
     setSearching(false);
@@ -68,16 +71,18 @@ export default function Verify() {
           </button>
         </div>
 
-        {/* Demo agents */}
-        <div className="flex flex-wrap gap-x-5 gap-y-1 mb-12">
-          <span className="label-meta mr-2 self-center">Try:</span>
-          {MOCK_AGENTS.map((a) => (
-            <button key={a.id} onClick={() => setQuery(a.id)}
-              className="link-underline font-mono text-xs text-muted-foreground hover:text-foreground transition-colors">
-              {a.id}
-            </button>
-          ))}
-        </div>
+        {/* Demo agents — show first 3 real on-chain agents */}
+        {agents.length > 0 && (
+          <div className="flex flex-wrap gap-x-5 gap-y-1 mb-12">
+            <span className="label-meta mr-2 self-center">Try:</span>
+            {agents.slice(0, 3).map((a) => (
+              <button key={a.id} onClick={() => setQuery(a.name)}
+                className="link-underline font-mono text-xs text-muted-foreground hover:text-foreground transition-colors">
+                {a.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* ── Result ── */}
         <AnimatePresence mode="wait">
@@ -88,11 +93,10 @@ export default function Verify() {
               <div className="flex items-center gap-3 py-4 border-b border-green/20 mb-0">
                 <CheckCircle2 className="w-4 h-4 text-green" />
                 <p className="text-sm text-green font-medium">Verified AgentID Credential · Solana devnet</p>
-                <div className={`ml-auto px-2.5 py-1 border text-xs font-mono ${
-                  result.verifiedLevel === "Audited" ? "border-green/30 text-green" :
-                  result.verifiedLevel === "KYB" ? "border-blue-accent/30 text-blue-accent" :
-                  "border-border text-muted-foreground"
-                }`}>{result.verifiedLevel}</div>
+                <div className={`ml-auto px-2.5 py-1 border text-xs font-mono ${result.verifiedLevel === "Audited" ? "border-green/30 text-green" :
+                    result.verifiedLevel === "KYB" ? "border-blue-accent/30 text-blue-accent" :
+                      "border-border text-muted-foreground"
+                  }`}>{result.verifiedLevel}</div>
               </div>
 
               {/* Agent name — journal style */}
@@ -115,10 +119,9 @@ export default function Verify() {
                 ].map((item) => (
                   <div key={item.label} className="flex justify-between items-baseline py-3 border-b border-border last:border-0">
                     <span className="label-meta">{item.label}</span>
-                    <span className={`text-sm ${item.mono ? "font-mono" : ""} ${
-                      item.color === "green" ? "text-green font-semibold" :
-                      item.color === "amber" ? "text-amber font-semibold" : "text-foreground"
-                    }`}>{item.value}</span>
+                    <span className={`text-sm ${item.mono ? "font-mono" : ""} ${item.color === "green" ? "text-green font-semibold" :
+                        item.color === "amber" ? "text-amber font-semibold" : "text-foreground"
+                      }`}>{item.value}</span>
                   </div>
                 ))}
               </div>

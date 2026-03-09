@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { MOCK_AGENTS, formatRelativeTime, Agent } from "@/data/mockAgents";
+import { useAllAgents } from "@/hooks/useAgents";
+import type { Agent } from "@/data/mockAgents";
+import { formatRelativeTime } from "@/data/mockAgents";
 import { useTextScramble } from "@/hooks/useTextScramble";
-import { Search, ChevronDown, X } from "lucide-react";
+import { Search, ChevronDown, X, RefreshCw } from "lucide-react";
 import { Sk } from "@/components/Skeleton";
 
 /* ── Skeleton: agent row list ── */
@@ -61,18 +63,18 @@ function JournalRow({ agent }: { agent: Agent }) {
 /* ── Sort / filter types ── */
 type SortKey = "rep-desc" | "rep-asc" | "recently-active" | "recently-registered";
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: "rep-desc",            label: "Reputation (High→Low)" },
-  { value: "rep-asc",             label: "Reputation (Low→High)" },
-  { value: "recently-active",     label: "Recently Active" },
+  { value: "rep-desc", label: "Reputation (High→Low)" },
+  { value: "rep-asc", label: "Reputation (Low→High)" },
+  { value: "recently-active", label: "Recently Active" },
   { value: "recently-registered", label: "Recently Registered" },
 ];
 const FRAMEWORKS = ["All", "ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"] as const;
 type Framework = typeof FRAMEWORKS[number];
 
 export default function Agents() {
+  const { agents, loading, error } = useAllAgents();
   const [time, setTime] = useState("");
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [framework, setFramework] = useState<Framework>("All");
   const [sort, setSort] = useState<SortKey>("rep-desc");
@@ -92,10 +94,6 @@ export default function Agents() {
     return () => window.removeEventListener("mousemove", onMove);
   }, []);
 
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 1500);
-    return () => clearTimeout(t);
-  }, []);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -105,22 +103,23 @@ export default function Agents() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+
   const filtered = useMemo(() => {
-    let list = [...MOCK_AGENTS];
+    let list = [...agents];
     if (query.trim()) {
       const q = query.trim().toLowerCase();
       list = list.filter((a) => a.name.toLowerCase().includes(q));
     }
     if (framework !== "All") list = list.filter((a) => a.framework === framework);
     list.sort((a, b) => {
-      if (sort === "rep-desc")            return b.reputationScore - a.reputationScore;
-      if (sort === "rep-asc")             return a.reputationScore - b.reputationScore;
-      if (sort === "recently-active")     return new Date(b.lastActive).getTime() - new Date(a.lastActive).getTime();
+      if (sort === "rep-desc") return b.reputationScore - a.reputationScore;
+      if (sort === "rep-asc") return a.reputationScore - b.reputationScore;
+      if (sort === "recently-active") return new Date(b.lastActive).getTime() - new Date(a.lastActive).getTime();
       if (sort === "recently-registered") return new Date(b.registeredAt).getTime() - new Date(a.registeredAt).getTime();
       return 0;
     });
     return list;
-  }, [query, framework, sort]);
+  }, [agents, query, framework, sort]);
 
   const activeSort = SORT_OPTIONS.find((o) => o.value === sort)!;
   const hasFilters = query.trim() !== "" || framework !== "All";
@@ -153,11 +152,10 @@ export default function Agents() {
             <div className="flex items-center gap-1 flex-wrap">
               {FRAMEWORKS.map((f) => (
                 <button key={f} onClick={() => setFramework(f)}
-                  className={`font-mono text-[10px] uppercase tracking-widest px-3 py-1.5 border transition-colors ${
-                    framework === f
-                      ? "border-green/60 text-green bg-green/5"
-                      : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
-                  }`}>
+                  className={`font-mono text-[10px] uppercase tracking-widest px-3 py-1.5 border transition-colors ${framework === f
+                    ? "border-green/60 text-green bg-green/5"
+                    : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+                    }`}>
                   {f}
                 </button>
               ))}
@@ -172,9 +170,8 @@ export default function Agents() {
                 <div className="absolute right-0 top-full mt-2 w-52 border border-border bg-background z-20 shadow-2xl">
                   {SORT_OPTIONS.map((o) => (
                     <button key={o.value} onClick={() => { setSort(o.value); setSortOpen(false); }}
-                      className={`w-full text-left px-4 py-2.5 font-mono text-[10px] uppercase tracking-widest transition-colors ${
-                        sort === o.value ? "text-green bg-green/5" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                      }`}>
+                      className={`w-full text-left px-4 py-2.5 font-mono text-[10px] uppercase tracking-widest transition-colors ${sort === o.value ? "text-green bg-green/5" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        }`}>
                       {o.label}
                     </button>
                   ))}
@@ -199,6 +196,12 @@ export default function Agents() {
         {/* Agent list / skeleton / empty */}
         {loading ? (
           <AgentsSkeleton />
+        ) : error ? (
+          <div className="border border-destructive/20 py-12 flex flex-col items-center gap-3">
+            <RefreshCw className="w-4 h-4 text-muted-foreground" />
+            <p className="label-meta text-destructive">Failed to fetch on-chain agents</p>
+            <p className="font-mono text-[10px] text-muted-foreground/50">{error.slice(0, 80)}</p>
+          </div>
         ) : filtered.length > 0 ? (
           <ul className="w-full">
             {filtered.map((agent) => (
@@ -220,7 +223,7 @@ export default function Agents() {
         {/* Footer telemetry */}
         <div className="flex justify-between items-end pt-12 pb-4">
           <span className="text-xs text-muted-foreground/40">
-            {MOCK_AGENTS.length} agents registered · Solana devnet
+            {agents.length} agent{agents.length !== 1 ? "s" : ""} registered · Solana devnet
           </span>
           <span className="font-mono text-[10px] text-muted-foreground/30 text-right">
             X: {mousePos.x} Y: {mousePos.y}
