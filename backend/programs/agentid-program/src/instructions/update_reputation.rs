@@ -29,10 +29,13 @@ pub fn handler(ctx: Context<UpdateReputation>, new_score: u16) -> Result<()> {
     let old_score = identity.reputation_score;
     identity.reputation_score = new_score;
 
+    let timestamp = Clock::get()?.unix_timestamp;
+
     emit!(ReputationUpdated {
-        agent_identity: identity.key(),
+        agent: identity.key(),
         old_score,
         new_score,
+        timestamp,
     });
 
     Ok(())
@@ -40,7 +43,8 @@ pub fn handler(ctx: Context<UpdateReputation>, new_score: u16) -> Result<()> {
 
 #[event]
 pub struct ReputationUpdated {
-    pub agent_identity: Pubkey,
+    pub agent: Pubkey,
     pub old_score: u16,
     pub new_score: u16,
+    pub timestamp: i64,
 }
