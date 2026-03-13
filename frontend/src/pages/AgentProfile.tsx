@@ -8,8 +8,9 @@ import { truncateWallet, formatRelativeTime } from "@/data/mockAgents";
 import type { Agent } from "@/data/mockAgents";
 import { PublicKey } from "@solana/web3.js";
 import { toast } from "sonner";
-import { Copy, Shield, Activity, Zap, CheckCircle2, ExternalLink, Clock, TrendingUp, Wallet } from "lucide-react";
+import { Copy, Shield, Activity, Zap, CheckCircle2, ExternalLink, Clock, TrendingUp, Wallet, RefreshCw } from "lucide-react";
 import { Sk } from "@/components/Skeleton";
+import { getSectionLabel } from "@/lib/indiaCompliance";
 
 /* ── Reputation gauge ── */
 function ReputationGauge({ score }: { score: number }) {
@@ -144,21 +145,59 @@ function normalizeAccount(pubkey: string, acc: Record<string, unknown>): Agent {
     canTradeDefi: boolean; canSendPayments: boolean;
     name: string; gstin: string;
     credentialNft: { toBase58(): string } | null;
+    totalTransactions: { toNumber(): number };
+    successfulTransactions: { toNumber(): number };
+    humanRatingX10: number; ratingCount: number;
   };
+
+  const totalTx = caps.totalTransactions?.toNumber?.() ?? 0;
+  const successTx = caps.successfulTransactions?.toNumber?.() ?? 0;
+  const ratingX10 = caps.humanRatingX10 ?? 0;
+  const ratingCount = caps.ratingCount ?? 0;
+  const regAt = caps.registeredAt?.toNumber?.() ?? 0;
+  const verLevel = caps.verifiedLevel ?? 0;
+
+  const successRate = totalTx === 0 ? 0 : (successTx / totalTx);
+  const scoreSuccess = successRate * 400;
+
+  const actualRating = ratingCount === 0 ? 3 : (ratingX10 / 10);
+  const scoreRating = Math.max(0, ((actualRating - 1) / 4) * 200);
+
+  const daysSinceReg = (Date.now() / 1000 - regAt) / (60 * 60 * 24);
+  const scoreLongevity = Math.min(Math.max(daysSinceReg, 0) / 365, 1) * 150;
+
+  const scoreVolume = 0; // Phase 8 feature
+  let scoreVerification = 0;
+  if (verLevel === 1) scoreVerification = 50;
+  if (verLevel === 2) scoreVerification = 100;
+  if (verLevel === 3) scoreVerification = 200;
+
+  // Derive "Uptime" based on longevity out of 365, "Transactions" out of 100 max display, etc. (Mock display metrics)
+  const displayUptime = Math.min(Math.round(daysSinceReg * 10), 100);
+
   return {
     id: pubkey,
     name: caps.name,
     framework: FRAMEWORKS[caps.framework] ?? "Custom",
     llmModel: caps.model,
-    verifiedLevel: VERIFIED_LEVELS[caps.verifiedLevel] ?? "Unverified",
+    verifiedLevel: VERIFIED_LEVELS[verLevel] ?? "Unverified",
     reputationScore: caps.reputationScore,
-    registeredAt: new Date((caps.registeredAt?.toNumber?.() ?? 0) * 1000).toISOString(),
+    registeredAt: new Date(regAt * 1000).toISOString(),
     lastActive: new Date((caps.lastActive?.toNumber?.() ?? 0) * 1000).toISOString(),
     ownerWallet: caps.owner?.toBase58?.() ?? "",
     totalTxValue: "—",
     paused: false,
     activity: [],
-    reputationBreakdown: { transactions: 0, uptime: 0, ratings: 0 },
+    reputationBreakdown: { 
+      transactions: totalTx, 
+      uptime: displayUptime, 
+      ratings: ratingCount,
+      scoreSuccess: Math.round(scoreSuccess),
+      scoreRating: Math.round(scoreRating),
+      scoreLongevity: Math.round(scoreLongevity),
+      scoreVolume: Math.round(scoreVolume),
+      scoreVerification: Math.round(scoreVerification),
+    },
     capabilities: {
       defiTrading: caps.canTradeDefi ?? false,
       paymentSending: caps.canSendPayments ?? false,
@@ -268,12 +307,17 @@ export default function AgentProfile() {
         {loading ? <HeroSkeleton /> : (
           <div className="grid lg:grid-cols-3 gap-0 border-b border-border mb-0">
             <div className="lg:col-span-2 py-10 lg:pr-10 lg:border-r border-border">
-              <div className="flex items-start gap-4 mb-6">
+              <div className="flex items-start gap-2 flex-wrap mb-6">
                 <div className={`px-2.5 py-1 text-xs font-mono border ${agent.verifiedLevel === "Audited" ? "border-green/30 text-green bg-green/5" :
                   agent.verifiedLevel === "KYB" ? "border-blue-accent/30 text-blue-accent bg-blue-accent/5" :
                     "border-border text-muted-foreground"
                   }`}>{agent.verifiedLevel}</div>
                 {agent.paused && <div className="px-2.5 py-1 text-xs font-mono border border-destructive/30 text-destructive">PAUSED</div>}
+                {agent.indiaCompliance && (
+                  <div className="px-2.5 py-1 text-xs font-mono border border-amber/30 text-amber bg-amber/5">
+                    🇮🇳 India KYA
+                  </div>
+                )}
               </div>
               <h1 className="display-serif text-4xl sm:text-5xl lg:text-6xl text-foreground mb-5 leading-tight">{agent.name}</h1>
               <div className="flex flex-wrap gap-4 mb-6">
@@ -304,9 +348,32 @@ export default function AgentProfile() {
             </div>
 
             <div className="py-10 lg:pl-10 flex flex-col items-center justify-center gap-4">
-              <p className="label-meta">Reputation Score</p>
-              <ReputationGauge score={agent.reputationScore} />
-              <div className="grid grid-cols-3 gap-4 text-center w-full">
+              <div className="flex items-center gap-2">
+                <p className="label-meta">Reputation Score</p>
+                <button onClick={async () => {
+                  try {
+                    const acc = await (program.account as any).agentIdentity.fetch(new PublicKey(id!));
+                    setAgent(normalizeAccount(id!, acc as Record<string, unknown>));
+                    toast.success("Reputation refreshed from chain");
+                  } catch (e) {
+                    toast.error("Failed to refresh");
+                  }
+                }} className="text-muted-foreground hover:text-foreground transition-colors" title="Refresh">
+                  <RefreshCw className="w-3 h-3" />
+                </button>
+              </div>
+              <div className="relative group cursor-help">
+                <ReputationGauge score={agent.reputationScore} />
+                {/* Tooltip */}
+                <div className="absolute top-full lg:left-1/2 lg:-translate-x-1/2 mt-2 w-max max-w-[280px] bg-card border border-border px-3 py-2 text-[11px] font-mono text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 text-center">
+                  Tx Success: {agent.reputationBreakdown.scoreSuccess ?? 0} pts | Rating: {agent.reputationBreakdown.scoreRating ?? 0} pts | Longevity: {agent.reputationBreakdown.scoreLongevity ?? 0} pts | Volume: {agent.reputationBreakdown.scoreVolume ?? 0} pts | Verified: {agent.reputationBreakdown.scoreVerification ?? 0} pts
+                </div>
+              </div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-mono -mt-2">
+                Last updated: {formatRelativeTime(agent.lastActive)}
+              </p>
+              
+              <div className="grid grid-cols-3 gap-4 text-center w-full mt-2">
                 {[
                   { label: "Transactions", val: agent.reputationBreakdown.transactions, color: "text-green" },
                   { label: "Uptime", val: agent.reputationBreakdown.uptime, color: "text-blue-accent" },
@@ -411,17 +478,27 @@ export default function AgentProfile() {
                 <div className="border-b border-border pb-8 mb-8">
                   <p className="label-meta text-amber mb-4">India Compliance</p>
                   <div className="space-y-3 font-mono text-xs">
-                    <div className="flex justify-between py-2 border-b border-border">
+                    <div className="flex justify-between items-center py-2 border-b border-border">
                       <span className="text-muted-foreground">GSTIN</span>
-                      <span>{agent.indiaCompliance.gstin}</span>
+                      <span className="flex items-center gap-1.5">
+                        {agent.indiaCompliance.gstin}
+                        {agent.indiaCompliance.gstin?.length === 15 && (
+                          <CheckCircle2 className="w-3 h-3 text-green shrink-0" aria-label="GSTIN Verified" />
+                        )}
+                      </span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-border">
                       <span className="text-muted-foreground">TDS Rate</span>
                       <span className="text-amber">{agent.indiaCompliance.tdsRate}%</span>
                     </div>
-                    <div className="flex justify-between py-2">
+                    <div className="flex justify-between py-2 border-b border-border">
                       <span className="text-muted-foreground">Category</span>
                       <span className="text-right max-w-[140px]">{agent.indiaCompliance.serviceCategory}</span>
+                    </div>
+                    <div className="pt-1">
+                      <span className="text-muted-foreground/60 text-[10px] uppercase tracking-wider">
+                        {getSectionLabel(agent.indiaCompliance.serviceCategory)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -441,7 +518,7 @@ export default function AgentProfile() {
                 ) : (
                   <div className="border border-border p-4 bg-foreground/5 opacity-60 grayscale">
                     <p className="label-meta mb-2">🎖 Soul-Bound Credential</p>
-                    <p className="text-xs text-muted-foreground font-mono mt-3">✅ Pending — upgrade to KYB</p>
+                    <p className="text-xs text-muted-foreground font-mono mt-3">⏳ Pending — upgrade to KYB</p>
                   </div>
                 )}
               </div>
