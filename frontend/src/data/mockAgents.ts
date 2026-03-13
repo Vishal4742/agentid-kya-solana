@@ -28,6 +28,11 @@ export interface Agent {
     transactions: number;
     uptime: number;
     ratings: number;
+    scoreSuccess?: number;
+    scoreRating?: number;
+    scoreLongevity?: number;
+    scoreVolume?: number;
+    scoreVerification?: number;
   };
   capabilities: AgentCapabilities;
   indiaCompliance?: {

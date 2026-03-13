@@ -53,8 +53,9 @@ export default function Register() {
         return;
       }
 
-      if (!form.skipIndia && form.gstin.trim().length !== 15) {
-        toast.error("GSTIN must be exactly 15 characters for Indian businesses");
+      // Only validate GSTIN if the user explicitly entered one (not empty and not skipped)
+      if (!form.skipIndia && form.gstin.trim().length > 0 && form.gstin.trim().length !== 15) {
+        toast.error("GSTIN must be exactly 15 characters — or leave it empty to skip");
         setMinting(false);
         return;
       }
@@ -407,7 +408,7 @@ export default function Register() {
                   className="btn-outline w-full justify-center">
                   <ExternalLink className="w-3.5 h-3.5" /> View on Solana Explorer
                 </a>
-                <Link to="/agent/agent-001" className="btn-primary w-full justify-center">
+                <Link to={`/agent/${publicKey}`} className="btn-primary w-full justify-center">
                   View Agent Profile <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
