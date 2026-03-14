@@ -1,0 +1,19 @@
+{
+    "name": "agentid-metadata-api",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Vercel serverless API — serves Metaplex-compatible NFT metadata for AgentID cNFTs",
+    "scripts": {
+        "dev": "vercel dev",
+        "deploy": "vercel --prod"
+    },
+    "dependencies": {
+        "@coral-xyz/anchor": "^0.30.1",
+        "@solana/web3.js": "^1.95.4",
+        "@vercel/node": "^3.2.24"
+    },
+    "devDependencies": {
+        "typescript": "^5.4.5",
+        "@types/node": "^20.14.0"
+    }
+}

@@ -28,6 +28,11 @@ export interface Agent {
     transactions: number;
     uptime: number;
     ratings: number;
+    scoreSuccess?: number;
+    scoreRating?: number;
+    scoreLongevity?: number;
+    scoreVolume?: number;
+    scoreVerification?: number;
   };
   capabilities: AgentCapabilities;
   indiaCompliance?: {
@@ -41,6 +46,7 @@ export interface Agent {
   activity: AgentActivity[];
   paused: boolean;
   avatarSeed: string;
+  credentialNft?: string;
 }
 
 export const MOCK_AGENTS: Agent[] = [

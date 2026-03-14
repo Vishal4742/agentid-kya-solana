@@ -72,7 +72,7 @@ const FRAMEWORKS = ["All", "ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"] 
 type Framework = typeof FRAMEWORKS[number];
 
 export default function Agents() {
-  const { agents, loading, error } = useAllAgents();
+  const { agents, loading, error, refetch } = useAllAgents();
   const [time, setTime] = useState("");
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [query, setQuery] = useState("");
@@ -201,6 +201,9 @@ export default function Agents() {
             <RefreshCw className="w-4 h-4 text-muted-foreground" />
             <p className="label-meta text-destructive">Failed to fetch on-chain agents</p>
             <p className="font-mono text-[10px] text-muted-foreground/50">{error.slice(0, 80)}</p>
+            <button onClick={refetch} className="btn-outline text-xs mt-2 flex items-center gap-2">
+              <RefreshCw className="w-3 h-3" /> Retry
+            </button>
           </div>
         ) : filtered.length > 0 ? (
           <ul className="w-full">

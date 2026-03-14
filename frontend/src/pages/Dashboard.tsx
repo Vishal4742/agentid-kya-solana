@@ -1,13 +1,15 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useWallet } from "@/hooks/useWallet";
 import { useMyAgent } from "@/hooks/useAgents";
 import { truncateWallet, formatRelativeTime } from "@/data/mockAgents";
+import type { Agent } from "@/data/mockAgents";
 import { toast } from "sonner";
-import { Shield, Activity, AlertTriangle, Wallet, ExternalLink, Play, Pause, Plus } from "lucide-react";
+import { Shield, Activity, AlertTriangle, Wallet, ExternalLink, Play, Pause, Plus, FileText, X } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Sk } from "@/components/Skeleton";
+import { calculateTDS, generateInvoice, getSectionLabel } from "@/lib/indiaCompliance";
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -139,10 +141,100 @@ const CHART_TOOLTIP_STYLE = {
   cursor: { stroke: "hsl(220 15% 20%)", strokeWidth: 1 },
 };
 
+/* ── Invoice Modal ── */
+function InvoiceModal({ agent, onClose }: { agent: Agent; onClose: () => void }) {
+  const [grossAmount, setGrossAmount] = useState("");
+  const [clientPan, setClientPan] = useState("");
+  const amount = parseFloat(grossAmount) || 0;
+  const category = agent.indiaCompliance?.serviceCategory ?? "Information Technology Services";
+  const tds = calculateTDS(category, amount);
+
+  const handlePdf = () => window.print();
+  const handleCopyJson = () => {
+    if (!clientPan || amount <= 0) { toast.error("Fill in all fields first"); return; }
+    const inv = generateInvoice(agent, amount, clientPan);
+    navigator.clipboard.writeText(JSON.stringify(inv, null, 2));
+    toast.success("Invoice JSON copied to clipboard");
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+          className="bg-card border border-amber/30 w-full max-w-md p-6 relative"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <p className="label-meta text-amber">India Compliance</p>
+              <h3 className="font-serif italic text-xl text-foreground mt-1">Generate Invoice — {agent.name}</h3>
+            </div>
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Inputs */}
+          <div className="space-y-4 mb-6">
+            <div>
+              <label className="label-meta mb-2 block">Gross Amount (USDC)</label>
+              <input
+                type="number" min="0" placeholder="0.00"
+                value={grossAmount} onChange={(e) => setGrossAmount(e.target.value)}
+                className="w-full bg-background border border-border px-3 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-amber/50 transition-colors"
+              />
+            </div>
+            <div>
+              <label className="label-meta mb-2 block">Client PAN</label>
+              <input
+                type="text" maxLength={10} placeholder="ABCDE1234F"
+                value={clientPan} onChange={(e) => setClientPan(e.target.value.toUpperCase())}
+                className="w-full bg-background border border-border px-3 py-2 font-mono text-sm text-foreground uppercase focus:outline-none focus:border-amber/50 transition-colors"
+              />
+            </div>
+          </div>
+
+          {/* TDS Breakdown */}
+          <div className="border border-amber/20 bg-amber/5 p-4 mb-6 space-y-2">
+            <p className="label-meta text-amber mb-3">{getSectionLabel(category)}</p>
+            {[
+              { label: "Gross Amount", value: `$${amount.toFixed(2)}`, highlight: false },
+              { label: `TDS @ ${tds.tdsRate}% (§${tds.section})`, value: `-$${tds.tdsAmount.toFixed(2)}`, highlight: true },
+              { label: "Net Payable", value: `$${tds.netPayable.toFixed(2)}`, highlight: false },
+            ].map((row) => (
+              <div key={row.label} className="flex justify-between items-center">
+                <span className="font-mono text-[11px] text-muted-foreground">{row.label}</span>
+                <span className={`font-mono text-sm font-bold ${row.highlight ? "text-amber" : "text-foreground"}`}>{row.value}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <button onClick={handlePdf} className="flex-1 btn-outline text-xs justify-center">
+              <FileText className="w-3.5 h-3.5" /> Download PDF
+            </button>
+            <button onClick={handleCopyJson} className="flex-1 btn-outline text-xs justify-center border-amber/40 text-amber hover:bg-amber/10">
+              Copy Invoice JSON
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 export default function Dashboard() {
   const { connected, publicKey, connect, connecting } = useWallet();
   const { agent, loading } = useMyAgent(publicKey);
   const [pausedAgents, setPausedAgents] = useState<Set<string>>(new Set());
+  const [invoiceAgent, setInvoiceAgent] = useState<Agent | null>(null);
   const [spendingLimit, setSpendingLimit] = useState(5000);
   const [perTxLimit, setPerTxLimit] = useState(1000);
 
@@ -322,6 +414,15 @@ export default function Dashboard() {
                           <Link to={`/agent/${agent.id}`} className="p-1.5 border border-border hover:bg-secondary transition-colors">
                             <ExternalLink className="w-3 h-3" />
                           </Link>
+                          {agent.indiaCompliance && (
+                            <button
+                              onClick={() => setInvoiceAgent(agent)}
+                              className="p-1.5 border border-amber/40 text-amber hover:bg-amber/10 transition-colors"
+                              title="Generate Invoice"
+                            >
+                              <FileText className="w-3 h-3" />
+                            </button>
+                          )}
                           <button onClick={() => togglePause(agent.id, agent.name)}
                             className={`p-1.5 border transition-colors ${isPaused ? "border-green/40 text-green hover:bg-green/10" : "border-destructive/40 text-destructive hover:bg-destructive/10"}`}>
                             {isPaused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
@@ -395,6 +496,13 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Invoice Modal */}
+      <AnimatePresence>
+        {invoiceAgent && (
+          <InvoiceModal agent={invoiceAgent} onClose={() => setInvoiceAgent(null)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

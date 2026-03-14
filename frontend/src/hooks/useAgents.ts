@@ -87,35 +87,59 @@ function normalize(raw: RawIdentity) {
     };
 }
 
-/** Fetch ALL registered agents (for /agents listing and /verify search) */
 export function useAllAgents() {
     const program = useProgram();
     const [agents, setAgents] = useState<ReturnType<typeof normalize>[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [retryCount, setRetry] = useState(0);
+
+    const refetch = () => setRetry(rc => rc + 1);
 
     useEffect(() => {
         if (!program) return;
+        let active = true;
         setLoading(true);
+        setError(null);
+
         program.account.agentIdentity
             .all()
-            .then((all) => setAgents(all.map((r) => normalize(r as unknown as RawIdentity))))
-            .catch((e) => setError(String(e)))
-            .finally(() => setLoading(false));
-    }, [program]);
+            .then((all) => {
+                if (active) setAgents(all.map((r) => normalize(r as unknown as RawIdentity)));
+            })
+            .catch((e) => {
+                if (active) setError(String(e));
+            })
+            .finally(() => {
+                if (active) setLoading(false);
+            });
 
-    return { agents, loading, error };
+        return () => { active = false; };
+    }, [program, retryCount]);
+
+    return { agents, loading, error, refetch };
 }
 
-/** Fetch the AgentIdentity PDA owned by `ownerPubkey` (for /dashboard) */
 export function useMyAgent(ownerPubkey: string | null) {
     const program = useProgram();
     const [agent, setAgent] = useState<ReturnType<typeof normalize> | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [retryCount, setRetry] = useState(0);
+
+    const refetch = () => setRetry(rc => rc + 1);
 
     useEffect(() => {
-        if (!program || !ownerPubkey) { setLoading(false); return; }
+        if (!program || !ownerPubkey) {
+            setLoading(false);
+            setError(null);
+            setAgent(null);
+            return;
+        }
+        let active = true;
+        setLoading(true);
+        setError(null);
+
         const owner = new PublicKey(ownerPubkey);
         const [pda] = PublicKey.findProgramAddressSync(
             [Buffer.from("agent-identity"), owner.toBytes()],
@@ -123,10 +147,23 @@ export function useMyAgent(ownerPubkey: string | null) {
         );
         program.account.agentIdentity
             .fetch(pda)
-            .then((acc) => setAgent(normalize({ publicKey: pda, account: acc } as unknown as RawIdentity)))
-            .catch(() => setAgent(null))  // not registered yet
-            .finally(() => setLoading(false));
-    }, [program, ownerPubkey]);
+            .then((acc) => {
+                if (active) setAgent(normalize({ publicKey: pda, account: acc } as unknown as RawIdentity));
+            })
+            .catch((e) => {
+                if (active) {
+                    setAgent(null); // not registered yet
+                    if (!String(e).includes("Account does not exist") && !String(e).includes("AccountNotFound")) {
+                        setError(String(e));
+                    }
+                }
+            })
+            .finally(() => {
+                if (active) setLoading(false);
+            });
 
-    return { agent, loading, error };
+        return () => { active = false; };
+    }, [program, ownerPubkey, retryCount]);
+
+    return { agent, loading, error, refetch };
 }

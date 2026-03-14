@@ -46,18 +46,30 @@ export default function Register() {
     }
     setMinting(true);
     try {
-      // Map framework name → u8 enum (0=ELIZA 1=AutoGen 2=CrewAI 3=LangGraph 4=Custom)
       const frameworkIndex = FRAMEWORKS.indexOf(form.framework);
+      if (frameworkIndex === -1) {
+        toast.error("Please select a valid framework");
+        setMinting(false);
+        return;
+      }
+
+      // Only validate GSTIN if the user explicitly entered one (not empty and not skipped)
+      if (!form.skipIndia && form.gstin.trim().length > 0 && form.gstin.trim().length !== 15) {
+        toast.error("GSTIN must be exactly 15 characters — or leave it empty to skip");
+        setMinting(false);
+        return;
+      }
+
       // Map model name to a max-32-char string
       const modelStr = form.model.slice(0, 32);
       // agent_wallet = owner wallet (same pubkey, can differ later)
       const agentWallet = new PublicKey(publicKey);
       // max_tx_size_usdc in USDC lamports (6 decimals) — must be BN, not BigInt
       const maxTxUsdc = new BN(form.maxUsdcTx).mul(new BN(1_000_000));
-      // gstin: must be empty string or exactly 15 chars
-      const gstin = form.skipIndia ? "" : (form.gstin.trim().length === 15 ? form.gstin.trim() : "");
+      // gstin: must be exactly 15 chars
+      const gstin = form.skipIndia ? "" : form.gstin.trim();
       // pan_hash: 32 zero bytes (PAN hashing not implemented in UI yet)
-      const panHash = Array(32).fill(0);
+      const panHash = Array.from({ length: 32 }, () => 0);
       // service_category u8 enum
       const serviceCategory = form.skipIndia ? 0 : SERVICE_CATEGORIES.indexOf(form.serviceCategory);
 
@@ -123,7 +135,14 @@ export default function Register() {
             </div>
             <div className="flex gap-3">
               {(["phantom", "solflare"] as const).map((p) => (
-                <button key={p} onClick={() => connect(p)} disabled={connecting}
+                <button key={p} onClick={async () => {
+                  try {
+                    await connect(p);
+                  } catch (err: unknown) {
+                    console.error("Wallet connection failed:", err);
+                    toast.error("Connection failed");
+                  }
+                }} disabled={connecting}
                   className="btn-primary disabled:opacity-50">
                   {connecting ? <div className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : <Wallet className="w-3.5 h-3.5" />}
                   {p === "phantom" ? "👻 Phantom" : "☀️ Solflare"}
@@ -355,7 +374,7 @@ export default function Register() {
                 )}
               </button>
               <p className="text-center font-mono text-[10px] text-muted-foreground/40 mt-3">
-                ⚡ Devnet simulation · On-chain minting live in Phase 2
+                ⚡ Live on Solana devnet
               </p>
             </motion.div>
           )}
@@ -374,7 +393,6 @@ export default function Register() {
               <div className="mb-8">
                 <div className="flex items-baseline justify-between mb-3">
                   <p className="label-meta">Transaction Hash</p>
-                  <span className="font-mono text-[10px] text-amber/60">simulated</span>
                 </div>
                 <div className="flex items-center gap-3 py-3 border-b border-border">
                   <code className="text-xs font-mono text-green flex-1 break-all">{txHash}</code>
@@ -390,7 +408,7 @@ export default function Register() {
                   className="btn-outline w-full justify-center">
                   <ExternalLink className="w-3.5 h-3.5" /> View on Solana Explorer
                 </a>
-                <Link to="/agent/agent-001" className="btn-primary w-full justify-center">
+                <Link to={`/agent/${publicKey}`} className="btn-primary w-full justify-center">
                   View Agent Profile <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>

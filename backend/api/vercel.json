@@ -1,0 +1,15 @@
+{
+    "version": 2,
+    "builds": [
+        {
+            "src": "metadata/[agentId].ts",
+            "use": "@vercel/node"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/api/metadata/(.*)",
+            "dest": "/metadata/[agentId].ts?agentId=$1"
+        }
+    ]
+}

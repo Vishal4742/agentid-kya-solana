@@ -38,6 +38,8 @@ pub fn handler(ctx: Context<UpdateCapabilities>, params: UpdateCapabilitiesParam
         owner: ctx.accounts.owner.key(),
         can_trade_defi:      params.can_trade_defi,
         can_send_payments:   params.can_send_payments,
+        can_publish_content: params.can_publish_content,
+        can_analyze_data:    params.can_analyze_data,
         max_tx_size_usdc:    params.max_tx_size_usdc,
     });
 
@@ -49,5 +51,7 @@ pub struct CapabilitiesUpdated {
     pub owner: Pubkey,
     pub can_trade_defi: bool,
     pub can_send_payments: bool,
+    pub can_publish_content: bool,
+    pub can_analyze_data: bool,
     pub max_tx_size_usdc: u64,
 }
