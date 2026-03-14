@@ -175,6 +175,11 @@ function normalizeAccount(pubkey: string, acc: Record<string, unknown>): Agent {
   // Derive "Uptime" based on longevity out of 365, "Transactions" out of 100 max display, etc. (Mock display metrics)
   const displayUptime = Math.min(Math.round(daysSinceReg * 10), 100);
 
+  const credentialNft =
+    caps.credentialNft && !caps.credentialNft.equals(PublicKey.default)
+      ? caps.credentialNft.toBase58()
+      : undefined;
+
   return {
     id: pubkey,
     name: caps.name,
@@ -209,7 +214,7 @@ function normalizeAccount(pubkey: string, acc: Record<string, unknown>): Agent {
       ? { gstin: caps.gstin, tdsRate: 10, serviceCategory: "Information Technology Services" }
       : null,
     avatarSeed: caps.name,
-    credentialNft: caps.credentialNft ? caps.credentialNft.toBase58() : undefined,
+    credentialNft,
   } as Agent;
 }
 
