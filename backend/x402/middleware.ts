@@ -7,17 +7,25 @@ dotenv.config();
 const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com";
 const DEVNET_USDC_MINT = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
 const REPLAY_TTL_MS = 24 * 60 * 60 * 1000;
+const REPLAY_PRUNE_INTERVAL_MS = 5 * 60 * 1000;
+const MAX_CONSUMED_SIGNATURES = 100_000;
 
 const connection = new Connection(SOLANA_RPC_URL, "confirmed");
 const consumedSignatures = new Map<string, number>();
 
 function pruneReplayCache(now = Date.now()) {
   for (const [signature, seenAt] of consumedSignatures.entries()) {
-    if (now - seenAt > REPLAY_TTL_MS) {
+    if (now - seenAt > REPLAY_TTL_MS || consumedSignatures.size > MAX_CONSUMED_SIGNATURES) {
       consumedSignatures.delete(signature);
     }
   }
 }
+
+const replayPruneTimer = setInterval(() => {
+  pruneReplayCache();
+}, REPLAY_PRUNE_INTERVAL_MS);
+
+replayPruneTimer.unref();
 
 function getAccountPubkey(tx: ParsedTransactionWithMeta, accountIndex: number): string | null {
   const key = tx.transaction.message.accountKeys[accountIndex];
@@ -117,7 +125,7 @@ export const x402Middleware = (
       }
 
       consumedSignatures.set(paymentSignature, Date.now());
-      req.body._verifiedPayment = {
+      res.locals.verifiedPayment = {
         signature: paymentSignature,
         treasury,
         mint: DEVNET_USDC_MINT,

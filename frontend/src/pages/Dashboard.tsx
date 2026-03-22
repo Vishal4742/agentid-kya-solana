@@ -316,10 +316,12 @@ export default function Dashboard() {
   const handleSaveLimits = async () => {
     if (!program || !treasuryPda || !publicKey) return;
     try {
+      const perTxLimitMicro = Math.round(perTxLimit * 1_000_000);
+      const spendingLimitMicro = Math.round(spendingLimit * 1_000_000);
       // @ts-ignore
       await program.methods.updateSpendingLimits(
-        new BN(perTxLimit * 1_000_000),
-        new BN(spendingLimit * 1_000_000),
+        new BN(perTxLimitMicro),
+        new BN(spendingLimitMicro),
         new BN(10_000 * 1_000_000)
       ).accountsStrict({
         treasury: treasuryPda,
