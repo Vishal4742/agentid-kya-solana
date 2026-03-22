@@ -506,7 +506,11 @@ export default function Dashboard() {
       </div>
 
       {/* Invoice Modal */}
-      {invoiceAgent && <InvoiceModal agent={invoiceAgent} onClose={() => setInvoiceAgent(null)} />}
+      <AnimatePresence>
+        {invoiceAgent && (
+          <InvoiceModal agent={invoiceAgent} onClose={() => setInvoiceAgent(null)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
