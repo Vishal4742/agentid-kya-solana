@@ -1,73 +1,49 @@
-# Welcome to your Lovable project
+# AgentID Frontend
 
-## Project info
+Vite/React frontend for the AgentID KYA protocol. The app connects directly to the Anchor program on Solana devnet through the browser wallet adapter and the generated Anchor IDL in `src/idl/`.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## What Works Today
 
-## How can I edit this code?
+- Wallet connection with Phantom and Solflare
+- On-chain registration from `/register`
+- Real agent reads on `/agents`, `/verify`, `/dashboard`, and `/agent/:id`
+- Treasury actions from the dashboard using the current shipped IDL
+- Docs route mounted in the app router
 
-There are several ways of editing your application.
+## Current Gaps
 
-**Use Lovable**
+- The landing page still shows `MOCK_AGENTS` in the live agents section
+- A full cNFT credential mint flow is not wired yet, so `credential_nft` is usually the default pubkey
+- Full production readiness still depends on backend/oracle hardening and treasury/x402 settlement storage
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Development
 
-Changes made via Lovable will be committed automatically to this repo.
+Requirements:
 
-**Use your preferred IDE**
+- Node.js 18+
+- npm
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Install and run:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+cd frontend
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Useful commands:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+npm run test
+npx tsc --noEmit -p tsconfig.app.json
+npm run build
+```
 
-**Use GitHub Codespaces**
+## Solana Integration
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- Program hook: `src/hooks/useProgram.ts`
+- Generated IDL: `src/idl/agentid_program.json`
+- Generated types: `src/idl/agentid_program.ts`
+- Program ID: `Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF`
 
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+If the Anchor program changes, regenerate the backend IDL first and then copy the refreshed IDL/types into `frontend/src/idl/` before using new instructions from the UI.

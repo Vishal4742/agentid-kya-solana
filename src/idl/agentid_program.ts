@@ -14,6 +14,466 @@ export type AgentidProgram = {
   },
   "instructions": [
     {
+      "name": "autonomousPayment",
+      "docs": [
+        "Execute an autonomous USDC payment via the agent's treasury"
+      ],
+      "discriminator": [
+        88,
+        46,
+        9,
+        90,
+        148,
+        71,
+        4,
+        217
+      ],
+      "accounts": [
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  45,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agentIdentity"
+              }
+            ]
+          }
+        },
+        {
+          "name": "agentIdentity",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  45,
+                  105,
+                  100,
+                  101,
+                  110,
+                  116,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "agentWallet",
+          "signer": true
+        },
+        {
+          "name": "owner",
+          "relations": [
+            "treasury",
+            "agentIdentity"
+          ]
+        },
+        {
+          "name": "treasuryUsdc",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "treasury"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "usdcMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "recipientUsdc",
+          "writable": true
+        },
+        {
+          "name": "usdcMint"
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "recipient",
+          "type": "pubkey"
+        },
+        {
+          "name": "memo",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "deposit",
+      "docs": [
+        "Deposit USDC into the treasury"
+      ],
+      "discriminator": [
+        242,
+        35,
+        198,
+        137,
+        82,
+        225,
+        242,
+        182
+      ],
+      "accounts": [
+        {
+          "name": "treasury",
+          "writable": true
+        },
+        {
+          "name": "depositor",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "depositorUsdc",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "depositor"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "usdcMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "treasuryUsdc",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "treasury"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "usdcMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "usdcMint"
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "emergencyPause",
+      "docs": [
+        "Emergency pause for the treasury (Owner only)"
+      ],
+      "discriminator": [
+        21,
+        143,
+        27,
+        142,
+        200,
+        181,
+        210,
+        255
+      ],
+      "accounts": [
+        {
+          "name": "treasury",
+          "writable": true
+        },
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "treasury"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "paused",
+          "type": "bool"
+        }
+      ]
+    },
+    {
       "name": "initConfig",
       "docs": [
         "Initialize the global program configuration (e.g., oracle authority)"
@@ -70,6 +530,114 @@ export type AgentidProgram = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "initializeTreasury",
+      "docs": [
+        "Initialize a newly created AgentTreasury PDA for an agent"
+      ],
+      "discriminator": [
+        124,
+        186,
+        211,
+        195,
+        85,
+        165,
+        129,
+        166
+      ],
+      "accounts": [
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  45,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agentIdentity"
+              }
+            ]
+          }
+        },
+        {
+          "name": "agentIdentity",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  45,
+                  105,
+                  100,
+                  101,
+                  110,
+                  116,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "agentIdentity"
+          ]
+        },
+        {
+          "name": "usdcMint"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "spendingLimitPerTx",
+          "type": "u64"
+        },
+        {
+          "name": "spendingLimitPerDay",
+          "type": "u64"
+        },
+        {
+          "name": "multisigRequiredAbove",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "logAction",
@@ -370,9 +938,6 @@ export type AgentidProgram = {
     },
     {
       "name": "updateReputation",
-      "docs": [
-        "Update reputation score. Oracle-authority only."
-      ],
       "discriminator": [
         194,
         220,
@@ -454,6 +1019,49 @@ export type AgentidProgram = {
         {
           "name": "newScore",
           "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "updateSpendingLimits",
+      "docs": [
+        "Update the treasury's operational limits (Owner only)"
+      ],
+      "discriminator": [
+        199,
+        114,
+        118,
+        214,
+        149,
+        133,
+        82,
+        132
+      ],
+      "accounts": [
+        {
+          "name": "treasury",
+          "writable": true
+        },
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "treasury"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "spendingLimitPerTx",
+          "type": "u64"
+        },
+        {
+          "name": "spendingLimitPerDay",
+          "type": "u64"
+        },
+        {
+          "name": "multisigRequiredAbove",
+          "type": "u64"
         }
       ]
     },
@@ -548,6 +1156,19 @@ export type AgentidProgram = {
       ]
     },
     {
+      "name": "agentTreasury",
+      "discriminator": [
+        129,
+        97,
+        0,
+        63,
+        102,
+        222,
+        200,
+        166
+      ]
+    },
+    {
       "name": "programConfig",
       "discriminator": [
         196,
@@ -599,6 +1220,19 @@ export type AgentidProgram = {
         93,
         144,
         113
+      ]
+    },
+    {
+      "name": "paymentExecuted",
+      "discriminator": [
+        153,
+        165,
+        141,
+        18,
+        246,
+        20,
+        204,
+        227
       ]
     },
     {
@@ -665,6 +1299,41 @@ export type AgentidProgram = {
       "code": 6009,
       "name": "invalidGstin",
       "msg": "GSTIN must be exactly 15 characters (leave blank to skip)"
+    },
+    {
+      "code": 6010,
+      "name": "treasuryPaused",
+      "msg": "Treasury is paused for emergency"
+    },
+    {
+      "code": 6011,
+      "name": "exceedsPerTxLimit",
+      "msg": "Payment amount exceeds per-transaction limit"
+    },
+    {
+      "code": 6012,
+      "name": "exceedsDailyLimit",
+      "msg": "Payment amount exceeds daily spending limit"
+    },
+    {
+      "code": 6013,
+      "name": "requiresMultisig",
+      "msg": "Transaction amount requires multisig approval"
+    },
+    {
+      "code": 6014,
+      "name": "unauthorizedTreasuryOwner",
+      "msg": "Only the treasury owner can perform this action"
+    },
+    {
+      "code": 6015,
+      "name": "invalidRecipient",
+      "msg": "Recipient does not match the provided token account owner"
+    },
+    {
+      "code": 6016,
+      "name": "arithmeticError",
+      "msg": "Arithmetic overflow or underflow"
     }
   ],
   "types": [
@@ -924,6 +1593,66 @@ export type AgentidProgram = {
       }
     },
     {
+      "name": "agentTreasury",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "agentIdentity",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "usdcMint",
+            "type": "pubkey"
+          },
+          {
+            "name": "usdcBalance",
+            "type": "u64"
+          },
+          {
+            "name": "totalEarned",
+            "type": "u64"
+          },
+          {
+            "name": "totalSpent",
+            "type": "u64"
+          },
+          {
+            "name": "spendingLimitPerTx",
+            "type": "u64"
+          },
+          {
+            "name": "spendingLimitPerDay",
+            "type": "u64"
+          },
+          {
+            "name": "spentToday",
+            "type": "u64"
+          },
+          {
+            "name": "dayResetTimestamp",
+            "type": "i64"
+          },
+          {
+            "name": "emergencyPause",
+            "type": "bool"
+          },
+          {
+            "name": "multisigRequiredAbove",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
       "name": "capabilitiesUpdated",
       "type": {
         "kind": "struct",
@@ -938,6 +1667,14 @@ export type AgentidProgram = {
           },
           {
             "name": "canSendPayments",
+            "type": "bool"
+          },
+          {
+            "name": "canPublishContent",
+            "type": "bool"
+          },
+          {
+            "name": "canAnalyzeData",
             "type": "bool"
           },
           {
@@ -971,6 +1708,34 @@ export type AgentidProgram = {
           {
             "name": "memo",
             "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "paymentExecuted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "agentIdentity",
+            "type": "pubkey"
+          },
+          {
+            "name": "recipient",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "memo",
+            "type": "string"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
           }
         ]
       }
@@ -1062,7 +1827,7 @@ export type AgentidProgram = {
         "kind": "struct",
         "fields": [
           {
-            "name": "agentIdentity",
+            "name": "agent",
             "type": "pubkey"
           },
           {
@@ -1072,6 +1837,10 @@ export type AgentidProgram = {
           {
             "name": "newScore",
             "type": "u16"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
           }
         ]
       }

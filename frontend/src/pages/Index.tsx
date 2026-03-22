@@ -299,7 +299,7 @@ export default function Index() {
                       <span className="font-mono text-[10px] text-muted-foreground/50">{agent.framework}</span>
                       <span className={`font-mono text-[10px] px-1.5 py-px border ${
                         agent.verifiedLevel === "Audited" ? "border-green/30 text-green" :
-                        agent.verifiedLevel === "KYB" ? "border-blue-accent/30 text-blue-accent" :
+                        agent.verifiedLevel === "KYBVerified" ? "border-blue-accent/30 text-blue-accent" :
                         "border-border text-muted-foreground"
                       }`}>{agent.verifiedLevel}</span>
                     </div>

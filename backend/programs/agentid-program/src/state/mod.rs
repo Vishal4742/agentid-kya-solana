@@ -92,6 +92,31 @@ pub struct AgentAction {
 }
 
 // ─────────────────────────────────────────────────────────────
+// AgentTreasury — stores operational funds (USDC) and limits
+// ─────────────────────────────────────────────────────────────
+#[account]
+#[derive(InitSpace)]
+pub struct AgentTreasury {
+    pub agent_identity: Pubkey,
+    pub owner: Pubkey,
+    pub usdc_mint: Pubkey,
+    pub usdc_balance: u64,
+    pub total_earned: u64,
+    pub total_spent: u64,
+    pub spending_limit_per_tx: u64,
+    pub spending_limit_per_day: u64,
+    pub spent_today: u64,
+    pub day_reset_timestamp: i64,
+    pub emergency_pause: bool,
+    pub multisig_required_above: u64,
+    pub bump: u8,
+}
+
+impl AgentTreasury {
+    pub const SEED_PREFIX: &'static [u8] = b"agent-treasury";
+}
+
+// ─────────────────────────────────────────────────────────────
 // ProgramConfig — stores oracle authority (one global PDA)
 // ─────────────────────────────────────────────────────────────
 #[account]

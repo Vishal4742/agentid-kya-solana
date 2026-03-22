@@ -15,7 +15,7 @@ pub struct RateAgent<'info> {
 }
 
 /// rating: 1–5 stars
-pub fn handler(ctx: Context<RateAgent>, rating: u8) -> Result<()> {
+pub fn process_rate_agent(ctx: Context<RateAgent>, rating: u8) -> Result<()> {
     require!(rating >= 1 && rating <= 5, AgentIdError::InvalidRating);
     require!(
         ctx.accounts.rater.key() != ctx.accounts.identity.owner,
