@@ -17,7 +17,10 @@ pub struct VerifyAgent<'info> {
 }
 
 /// action_type: 0=DeFiTrade 1=Payment 2=ContentPublish 3=DataQuery
-pub fn handler(ctx: Context<VerifyAgent>, action_type: u8) -> Result<VerificationResult> {
+pub fn process_verify_agent(
+    ctx: Context<VerifyAgent>,
+    action_type: u8,
+) -> Result<VerificationResult> {
     let identity = &ctx.accounts.identity;
 
     let (required_rep, capability_enabled) = match action_type {

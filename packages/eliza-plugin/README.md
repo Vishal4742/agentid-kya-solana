@@ -1,11 +1,12 @@
 # @agentid/eliza-plugin
 
-ELIZA plugin for **AgentID KYA** — on-chain identity and reputation on Solana.
+ELIZA plugin for AgentID KYA.
 
-Gives your ELIZA agent the ability to:
-- Display its own on-chain identity and reputation score
-- Verify counterparty agents before transacting
-- Automatically log every action for on-chain reputation tracking
+The plugin uses `@agentid/sdk` to:
+
+- read the agent's on-chain identity
+- verify counterparties before actions
+- log completed actions back on-chain
 
 ## Installation
 
@@ -15,85 +16,51 @@ npm install @agentid/eliza-plugin @agentid/sdk @solana/web3.js
 
 ## Quick Start
 
-```typescript
+```ts
 import { AgentRuntime } from "@ai16z/eliza";
 import { agentIdPlugin } from "@agentid/eliza-plugin";
 
 const agent = new AgentRuntime({
-  // ... your existing config
   plugins: [agentIdPlugin],
   settings: {
     SOLANA_RPC_URL: "https://api.devnet.solana.com",
-    ORACLE_PRIVATE_KEY: process.env.ORACLE_PRIVATE_KEY, // base64 keypair
+    ORACLE_PRIVATE_KEY: process.env.ORACLE_PRIVATE_KEY,
   },
 });
 ```
 
-## Actions
+## What It Does
 
 ### `GET_MY_REPUTATION`
 
-Returns the agent's on-chain AgentID credential and current reputation score.
-
-**Example response:**
-```
-AgentID Credential:
-  Name:         TradingBot-Alpha
-  Framework:    ELIZA
-  Model:        gpt-4o
-  Reputation:   847/1000
-  Verified:     Audited
-  Registered:   2025-03-01T00:00:00.000Z
-  Transactions: 1240 (1198 successful)
-```
+Reads the current on-chain AgentID identity and reputation summary.
 
 ### `VERIFY_COUNTERPARTY_AGENT`
 
-Verifies another agent's credentials before transacting. Pass the target wallet
-address in the message.
+Checks if another agent is registered and whether it meets the SDK authorization rules for the requested action.
 
-**Example:**
-```
-User: VERIFY_COUNTERPARTY_AGENT 2Hk9qR...
-Bot:  ✅ Agent verified and authorized.
-        Wallet:     2Hk9qR...
-        Score:      725/1000
-        Level:      KYB
-        Authorized: Yes (payment threshold met)
-```
+Current score thresholds:
 
-**Authorization thresholds:**
+- `defi_trade`: 600
+- `payment`: 400
+- `content`: 200
+- `other`: 100
 
-| Action | Min Score |
-|---|---|
-| DeFi Trade | 600 |
-| Payment | 400 |
-| Content | 100 |
+Capability flags are also checked before the helper reports an agent as authorized.
 
-## Auto-Logging (onActionExecuted hook)
+### Auto-Logging
 
-Every action your agent executes is automatically logged on-chain:
-
-```
-Action "SEND_PAYMENT" → logs as actionType: "payment", outcome: true, usdcTransferred: 250
-```
-
-This keeps your agent's reputation score up-to-date in real time.
-
-## Environment Variables
-
-| Variable | Description |
-|---|---|
-| `SOLANA_RPC_URL` | Solana RPC endpoint (defaults to devnet) |
-| `ORACLE_PRIVATE_KEY` | Base64-encoded keypair for signing transactions |
+The plugin maps completed ELIZA actions into `logAction()` SDK calls so the AgentID program can append `AgentAction` records.
 
 ## Build
 
 ```bash
+cd packages/eliza-plugin
 npm install
 npm run build
 ```
 
-## License
+## Current Limits
 
-MIT © AgentID KYA
+- The package builds locally, but npm publication/release automation is not set up yet.
+- Authorization here is still a client/plugin-side helper. Final settlement or privileged flows should still enforce checks on-chain.

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWallet } from "@/hooks/useWallet";
@@ -10,6 +10,9 @@ import { Shield, Activity, AlertTriangle, Wallet, ExternalLink, Play, Pause, Plu
 import { Slider } from "@/components/ui/slider";
 import { Sk } from "@/components/Skeleton";
 import { calculateTDS, generateInvoice, getSectionLabel } from "@/lib/indiaCompliance";
+import { useProgram } from "@/hooks/useProgram";
+import { PublicKey, SystemProgram } from "@solana/web3.js";
+import { BN } from "@coral-xyz/anchor";
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -246,10 +249,106 @@ export default function Dashboard() {
   const [spendingLimit, setSpendingLimit] = useState(5000);
   const [perTxLimit, setPerTxLimit] = useState(1000);
 
+  const program = useProgram();
+  const [treasuryData, setTreasuryData] = useState<any>(null);
+  const [treasuryPda, setTreasuryPda] = useState<PublicKey | null>(null);
+
   // seed per-tx limit from on-chain max_tx_size_usdc when loaded
   useEffect(() => {
     if (agent) setPerTxLimit(Math.min(agent.capabilities.maxUsdcTx, 10000));
   }, [agent]);
+
+  const fetchTreasury = useCallback(async () => {
+    if (!agent || !program) return;
+    try {
+      const identityPda = new PublicKey(agent.id);
+      const [pda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("agent-treasury"), identityPda.toBuffer()],
+        program.programId
+      );
+      setTreasuryPda(pda);
+      // @ts-ignore
+      const data = await program.account.agentTreasury.fetch(pda);
+      setTreasuryData(data);
+      if (data) {
+        setSpendingLimit(data.spendingLimitPerDay.toNumber() / 1_000_000);
+        setPerTxLimit(data.spendingLimitPerTx.toNumber() / 1_000_000);
+        if (data.emergencyPause) {
+          setPausedAgents(prev => new Set(prev).add(agent.id));
+        }
+      }
+    } catch (e) {
+      setTreasuryData(null);
+    }
+  }, [agent, program]);
+
+  useEffect(() => {
+    fetchTreasury();
+  }, [fetchTreasury]);
+
+  const handleInitTreasury = async () => {
+    if (!program || !treasuryPda || !agent || !publicKey) return;
+    try {
+      const usdcMint = new PublicKey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"); // devnet USDC
+      const owner = new PublicKey(publicKey);
+      // @ts-ignore
+      await program.methods.initializeTreasury(
+        new BN(1000 * 1_000_000), // per tx
+        new BN(5000 * 1_000_000), // per day
+        new BN(10_000 * 1_000_000) // multisig above
+      ).accountsStrict({
+        treasury: treasuryPda,
+        agentIdentity: new PublicKey(agent.id),
+        owner,
+        usdcMint,
+        systemProgram: SystemProgram.programId,
+      }).rpc();
+      toast.success("Treasury Auto-Initialized!");
+      fetchTreasury();
+    } catch (e: any) {
+      toast.error(`Init Failed: ${e.message}`);
+    }
+  };
+
+  const handleSaveLimits = async () => {
+    if (!program || !treasuryPda || !publicKey) return;
+    try {
+      // @ts-ignore
+      await program.methods.updateSpendingLimits(
+        new BN(perTxLimit * 1_000_000),
+        new BN(spendingLimit * 1_000_000),
+        new BN(10_000 * 1_000_000)
+      ).accountsStrict({
+        treasury: treasuryPda,
+        owner: new PublicKey(publicKey),
+      }).rpc();
+      toast.success("Spending limits updated on-chain");
+      fetchTreasury();
+    } catch (e: any) {
+      toast.error(`Tx Failed: ${e.message}`);
+    }
+  };
+
+  const togglePauseReal = async (agent: Agent) => {
+    if (!program || !publicKey) return toast.error("Wallet not connected");
+    const isCurrentlyPaused = pausedAgents.has(agent.id);
+    try {
+      const identity = new PublicKey(agent.id);
+      const [tPda] = PublicKey.findProgramAddressSync([Buffer.from("agent-treasury"), identity.toBuffer()], program.programId);
+      // @ts-ignore
+      await program.methods.emergencyPause(!isCurrentlyPaused).accountsStrict({
+        treasury: tPda,
+        owner: new PublicKey(publicKey),
+      }).rpc();
+      
+      const newSet = new Set(pausedAgents);
+      if (isCurrentlyPaused) { newSet.delete(agent.id); toast.success(`${agent.name} resumed on-chain`); }
+      else { newSet.add(agent.id); toast(`${agent.name} paused on-chain`, { icon: "⏸️" }); }
+      setPausedAgents(newSet);
+    } catch (e: any) {
+      toast.error(`Pause Tx Failed. Has treasury been initialized?`);
+    }
+  };
 
   const userAgents = agent ? [agent] : [];
 
@@ -274,6 +373,7 @@ export default function Dashboard() {
   }
 
   const togglePause = (agentId: string, name: string) => {
+    // Deprecated for the new togglePauseReal
     const newSet = new Set(pausedAgents);
     if (newSet.has(agentId)) { newSet.delete(agentId); toast.success(`${name} resumed`); }
     else { newSet.add(agentId); toast(`${name} paused`, { icon: "⏸️" }); }
@@ -431,7 +531,7 @@ export default function Dashboard() {
                               <FileText className="w-3 h-3" />
                             </button>
                           )}
-                          <button onClick={() => togglePause(agent.id, agent.name)}
+                          <button onClick={() => togglePauseReal(agent)}
                             className={`p-1.5 border transition-colors ${isPaused ? "border-green/40 text-green hover:bg-green/10" : "border-destructive/40 text-destructive hover:bg-destructive/10"}`}>
                             {isPaused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
                           </button>
@@ -449,11 +549,34 @@ export default function Dashboard() {
             {loading ? <TreasurySkeleton /> : (
               <>
                 <div className="border-b border-border pb-8 mb-8">
-                  <p className="label-meta mb-6">Treasury</p>
-                  <div className="mb-6">
-                    <p className="label-meta mb-1">USDC Balance</p>
-                    <p className="font-mono text-3xl font-bold text-green">$24,850</p>
-                    <p className="label-meta mt-1">Solana devnet</p>
+                  <p className="label-meta mb-6 flex justify-between items-center">
+                    Treasury
+                    {!treasuryData && (
+                      <button onClick={handleInitTreasury} className="text-green text-xs link-underline">
+                        Initialize
+                      </button>
+                    )}
+                  </p>
+                  <div className="mb-6 flex gap-12">
+                    <div>
+                      <p className="label-meta mb-1">USDC Balance</p>
+                      <p className="font-mono text-3xl font-bold text-green">
+                        {treasuryData ? `$${(treasuryData.usdcBalance.toNumber() / 1_000_000).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "$0.00"}
+                      </p>
+                      <p className="label-meta mt-1">Solana devnet USDC</p>
+                    </div>
+                    {treasuryData && (
+                      <div className="flex gap-8 border-l border-border pl-8 pt-1">
+                        <div>
+                          <p className="label-meta mb-1 text-muted-foreground/60">Total Earned</p>
+                          <p className="font-mono text-sm">${(treasuryData.totalEarned.toNumber() / 1_000_000).toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="label-meta mb-1 text-muted-foreground/60">Total Spent</p>
+                          <p className="font-mono text-sm">${(treasuryData.totalSpent.toNumber() / 1_000_000).toLocaleString()}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-6">
                     <div>
@@ -473,13 +596,25 @@ export default function Dashboard() {
                       <div className="flex justify-between label-meta mt-2"><span>$100</span><span>$10,000</span></div>
                     </div>
                   </div>
-                  <button onClick={() => toast.success("Spending limits updated on-chain")} className="btn-outline w-full justify-center mt-6">Save Limits</button>
+                  <button 
+                    onClick={handleSaveLimits} 
+                    disabled={!treasuryData}
+                    className="btn-outline w-full justify-center mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Save Limits On-Chain
+                  </button>
                 </div>
 
                 <div className="border-b border-border pb-8 mb-8">
                   <p className="label-meta text-amber mb-4 flex items-center gap-2"><AlertTriangle className="w-3 h-3" /> Active Alerts</p>
-                  <p className="text-xs font-medium mb-1">Spending limit nearing threshold</p>
-                  <p className="text-xs text-muted-foreground">TradingBot-Alpha used 87% of daily limit today.</p>
+                  <p className="text-xs font-medium mb-1">
+                    {treasuryData?.emergencyPause ? "🔥 Treasury is PAUSED logic blocked" : "Spending limit checks active"}
+                  </p>
+                  {treasuryData && treasuryData.spentToday.toNumber() > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {agent?.name} has spent ${(treasuryData.spentToday.toNumber() / 1_000_000).toLocaleString()} out of the ${spendingLimit.toLocaleString()} daily limit.
+                    </p>
+                  )}
                 </div>
 
                 <div>

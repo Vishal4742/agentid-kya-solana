@@ -21,7 +21,7 @@ pub struct InitConfig<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(ctx: Context<InitConfig>) -> Result<()> {
+pub fn process_init_config(ctx: Context<InitConfig>) -> Result<()> {
     let config = &mut ctx.accounts.config;
     config.admin = ctx.accounts.admin.key();
     config.oracle_authority = ctx.accounts.oracle.key();

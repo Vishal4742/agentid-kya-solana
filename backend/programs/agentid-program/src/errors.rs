@@ -31,4 +31,25 @@ pub enum AgentIdError {
 
     #[msg("GSTIN must be exactly 15 characters (leave blank to skip)")]  
     InvalidGstin,
+
+    #[msg("Treasury is paused for emergency")]
+    TreasuryPaused,
+
+    #[msg("Payment amount exceeds per-transaction limit")]
+    ExceedsPerTxLimit,
+
+    #[msg("Payment amount exceeds daily spending limit")]
+    ExceedsDailyLimit,
+
+    #[msg("Transaction amount requires multisig approval")]
+    RequiresMultisig,
+
+    #[msg("Only the treasury owner can perform this action")]
+    UnauthorizedTreasuryOwner,
+
+    #[msg("Recipient does not match the provided token account owner")]
+    InvalidRecipient,
+
+    #[msg("Arithmetic overflow or underflow")]
+    ArithmeticError,
 }
