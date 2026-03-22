@@ -14,7 +14,7 @@ import { useProgram } from "@/hooks/useProgram";
 
 const FRAMEWORK_NAMES = ["ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"] as const;
 const MODEL_NAMES = ["Claude 3.5 Sonnet", "GPT-4o", "Llama 3.1", "Gemini Pro"] as const;
-const VERIFIED_LEVELS = ["Unverified", "KYB", "Audited"] as const;
+const VERIFIED_LEVELS = ["Unverified", "EmailVerified", "KYBVerified", "Audited"] as const;
 
 /** Shape returned by program.account.agentIdentity.all() */
 type RawIdentity = {
@@ -49,7 +49,7 @@ function normalize(raw: RawIdentity) {
     const framework = FRAMEWORK_NAMES[a.framework] ?? "Custom";
     // map stored model string back to known label
     const llmModel = MODEL_NAMES.find((m) => m === a.model) ?? (a.model as typeof MODEL_NAMES[number]);
-    const verifiedLevel = VERIFIED_LEVELS[Math.min(a.verifiedLevel, 2)];
+    const verifiedLevel = VERIFIED_LEVELS[Math.min(a.verifiedLevel, 3)];
     const totalTxUsd = (a.totalTransactions.toNumber() * maxUsdc * 0.5).toLocaleString("en-US", {
         style: "currency", currency: "USD", maximumFractionDigits: 0,
     });

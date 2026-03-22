@@ -120,7 +120,7 @@ export default async function handler(
                 "verified identity, reputation, and authorised capabilities.",
             image: `https://agentid.xyz/nft/${agentId}.png`,
             animation_url: null,
-            external_url: `https://agentid.xyz/agent/${ownerPubkey}`,
+            external_url: `https://agentid.xyz/agent/${agentId}`,
             attributes: [
                 { trait_type: "Agent Name", value: acc.name },
                 { trait_type: "Framework", value: framework },

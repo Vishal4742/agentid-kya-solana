@@ -152,6 +152,14 @@ function InvoiceModal({ agent, onClose }: { agent: Agent; onClose: () => void })
   const handlePdf = () => window.print();
   const handleCopyJson = () => {
     if (!clientPan || amount <= 0) { toast.error("Fill in all fields first"); return; }
+    
+    // Validate PAN format: 5 letters, 4 digits, 1 letter
+    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
+    if (!panRegex.test(clientPan)) {
+      toast.error("Invalid PAN format (e.g., ABCDE1234F)");
+      return;
+    }
+
     const inv = generateInvoice(agent, amount, clientPan);
     navigator.clipboard.writeText(JSON.stringify(inv, null, 2));
     toast.success("Invoice JSON copied to clipboard");

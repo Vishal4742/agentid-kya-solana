@@ -5,7 +5,8 @@ import bs58 from "bs58";
 import cron from "node-cron";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { Program, AnchorProvider, Idl, Wallet } from "@coral-xyz/anchor";
-import idl from "../../target/idl/agentid_program.json";
+// @ts-ignore
+import idl from "./idl/agentid_program.json";
 
 dotenv.config();
 
@@ -48,7 +49,7 @@ const PROGRAM_ID = program.programId;
 console.log(`📜 Loaded Program: ${PROGRAM_ID.toBase58()}`);
 
 // Seed prefixes from Anchor program
-const CONFIG_SEED = Buffer.from("config");
+const CONFIG_SEED = Buffer.from("program-config");
 
 const [configPda] = PublicKey.findProgramAddressSync(
     [CONFIG_SEED],
