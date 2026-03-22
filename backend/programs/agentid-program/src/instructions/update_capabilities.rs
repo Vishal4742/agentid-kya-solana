@@ -24,7 +24,10 @@ pub struct UpdateCapabilities<'info> {
     pub owner: Signer<'info>,
 }
 
-pub fn handler(ctx: Context<UpdateCapabilities>, params: UpdateCapabilitiesParams) -> Result<()> {
+pub fn process_update_capabilities(
+    ctx: Context<UpdateCapabilities>,
+    params: UpdateCapabilitiesParams,
+) -> Result<()> {
     let identity = &mut ctx.accounts.identity;
 
     identity.can_trade_defi      = params.can_trade_defi;

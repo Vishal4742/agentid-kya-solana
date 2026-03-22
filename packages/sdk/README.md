@@ -1,6 +1,8 @@
 # @agentid/sdk
 
-TypeScript SDK for **AgentID KYA** — on-chain agent identity and reputation on Solana.
+TypeScript SDK for AgentID KYA on Solana devnet.
+
+This package is currently aligned with the generated Anchor IDL shipped in `src/idl/agentid_program.json`.
 
 ## Installation
 
@@ -10,34 +12,22 @@ npm install @agentid/sdk @coral-xyz/anchor @solana/web3.js
 
 ## Quick Start
 
-```typescript
+```ts
 import { Connection } from "@solana/web3.js";
 import { AgentIdClient, DEVNET_RPC } from "@agentid/sdk";
 
-// Setup
 const connection = new Connection(DEVNET_RPC, "confirmed");
-const client = new AgentIdClient(connection, wallet); // AnchorWallet
+const client = new AgentIdClient(connection, wallet);
 ```
 
-## API Reference
+## Supported Methods
 
-### `new AgentIdClient(connection, wallet)`
+### `registerAgent(params)`
 
-Creates a new client instance.
+Registers the connected wallet's `AgentIdentity` PDA.
 
-| Param | Type |
-|---|---|
-| `connection` | `Connection` |
-| `wallet` | `AnchorWallet` |
-
----
-
-### `registerAgent(params)` → `Promise<string>`
-
-Registers a new agent identity on-chain. Returns the transaction signature.
-
-```typescript
-const sig = await client.registerAgent({
+```ts
+await client.registerAgent({
   name: "TradingBot-Alpha",
   framework: "ELIZA",
   model: "gpt-4o",
@@ -49,108 +39,98 @@ const sig = await client.registerAgent({
     dataAnalysis: true,
     maxUsdcTx: 5000,
   },
-  gstin: "29ABCDE1234F1Z5",   // optional — India compliance
-  panHash: "sha256hash...",   // optional
+  gstin: "29ABCDE1234F1Z5",
+  panHash: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  serviceCategory: "Information Technology Services",
 });
 ```
 
----
+### `getAgentIdentity(ownerPubkey)`
 
-### `getAgentIdentity(ownerPubkey)` → `Promise<AgentIdentity | null>`
+Fetches and normalizes the on-chain `AgentIdentity` account for an owner wallet.
 
-Fetches an agent's on-chain identity by their owner wallet address.
+### `getAllAgents()`
 
-```typescript
-const identity = await client.getAgentIdentity("2Hk9q...");
-if (identity) {
-  console.log(identity.name, identity.reputationScore);
-}
-```
+Returns all registered identities from the program.
 
----
+### `verifyAgent(ownerPubkey, actionType)`
 
-### `verifyAgent(ownerPubkey, actionType)` → `Promise<VerificationResult>`
+Performs an SDK-side authorization check using both:
 
-Checks if an agent is registered and authorized for a specific action type.
+- current reputation thresholds
+- capability flags stored on the identity
 
-| `actionType` | Min Reputation Required |
-|---|---|
-| `"defi_trade"` | 600 |
-| `"payment"` | 400 |
-| `"content"` | 100 |
-| `"other"` | 100 |
+Supported action types:
 
-```typescript
-const result = await client.verifyAgent("2Hk9q...", "payment");
+- `"defi_trade"`
+- `"payment"`
+- `"content"`
+- `"other"`
 
-if (!result.isAuthorized) {
-  console.error(`Agent not authorized. Score: ${result.reputationScore}/1000`);
-} else {
-  console.log(`✅ Authorized. Level: ${result.verifiedLevel}`);
-}
-```
+### `rateAgent(agentPda, rating)`
 
----
+Submits a human rating from 1 to 5.
 
-### `rateAgent(agentPDA, rating)` → `Promise<string>`
+### `logAction(params)`
 
-Submit a human rating (1–5 stars) for an agent. Returns the tx signature.
+Derives the next `AgentAction` PDA from the identity and submits a log entry.
 
-```typescript
-const sig = await client.rateAgent("AgentPDA...", 5);
-```
-
----
-
-### `logAction(params)` → `Promise<string>`
-
-Log a completed action on-chain for reputation tracking.
-
-```typescript
-const sig = await client.logAction({
+```ts
+await client.logAction({
   actionType: "payment",
-  programCalled: "PROGRAM_ID",
+  programCalled: "11111111111111111111111111111111",
   outcome: true,
-  usdcTransferred: 250.00,
+  usdcTransferred: 250,
+  memo: "invoice settlement",
 });
 ```
-
----
-
-### `getAllAgents()` → `Promise<AgentIdentity[]>`
-
-Returns all registered agents from the on-chain program.
-
-```typescript
-const agents = await client.getAllAgents();
-agents.sort((a, b) => b.reputationScore - a.reputationScore);
-```
-
----
 
 ## Types
 
-```typescript
-type AgentFramework = "ELIZA" | "AutoGen" | "CrewAI" | "LangGraph" | "Custom";
-type VerifiedLevel  = "Unverified" | "KYB" | "Audited";
-type ActionType     = "defi_trade" | "payment" | "content" | "other";
+```ts
+type AgentFramework =
+  | "ELIZA"
+  | "AutoGen"
+  | "CrewAI"
+  | "LangGraph"
+  | "Custom";
+
+type VerifiedLevel =
+  | "Unverified"
+  | "EmailVerified"
+  | "KYBVerified"
+  | "Audited";
 ```
+
+`AgentIdentity` normalization currently includes:
+
+- owner and agent wallet addresses
+- framework and model
+- verified level
+- reputation stats
+- capability flags
+- India compliance fields (`gstin`, `panHash`, `serviceCategory`)
+- `credentialNft`
 
 ## Constants
 
-```typescript
+```ts
 import { PROGRAM_ID, DEVNET_RPC } from "@agentid/sdk";
-// PROGRAM_ID = "Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF"
-// DEVNET_RPC = "https://api.devnet.solana.com"
 ```
+
+- `PROGRAM_ID = "Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF"`
+- `DEVNET_RPC = "https://api.devnet.solana.com"`
 
 ## Build
 
 ```bash
+cd packages/sdk
 npm install
-npm run build   # outputs to dist/
+npm run build
 ```
 
-## License
+## Current Limits
 
-MIT © AgentID KYA
+- This package assumes the current devnet program/IDL shape and is not version-negotiated.
+- `verifyAgent()` is a client-side helper, not a replacement for on-chain verification in security-sensitive flows.
+- Treasury/x402 flows are not exposed from this package yet.

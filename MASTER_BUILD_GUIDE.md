@@ -5,14 +5,14 @@
 > **Program ID (Devnet):** `Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF`
 > **IDL Account:** `FE74FsqJ9YsGGrKCW8y66UC6JDpsxfPuSP86dF9d3ZM8`
 > **Grant Target:** Solana Foundation via Superteam Earn — up to $10,000
-> **Last Audited:** March 9, 2026 — 10:15 IST
+> **Last Audited:** March 22, 2026 — 14:05 IST
 
 ---
 
 ## 1. Vision & Problem Statement
 
-**AgentID** is the first Solana-native "Know Your Agent" (KYA) protocol giving every AI agent:
-- A **verifiable on-chain identity** (soul-bound cNFT credential)
+**AgentID** is a Solana-native "Know Your Agent" (KYA) protocol aiming to give every AI agent:
+- A **verifiable on-chain identity** (today: `AgentIdentity` PDA, future: soul-bound cNFT credential)
 - A **reputation score** (0–1000) from tx history, uptime & human ratings
 - **Autonomous payment capability** via x402 + USDC treasury
 - An **immutable audit trail** of every action on Solana
@@ -31,47 +31,47 @@ Indian AI freelance agencies need TDS compliance for agent-generated payments. A
 ┌────────────────────────────────────────────────────────┐
 │                      AGENTID STACK                      │
 │                                                         │
-│  L1 IDENTITY   → Soul-bound cNFT via Metaplex Bubblegum│
+│  L1 IDENTITY   → AgentIdentity PDA (Bubblegum cNFT planned)│
 │  L2 REPUTATION → Oracle-computed score (0–1000)        │
 │  L3 PAYMENT    → x402 micropayments + USDC Treasury    │
 │  L4 SDK        → ELIZA plugin + TypeScript SDK         │
 │                                                         │
 │  Stack: Anchor (Rust) | Vite/React/TS | Tailwind       │
-│         Metaplex cNFT | Helius DAS | Arweave | Supabase│
+│         Anchor IDL | Helius | Vercel API | React       │
 └────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 3. Current Project Status *(Audited March 9, 2026 — 10:15 IST)*
+## 3. Current Project Status *(Audited March 22, 2026 — 14:05 IST)*
 
 ### 3.1 Overall Progress
 
 | Layer | UI | Smart Contract | Backend | SDK | Overall |
 |---|---|---|---|---|---|
-| **L1 — Identity Registry** | ✅ 100% | ✅ 100% | ✅ 100% | ❌ 0% | **~75%** |
-| **L2 — Reputation Engine** | ✅ 85% | ❌ 0% | ❌ 0% | ❌ 0% | **~20%** |
-| **L3 — Payment Layer** | ✅ 80% | ❌ 0% | ❌ 0% | ❌ 0% | **~20%** |
-| **L4 — SDK & Plugins** | ✅ 70% | — | — | ❌ 0% | **~15%** |
-| **India Compliance** | ✅ 85% | ✅ 60% | ❌ 0% | ❌ 0% | **~40%** |
+| **L1 — Identity Registry** | ✅ 80% | ✅ 75% | ✅ 80% | ✅ Buildable | **~75%** |
+| **L2 — Reputation Engine** | ✅ 80% | ✅ 70% | ✅ 70% | ✅ Buildable | **~70%** |
+| **L3 — Payment Layer** | ✅ 70% | ⚠️ Partial | ⚠️ Partial | ❌ Not exposed | **~50%** |
+| **L4 — SDK & Plugins** | ✅ 70% | — | — | ✅ Buildable | **~70%** |
+| **India Compliance** | ✅ 70% | ✅ 60% | ❌ 0% | ⚠️ Partial | **~45%** |
 
 ### 3.2 Completed vs Remaining
 
 | ✅ DONE (confirmed in repo) | ❌ REMAINING |
 |---|---|
-| Real Phantom + Solflare wallet integration | `frontend/src/lib/indiaCompliance.ts` (Phase 6.1) |
+| Real Phantom + Solflare wallet integration | `frontend/src/lib/indiaCompliance.ts` still needs verification against current UI flows |
 | Anchor smart contract deployed to devnet | Invoice modal in Dashboard (Phase 6.2) |
 | `registerAgent` on-chain from `Register.tsx` | GSTIN badge in AgentProfile (Phase 6.3) |
 | `useAllAgents()` — `Agents.tsx`, `Verify.tsx`, `AgentProfile.tsx` | Metadata API Vercel function (Phase 4.4) |
 | `useMyAgent()` — `Dashboard.tsx` real PDA | cNFT badge in AgentProfile UI (Phase 4.5) |
 | `AgentProfile.tsx` — real on-chain PDA fetch | Reputation oracle + Helius webhook (Phase 5) ✅ |
-| **Bubblegum CPI in `register.rs`** — `non_transferable: true` ✅ | `@agentid/sdk` npm package (Phase 7) |
-| **All 7 Anchor instructions** (register, rate, verify, log, update_rep, init_config, update_cap) | `@agentid/eliza-plugin` npm package (Phase 7) |
-| **`AgentAction` + `ProgramConfig` + `VerificationResult` structs** ✅ | Agent Treasury program (Phase 8) |
-| `Docs.tsx` page — exists (verify route in App.tsx) | x402 payment middleware (Phase 8) |
-| `OnboardingModal.tsx` component exists | `packages/sdk/` + `packages/eliza-plugin/` dirs |
+| `@agentid/sdk` source synced to the current program IDL and builds locally | Real Bubblegum CPI mint in `register.rs` |
+| `@agentid/eliza-plugin` builds locally against the updated SDK | Public npm publication / release automation |
+| **`AgentAction` + `ProgramConfig` + `VerificationResult` structs** ✅ | Real cNFT mint + metadata upload flow |
+| `Docs.tsx` page is routed in `App.tsx` | Persistent replay protection / settlement storage for x402 |
+| Treasury instructions exist in the Anchor program and shipped IDLs | `packages/sdk/` + `packages/eliza-plugin/` release packaging/publishing |
 | 49+ shadcn/ui components + Framer Motion | `Index.tsx` live agents still using `MOCK_AGENTS` |
-| IDL: `agentid_program.json` + `.ts` types | **Re-deploy to devnet needed** (Bubblegum accounts added) |
+| IDL: `agentid_program.json` + `.ts` types synced into frontend / SDK / API | **Re-deploy to devnet needed** if the live devnet program has not yet been updated to the latest treasury/register code |
 
 ### 3.3 Hooks & Data Layer
 
@@ -96,7 +96,7 @@ Indian AI freelance agencies need TDS compliance for agent-generated payments. A
 | Verify `/verify` | `Verify.tsx` | ✅ | `useAllAgents()` confirmed |
 | Dashboard `/dashboard` | `Dashboard.tsx` | ✅ | `useMyAgent()` confirmed |
 | Agent Profile `/agent/:id` | `AgentProfile.tsx` | ✅ | Real PDA fetch + `useAllAgents()` |
-| Docs `/docs` | `Docs.tsx` | — | **File exists** — verify it's routed in `App.tsx` |
+| Docs `/docs` | `Docs.tsx` | — | Routed in `App.tsx` |
 | 404 | `NotFound.tsx` | — | ✅ |
 
 ---
@@ -140,21 +140,20 @@ Indian AI freelance agencies need TDS compliance for agent-generated payments. A
 - 404 state shows real agents from `useAllAgents()` as suggestions
 - Build verified: exit code 0
 
-### ✅ Phase 4.2 — Merkle Tree + Bubblegum CPI (Complete, confirmed in repo)
-- `register.rs` imports `mpl_bubblegum`, `spl_account_compression`, `spl_noop`
-- `MintV1CpiBuilder` call with `non_transferable: true` (soul-bound)
-- cNFT metadata URI: `https://agentid.xyz/metadata/<hex_agent_id>`
-- `credential_nft` field stored in `AgentIdentity` PDA after mint
-- `AgentIdentity` struct includes all capability, reputation, and India compliance fields
+### ⚠️ Phase 4.2 — Merkle Tree + Bubblegum CPI (Not implemented in current program)
+- No `mpl_bubblegum` CPI is present in `register.rs`
+- `credential_nft` remains `Pubkey::default()` until a real mint flow exists
+- No on-chain cNFT mint or metadata upload path is currently wired
+- `AgentIdentity` still includes the field needed for a future credential mint
 
 ### ✅ Phase 4.3 — Full Anchor Program (Complete, confirmed in repo)
 - **All 7 instructions present:** `register`, `update_capabilities`, `log_action`, `rate`, `verify`, `update_reputation`, `init_config`
 - `AgentAction` PDA for audit trail
 - `ProgramConfig` PDA with `oracle_authority` for reputation oracle
 - `VerificationResult` return type for CPI calls
-- **Needs re-deploy to devnet** — Bubblegum accounts added since last deploy
+- **Needs re-deploy to devnet** — treasury instructions and register behavior changed since last deploy
 
-### ✅ Phase 4.4 — Metadata API (Complete, March 9)
+### ✅ Phase 4.4 — Metadata API (Implemented in repo)
 - `backend/api/metadata/[agentId].ts` — Vercel serverless function
 - Accepts `GET /api/metadata/:agentId` (64-char hex `agent_id`)
 - Fetches real `AgentIdentity` PDA on devnet via `@coral-xyz/anchor`
@@ -162,16 +161,15 @@ Indian AI freelance agencies need TDS compliance for agent-generated payments. A
 - 5-minute `Cache-Control` (reputation updates hourly)
 - `backend/api/idl/agentid_program.json` — IDL copied for Vercel runtime
 - `backend/api/vercel.json` + `package.json` + `tsconfig.json`
-- **Deployed:** `https://agentid-metadata-api.vercel.app`
-- **Endpoint:** `https://agentid-metadata-api.vercel.app/api/metadata/<hex_agent_id>`
+- Deployment status depends on the current Vercel project; the source and config are present in-repo
 ### ✅ Phase 4.5 — cNFT badge in AgentProfile UI (Complete, March 9)
 - Fetches `credentialNft` from parsed `AgentIdentity` data.
-- Displays `🎖 Soul-Bound Credential` badge with Solana Explorer link if the agent has a credential NFT.
-- Shows pending upgrade message if KYB/Audited is not yet met and no credential exists.
+- Displays a soul-bound credential badge with Solana Explorer link if the agent has a credential NFT
+- Shows a pending upgrade message if KYB/Audited is not yet met and no credential exists
 ### ✅ Phase 5 — Reputation Oracle (Complete, March 13)
 ### ✅ Phase 6 — India Compliance Wiring (Complete, March 13)
-### ⚠️ Phase 7 — ELIZA Plugin + SDK (Not started — no `packages/` folder yet)
-### ⚠️ Phase 8 — Treasury + x402 (Not started)
+### ⚠️ Phase 7 — ELIZA Plugin + SDK (Buildable locally; publication/release status still pending)
+### ⚠️ Phase 8 — Treasury + x402 (Partially implemented; treasury instructions exist, x402 verification is hardened, full production flow still pending)
 ### ⚠️ Phase 9 — Mainnet Deploy (Not started)
 ### ✅ Phase 10.1 — Docs Page (File `Docs.tsx` exists — verify route in App.tsx)
 
@@ -182,6 +180,7 @@ Indian AI freelance agencies need TDS compliance for agent-generated payments. A
 ---
 
 ### Phase 4: AgentProfile On-Chain + Metaplex cNFT Credential
+This section is now partly historical. The current status summary above is the source of truth; the task prompts below are retained as build-log/archive notes and may describe work that is still pending.
 **⏱️ 2–3 days | 🔵 Codex (Rust) + 🟢 Antigravity (wiring)**
 
 #### Step 4.1 — Wire AgentProfile Page to Real PDA
@@ -202,7 +201,7 @@ What to do:
 3. Map the on-chain AgentIdentity account to the existing Agent interface shape:
    - framework: use FRAMEWORKS array [ELIZA, AutoGen, CrewAI, LangGraph, Custom][account.framework]
    - llmModel: account.model (string, max 32 chars)
-   - verifiedLevel: ["Unverified","KYB","Audited"][account.verifiedLevel]
+   - verifiedLevel: ["Unverified","EmailVerified","KYBVerified","Audited"][account.verifiedLevel]
    - reputationScore: account.reputationScore (u16)
    - registeredAt: new Date(account.registeredAt.toNumber() * 1000).toISOString()
    - lastActive: new Date(account.lastActive.toNumber() * 1000).toISOString()
@@ -534,7 +533,7 @@ src/index.ts must export:
    async verifyAgent(ownerPubkey: string, actionType: ActionType): Promise<VerificationResult>
    // actionType: "defi_trade" | "payment" | "content" | "other"
    // Returns: { isRegistered, verifiedLevel, reputationScore, isAuthorized }
-   // isAuthorized thresholds: defi_trade>=600, payment>=400, other>=100
+   // isAuthorized thresholds: defi_trade>=600, payment>=400, content>=200, other>=100
    
    async rateAgent(agentPDA: string, rating: 1|2|3|4|5): Promise<string>
    
@@ -543,7 +542,7 @@ src/index.ts must export:
 2. Export all TypeScript types:
    AgentIdentity, RegisterAgentParams, VerificationResult, ActionType
    AgentFramework = "ELIZA" | "AutoGen" | "CrewAI" | "LangGraph" | "Custom"
-   VerifiedLevel = "Unverified" | "KYB" | "Audited"
+   VerifiedLevel = "Unverified" | "EmailVerified" | "KYBVerified" | "Audited"
 
 3. Export constants:
    PROGRAM_ID = "Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF"
@@ -618,6 +617,7 @@ Include README.md showing:
 ```
 
 #### Step 7.4 — Publish Packages
+This step is still pending. The packages build locally, but public npm publication has not been completed yet.
 
 ```bash
 # Build
@@ -682,6 +682,7 @@ Use Anchor 0.30, SPL token CPI. Show updated Cargo.toml. Include error codes.
 ```
 
 #### Step 8.2 — x402 Payment Middleware
+Current repo status: middleware exists and verifies confirmed devnet USDC inflow plus replay rejection in-memory, but it does not yet provide full persistent settlement storage.
 
 **Ask Codex:**
 ```

@@ -1,5 +1,4 @@
-use anchor_lang::prelude::*;
-use solana_program::hash::hash;
+use anchor_lang::{prelude::*, solana_program::hash::hash};
 
 use crate::errors::AgentIdError;
 use crate::state::AgentIdentity;
@@ -38,7 +37,10 @@ pub struct RegisterAgent<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(ctx: Context<RegisterAgent>, params: RegisterAgentParams) -> Result<()> {
+pub fn process_register_agent(
+    ctx: Context<RegisterAgent>,
+    params: RegisterAgentParams,
+) -> Result<()> {
     require!(
         params.name.len() >= 3 && params.name.len() <= 64,
         AgentIdError::InvalidNameLength
@@ -61,7 +63,7 @@ pub fn handler(ctx: Context<RegisterAgent>, params: RegisterAgentParams) -> Resu
     identity.name = params.name.clone();
     identity.framework = params.framework;
     identity.model = params.model;
-    identity.credential_nft = Pubkey::default(); // placeholder for future cNFT credential
+    identity.credential_nft = Pubkey::default(); // set after a real cNFT mint
     identity.verified_level = 0; // Unverified
     identity.registered_at = now;
     identity.last_active = now;
@@ -79,9 +81,6 @@ pub fn handler(ctx: Context<RegisterAgent>, params: RegisterAgentParams) -> Resu
     identity.pan_hash = params.pan_hash;
     identity.service_category = params.service_category;
     identity.bump = ctx.bumps.identity;
-
-    // Store a deterministic credential pointer derived from the agent id.
-    identity.credential_nft = Pubkey::new_from_array(agent_id);
 
     emit!(AgentRegistered {
         owner: ctx.accounts.owner.key(),

@@ -39,7 +39,7 @@ pub struct LogAction<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(ctx: Context<LogAction>, params: LogActionParams) -> Result<()> {
+pub fn process_log_action(ctx: Context<LogAction>, params: LogActionParams) -> Result<()> {
     let now = Clock::get()?.unix_timestamp;
     let identity = &mut ctx.accounts.identity;
     let action = &mut ctx.accounts.action;
