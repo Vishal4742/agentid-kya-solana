@@ -1,9 +1,24 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 const CHARS = "!<>-_\\/[]{}—=+*^?#_·∴∵∶∷";
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export function useTextScramble() {
   const frameRef = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (frameRef.current !== null) {
+      cancelAnimationFrame(frameRef.current);
+    }
+  }, []);
 
   const scramble = useCallback((
     el: HTMLElement,
@@ -29,18 +44,19 @@ export function useTextScramble() {
         const { to, start, end } = queue[i];
         if (frame >= end) {
           complete++;
-          output += to;
+          output += escapeHtml(to);
         } else if (frame >= start) {
           if (!queue[i].char || Math.random() < 0.28) {
             queue[i].char = CHARS[Math.floor(Math.random() * CHARS.length)];
           }
-          output += `<span class="text-green/50 font-mono">${queue[i].char}</span>`;
+          output += `<span class="text-green/50 font-mono">${escapeHtml(queue[i].char)}</span>`;
         } else {
-          output += to;
+          output += escapeHtml(to);
         }
       }
       el.innerHTML = output;
       if (complete === queue.length) {
+        frameRef.current = null;
         onDone?.();
       } else {
         frameRef.current = requestAnimationFrame(update);

@@ -1658,6 +1658,10 @@ export type AgentidProgram = {
         "kind": "struct",
         "fields": [
           {
+            "name": "identity",
+            "type": "pubkey"
+          },
+          {
             "name": "owner",
             "type": "pubkey"
           },
@@ -1680,6 +1684,10 @@ export type AgentidProgram = {
           {
             "name": "maxTxSizeUsdc",
             "type": "u64"
+          },
+          {
+            "name": "updatedAt",
+            "type": "i64"
           }
         ]
       }

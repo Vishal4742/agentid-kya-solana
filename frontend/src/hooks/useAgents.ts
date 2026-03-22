@@ -16,6 +16,11 @@ const FRAMEWORK_NAMES = ["ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"] as
 const MODEL_NAMES = ["Claude 3.5 Sonnet", "GPT-4o", "Llama 3.1", "Gemini Pro"] as const;
 const VERIFIED_LEVELS = ["Unverified", "EmailVerified", "KYBVerified", "Audited"] as const;
 
+function formatErrorMessage(error: unknown): string {
+    if (error instanceof Error && error.message) return error.message;
+    return String(error);
+}
+
 /** Shape returned by program.account.agentIdentity.all() */
 type RawIdentity = {
     publicKey: PublicKey;
@@ -108,7 +113,7 @@ export function useAllAgents() {
                 if (active) setAgents(all.map((r) => normalize(r as unknown as RawIdentity)));
             })
             .catch((e) => {
-                if (active) setError(String(e));
+                if (active) setError(formatErrorMessage(e));
             })
             .finally(() => {
                 if (active) setLoading(false);
@@ -154,7 +159,7 @@ export function useMyAgent(ownerPubkey: string | null) {
                 if (active) {
                     setAgent(null); // not registered yet
                     if (!String(e).includes("Account does not exist") && !String(e).includes("AccountNotFound")) {
-                        setError(String(e));
+                        setError(formatErrorMessage(e));
                     }
                 }
             })

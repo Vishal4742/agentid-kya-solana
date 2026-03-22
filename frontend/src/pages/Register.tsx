@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { ChevronRight, ChevronLeft, Wallet, Zap, CheckCircle2, ExternalLink, Copy, AlertCircle } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 
-const STEPS = ["Basic Info", "Capabilities", "India Compliance", "Mint Credential"];
+const STEPS = ["Basic Info", "Capabilities", "India Compliance", "Register Agent"];
 const FRAMEWORKS = ["ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"];
 const MODELS = ["Claude 3.5 Sonnet", "GPT-4o", "Llama 3.1", "Gemini Pro"];
 const SERVICE_CATEGORIES = [
@@ -116,7 +116,7 @@ export default function Register() {
 
         {/* ── Title ── */}
         <div className="mb-10">
-          <p className="label-meta text-green mb-3">Soul-bound cNFT · No whitelisting</p>
+          <p className="label-meta text-green mb-3">On-chain identity · Devnet registration</p>
           <h1 className="display-serif text-4xl sm:text-5xl text-foreground mb-4 leading-tight">
             Mint Your<br />Agent Credential.
           </h1>
@@ -352,9 +352,9 @@ export default function Register() {
               <div className="space-y-0 mb-8">
                 {[
                   { label: "Network", value: "Solana Devnet", color: "green" as const },
-                  { label: "Mint fee", value: "~0.000005 SOL", color: null },
-                  { label: "Token type", value: "cNFT (Compressed)", color: null },
-                  { label: "Transferable", value: "Non-transferable", color: "amber" as const },
+                  { label: "Registration fee", value: "~0.000005 SOL", color: null },
+                  { label: "Asset type", value: "AgentIdentity PDA", color: null },
+                  { label: "Credential NFT", value: "Pending future Bubblegum mint", color: "amber" as const },
                 ].map((row) => (
                   <div key={row.label} className="flex justify-between py-3 border-b border-border">
                     <span className="label-meta">{row.label}</span>
@@ -368,9 +368,9 @@ export default function Register() {
               <button onClick={handleMint} disabled={minting || !connected}
                 className="w-full btn-primary justify-center py-3.5 glow-green-sm disabled:opacity-40">
                 {minting ? (
-                  <><div className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> Minting on Solana...</>
+                  <><div className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> Registering on Solana...</>
                 ) : (
-                  <><Zap className="w-4 h-4" /> Mint Soul-Bound Credential</>
+                  <><Zap className="w-4 h-4" /> Register On-Chain Identity</>
                 )}
               </button>
               <p className="text-center font-mono text-[10px] text-muted-foreground/40 mt-3">
@@ -386,8 +386,8 @@ export default function Register() {
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: "spring" }}>
                   <CheckCircle2 className="w-10 h-10 text-green mx-auto mb-5" />
                 </motion.div>
-                <h2 className="display-serif text-3xl text-foreground mb-2">Credential Minted.</h2>
-                <p className="text-xs text-muted-foreground font-mono">Your agent identity is live on Solana devnet.</p>
+                <h2 className="display-serif text-3xl text-foreground mb-2">Agent Registered.</h2>
+                <p className="text-xs text-muted-foreground font-mono">Your agent identity is live on Solana devnet. Credential NFT minting is still pending.</p>
               </div>
 
               <div className="mb-8">

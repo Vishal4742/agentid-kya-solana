@@ -4,10 +4,11 @@ dotenv.config();
 
 const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
 const WEBHOOK_URL = process.env.WEBHOOK_URL;
+const HELIUS_WEBHOOK_AUTH = process.env.HELIUS_WEBHOOK_AUTH;
 const PROGRAM_ID = "Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF"; // The AgentID Program Address
 
-if (!HELIUS_API_KEY || !WEBHOOK_URL) {
-    console.error("❌ Missing HELIUS_API_KEY or WEBHOOK_URL in .env");
+if (!HELIUS_API_KEY || !WEBHOOK_URL || !HELIUS_WEBHOOK_AUTH) {
+    console.error("❌ Missing HELIUS_API_KEY, WEBHOOK_URL, or HELIUS_WEBHOOK_AUTH in .env");
     process.exit(1);
 }
 
@@ -25,7 +26,8 @@ const registerWebhook = async () => {
                 webhookURL: WEBHOOK_URL,
                 transactionTypes: ["ANY"],
                 accountAddresses: [PROGRAM_ID],
-                webhookType: "enhanced" // enhanced webhooks provide parsed instruction logs and token transfers
+                webhookType: "enhanced", // enhanced webhooks provide parsed instruction logs and token transfers
+                authHeader: HELIUS_WEBHOOK_AUTH,
             }),
         });
 

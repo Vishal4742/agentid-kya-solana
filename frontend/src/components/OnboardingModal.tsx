@@ -20,7 +20,7 @@ const STEPS = [
     bullets: [
       {
         step: "Register",
-        desc: "Mint an on-chain credential NFT for your agent — name, framework, capabilities, spending limits.",
+        desc: "Register an on-chain identity for your agent — name, framework, capabilities, and spending limits. Credential NFT minting is still pending.",
       },
       {
         step: "Build Reputation",

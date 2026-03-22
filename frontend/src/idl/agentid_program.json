@@ -1652,6 +1652,10 @@
         "kind": "struct",
         "fields": [
           {
+            "name": "identity",
+            "type": "pubkey"
+          },
+          {
             "name": "owner",
             "type": "pubkey"
           },
@@ -1674,6 +1678,10 @@
           {
             "name": "max_tx_size_usdc",
             "type": "u64"
+          },
+          {
+            "name": "updated_at",
+            "type": "i64"
           }
         ]
       }
