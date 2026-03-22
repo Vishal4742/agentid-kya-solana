@@ -45,6 +45,10 @@ pub fn process_register_agent(
         params.name.len() >= 3 && params.name.len() <= 64,
         AgentIdError::InvalidNameLength
     );
+    require!(
+        params.gstin.is_empty() || params.gstin.len() == 15,
+        AgentIdError::InvalidGstin
+    );
 
     let now = Clock::get()?.unix_timestamp;
     let identity = &mut ctx.accounts.identity;

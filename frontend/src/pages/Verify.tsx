@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAllAgents } from "@/hooks/useAgents";
 import { truncateWallet } from "@/data/mockAgents";
-import { Search, Shield, CheckCircle2, XCircle, Activity, TrendingUp, Zap, Copy, Code2, ExternalLink } from "lucide-react";
+import { Search, Shield, CheckCircle2, XCircle, Activity, TrendingUp, Zap, Copy, Code2, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 const EMBED_SNIPPET = `<script src="https://cdn.agentid.xyz/widget.js"></script>
@@ -14,7 +14,7 @@ const EMBED_SNIPPET = `<script src="https://cdn.agentid.xyz/widget.js"></script>
 ></div>`;
 
 export default function Verify() {
-  const { agents } = useAllAgents();
+  const { agents, loading, error, refetch } = useAllAgents();
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [result, setResult] = useState<typeof agents[number] | null | "not-found">(null);
@@ -65,14 +65,27 @@ export default function Verify() {
               className="w-full pl-6 pr-4 py-2 bg-transparent border-0 text-sm font-mono text-foreground placeholder:text-muted-foreground/30 focus:outline-none"
             />
           </div>
-          <button onClick={handleSearch} disabled={searching || !query.trim()}
+          <button onClick={handleSearch} disabled={searching || loading || !query.trim()}
             className="btn-primary disabled:opacity-40 shrink-0">
             {searching ? <div className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : "Verify"}
           </button>
         </div>
 
+        {error && (
+          <div className="mb-8 border border-destructive/20 py-5 px-4">
+            <div className="flex items-center gap-2 mb-2">
+              <XCircle className="w-4 h-4 text-destructive" />
+              <p className="text-sm text-destructive font-medium">Failed to load on-chain agents</p>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">{error.slice(0, 120)}</p>
+            <button onClick={refetch} className="btn-outline text-xs">
+              <RefreshCw className="w-3.5 h-3.5" /> Retry
+            </button>
+          </div>
+        )}
+
         {/* Demo agents — show first 3 real on-chain agents */}
-        {agents.length > 0 && (
+        {!error && agents.length > 0 && (
           <div className="flex flex-wrap gap-x-5 gap-y-1 mb-12">
             <span className="label-meta mr-2 self-center">Try:</span>
             {agents.slice(0, 3).map((a) => (

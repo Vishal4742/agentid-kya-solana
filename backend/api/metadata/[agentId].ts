@@ -32,6 +32,11 @@ const CATEGORIES = [
     "Research & Development",
 ];
 
+const usdcFormatter = new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+});
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 function hexToBytes(hex: string): Uint8Array {
     if (hex.length % 2 !== 0) throw new Error("Invalid hex string");
@@ -133,7 +138,7 @@ export default async function handler(
                 { trait_type: "Registration Date", value: registeredDate },
                 {
                     trait_type: "Max USDC per Tx",
-                    value: `$${(acc.maxTxSizeUsdc.toNumber() / 1_000_000).toLocaleString("en-US")}`,
+                    value: `$${usdcFormatter.format(acc.maxTxSizeUsdc.toNumber() / 1_000_000)}`,
                 },
                 {
                     trait_type: "Total Transactions",

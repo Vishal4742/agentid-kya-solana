@@ -17,7 +17,7 @@ const ScrambleText = forwardRef<HTMLElement, ScrambleTextProps>(
     useEffect(() => {
       const el = elRef.current;
       if (!el) return;
-      el.innerHTML = text;
+      el.textContent = text;
 
       if (autoPlay) {
         const timer = setTimeout(() => {
@@ -36,8 +36,9 @@ const ScrambleText = forwardRef<HTMLElement, ScrambleTextProps>(
       <Comp
         ref={(node: HTMLElement | null) => { elRef.current = node; }}
         className={className}
-        dangerouslySetInnerHTML={{ __html: text }}
-      />
+      >
+        {text}
+      </Comp>
     );
   }
 );

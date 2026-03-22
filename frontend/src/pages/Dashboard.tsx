@@ -243,7 +243,7 @@ function InvoiceModal({ agent, onClose }: { agent: Agent; onClose: () => void })
 
 export default function Dashboard() {
   const { connected, publicKey, connect, connecting } = useWallet();
-  const { agent, loading } = useMyAgent(publicKey);
+  const { agent, loading, error: agentError, refetch: refetchAgent } = useMyAgent(publicKey);
   const [pausedAgents, setPausedAgents] = useState<Set<string>>(new Set());
   const [invoiceAgent, setInvoiceAgent] = useState<Agent | null>(null);
   const [spendingLimit, setSpendingLimit] = useState(5000);
@@ -252,6 +252,7 @@ export default function Dashboard() {
   const program = useProgram();
   const [treasuryData, setTreasuryData] = useState<any>(null);
   const [treasuryPda, setTreasuryPda] = useState<PublicKey | null>(null);
+  const [treasuryError, setTreasuryError] = useState<string | null>(null);
 
   // seed per-tx limit from on-chain max_tx_size_usdc when loaded
   useEffect(() => {
@@ -261,6 +262,7 @@ export default function Dashboard() {
   const fetchTreasury = useCallback(async () => {
     if (!agent || !program) return;
     try {
+      setTreasuryError(null);
       const identityPda = new PublicKey(agent.id);
       const [pda] = PublicKey.findProgramAddressSync(
         [Buffer.from("agent-treasury"), identityPda.toBuffer()],
@@ -279,6 +281,7 @@ export default function Dashboard() {
       }
     } catch (e) {
       setTreasuryData(null);
+      setTreasuryError(e instanceof Error ? e.message : String(e));
     }
   }, [agent, program]);
 
@@ -480,7 +483,14 @@ export default function Dashboard() {
                 <Plus className="w-3 h-3 inline mr-1" /> Register New
               </Link>
             </div>
-            {loading ? <AgentListSkeleton /> : userAgents.length === 0 ? (
+            {loading ? <AgentListSkeleton /> : agentError ? (
+              <div className="border border-destructive/20 py-12 flex flex-col items-center gap-3">
+                <AlertTriangle className="w-4 h-4 text-destructive" />
+                <p className="label-meta text-destructive">Failed to load your agent</p>
+                <p className="font-mono text-[10px] text-muted-foreground/50">{agentError.slice(0, 80)}</p>
+                <button onClick={refetchAgent} className="btn-outline text-xs mt-2">Retry</button>
+              </div>
+            ) : userAgents.length === 0 ? (
               <div className="py-16 text-center">
                 <p className="font-serif italic text-2xl text-foreground/20 mb-3">No agent registered yet.</p>
                 <Link to="/register" className="btn-outline text-xs">Register Now →</Link>
@@ -564,6 +574,9 @@ export default function Dashboard() {
                         {treasuryData ? `$${(treasuryData.usdcBalance.toNumber() / 1_000_000).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "$0.00"}
                       </p>
                       <p className="label-meta mt-1">Solana devnet USDC</p>
+                      {!treasuryData && treasuryError && (
+                        <p className="font-mono text-[10px] text-muted-foreground/50 mt-2">{treasuryError.slice(0, 120)}</p>
+                      )}
                     </div>
                     {treasuryData && (
                       <div className="flex gap-8 border-l border-border pl-8 pt-1">
