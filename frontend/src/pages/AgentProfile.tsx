@@ -134,7 +134,7 @@ const ACTIVITY_ICONS: Record<string, React.FC<{ className?: string }>> = {
 };
 
 const FRAMEWORKS = ["ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"] as const;
-const VERIFIED_LEVELS = ["Unverified", "KYB", "Audited"] as const;
+const VERIFIED_LEVELS = ["Unverified", "EmailVerified", "KYBVerified", "Audited"] as const;
 
 function normalizeAccount(pubkey: string, acc: Record<string, unknown>): Agent {
   const caps = acc as {
@@ -309,7 +309,7 @@ export default function AgentProfile() {
             <div className="lg:col-span-2 py-10 lg:pr-10 lg:border-r border-border">
               <div className="flex items-start gap-2 flex-wrap mb-6">
                 <div className={`px-2.5 py-1 text-xs font-mono border ${agent.verifiedLevel === "Audited" ? "border-green/30 text-green bg-green/5" :
-                  agent.verifiedLevel === "KYB" ? "border-blue-accent/30 text-blue-accent bg-blue-accent/5" :
+                  agent.verifiedLevel === "KYBVerified" ? "border-blue-accent/30 text-blue-accent bg-blue-accent/5" :
                     "border-border text-muted-foreground"
                   }`}>{agent.verifiedLevel}</div>
                 {agent.paused && <div className="px-2.5 py-1 text-xs font-mono border border-destructive/30 text-destructive">PAUSED</div>}

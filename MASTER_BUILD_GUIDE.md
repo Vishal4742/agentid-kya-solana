@@ -64,7 +64,7 @@ Indian AI freelance agencies need TDS compliance for agent-generated payments. A
 | `registerAgent` on-chain from `Register.tsx` | GSTIN badge in AgentProfile (Phase 6.3) |
 | `useAllAgents()` — `Agents.tsx`, `Verify.tsx`, `AgentProfile.tsx` | Metadata API Vercel function (Phase 4.4) |
 | `useMyAgent()` — `Dashboard.tsx` real PDA | cNFT badge in AgentProfile UI (Phase 4.5) |
-| `AgentProfile.tsx` — real on-chain PDA fetch | Reputation oracle + Helius webhook (Phase 5) |
+| `AgentProfile.tsx` — real on-chain PDA fetch | Reputation oracle + Helius webhook (Phase 5) ✅ |
 | **Bubblegum CPI in `register.rs`** — `non_transferable: true` ✅ | `@agentid/sdk` npm package (Phase 7) |
 | **All 7 Anchor instructions** (register, rate, verify, log, update_rep, init_config, update_cap) | `@agentid/eliza-plugin` npm package (Phase 7) |
 | **`AgentAction` + `ProgramConfig` + `VerificationResult` structs** ✅ | Agent Treasury program (Phase 8) |
@@ -82,7 +82,7 @@ Indian AI freelance agencies need TDS compliance for agent-generated payments. A
 | `hooks/useAgents.ts` | ✅ `useAllAgents()` + `useMyAgent()` | ✅ file exists |
 | `hooks/useTextScramble.ts` | ✅ Text animation | ✅ |
 | `hooks/use-toast.ts` | ✅ Toast hook | ✅ |
-| `lib/indiaCompliance.ts` | ❌ **Not created yet** | ❌ missing |
+| `lib/indiaCompliance.ts` | ✅ **India Compliance Tools** | ✅ file exists |
 | `idl/agentid_program.json` | ✅ Deployed IDL | ✅ file exists |
 | `idl/agentid_program.ts` | ✅ TypeScript types | ✅ file exists |
 
@@ -168,8 +168,8 @@ Indian AI freelance agencies need TDS compliance for agent-generated payments. A
 - Fetches `credentialNft` from parsed `AgentIdentity` data.
 - Displays `🎖 Soul-Bound Credential` badge with Solana Explorer link if the agent has a credential NFT.
 - Shows pending upgrade message if KYB/Audited is not yet met and no credential exists.
-### ⚠️ Phase 5 — Reputation Oracle (Not started)
-### ⚠️ Phase 6 — India Compliance Wiring (Not started — UI exists, `indiaCompliance.ts` missing)
+### ✅ Phase 5 — Reputation Oracle (Complete, March 13)
+### ✅ Phase 6 — India Compliance Wiring (Complete, March 13)
 ### ⚠️ Phase 7 — ELIZA Plugin + SDK (Not started — no `packages/` folder yet)
 ### ⚠️ Phase 8 — Treasury + x402 (Not started)
 ### ⚠️ Phase 9 — Mainnet Deploy (Not started)

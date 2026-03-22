@@ -22,7 +22,7 @@ export interface Agent {
   framework: "ELIZA" | "AutoGen" | "CrewAI" | "LangGraph" | "Custom";
   llmModel: "Claude 3.5 Sonnet" | "GPT-4o" | "Llama 3.1" | "Gemini Pro";
   ownerWallet: string;
-  verifiedLevel: "Unverified" | "KYB" | "Audited";
+  verifiedLevel: "Unverified" | "EmailVerified" | "KYBVerified" | "Audited";
   reputationScore: number;
   reputationBreakdown: {
     transactions: number;
@@ -123,7 +123,7 @@ export const MOCK_AGENTS: Agent[] = [
     framework: "CrewAI",
     llmModel: "GPT-4o",
     ownerWallet: "4mBnCdEfGhIjKlMnOpQrStUvWxYz1234567890abcde",
-    verifiedLevel: "KYB",
+    verifiedLevel: "KYBVerified",
     reputationScore: 612,
     reputationBreakdown: { transactions: 180, uptime: 240, ratings: 192 },
     capabilities: {

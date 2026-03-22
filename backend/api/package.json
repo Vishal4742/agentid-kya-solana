@@ -4,8 +4,8 @@
     "private": true,
     "description": "Vercel serverless API — serves Metaplex-compatible NFT metadata for AgentID cNFTs",
     "scripts": {
-        "dev": "vercel dev",
-        "deploy": "vercel --prod"
+        "dev": "npx vercel dev",
+        "deploy": "npx vercel --prod"
     },
     "dependencies": {
         "@coral-xyz/anchor": "^0.30.1",

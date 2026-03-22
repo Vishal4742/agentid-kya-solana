@@ -408,7 +408,7 @@ export default function Register() {
                   className="btn-outline w-full justify-center">
                   <ExternalLink className="w-3.5 h-3.5" /> View on Solana Explorer
                 </a>
-                <Link to={`/agent/${publicKey}`} className="btn-primary w-full justify-center">
+                <Link to={`/agent/${PublicKey.findProgramAddressSync([Buffer.from("agent-identity"), new PublicKey(publicKey!).toBytes()], program!.programId)[0].toBase58()}`} className="btn-primary w-full justify-center">
                   View Agent Profile <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
