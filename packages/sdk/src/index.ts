@@ -121,7 +121,16 @@ function toNumber(value: unknown): number {
   if (value && typeof value === "object" && "toNumber" in value && typeof (value as { toNumber(): number }).toNumber === "function") {
     return (value as { toNumber(): number }).toNumber();
   }
-  return 0;
+  throw new TypeError(`Unsupported numeric value: ${String(value)}`);
+}
+
+function toBigInt(value: unknown): bigint {
+  if (typeof value === "bigint") return value;
+  if (typeof value === "number") return BigInt(value);
+  if (value && typeof value === "object" && "toString" in value && typeof (value as { toString(): string }).toString === "function") {
+    return BigInt((value as { toString(): string }).toString());
+  }
+  throw new TypeError(`Unsupported bigint value: ${String(value)}`);
 }
 
 function toPublicKeyString(value: unknown): string {
@@ -339,7 +348,7 @@ export class AgentIdClient {
     const identity = await (this.program.account as any).agentIdentity.fetch(identityPDA);
     const [actionPDA] = deriveActionPda(
       identityPDA,
-      BigInt(toNumber((identity as RawIdentity).totalTransactions)),
+      toBigInt((identity as RawIdentity).totalTransactions),
     );
 
     const logParams = {

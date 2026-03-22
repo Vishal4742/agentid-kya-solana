@@ -59,6 +59,10 @@ pub fn process_autonomous_payment(
     memo: String,
 ) -> Result<()> {
     require!(
+        ctx.accounts.agent_identity.can_send_payments,
+        AgentIdError::CapabilityNotEnabled
+    );
+    require!(
         ctx.accounts.agent_wallet.key() == ctx.accounts.agent_identity.agent_wallet,
         AgentIdError::CapabilityNotEnabled
     );
@@ -111,6 +115,7 @@ pub fn process_autonomous_payment(
     let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer);
 
     token::transfer(cpi_ctx, amount)?;
+    ctx.accounts.treasury_usdc.reload()?;
 
     // Update state
     treasury.spent_today = next_spent_today;

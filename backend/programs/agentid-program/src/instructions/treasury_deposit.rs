@@ -44,6 +44,7 @@ pub fn process_deposit_to_treasury(
     let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
 
     token::transfer(cpi_ctx, amount)?;
+    ctx.accounts.treasury_usdc.reload()?;
 
     let treasury = &mut ctx.accounts.treasury;
     treasury.total_earned = treasury
