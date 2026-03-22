@@ -22,7 +22,10 @@ pub struct UpdateReputation<'info> {
     pub oracle: Signer<'info>,
 }
 
-pub fn handler(ctx: Context<UpdateReputation>, new_score: u16) -> Result<()> {
+pub fn process_update_reputation(
+    ctx: Context<UpdateReputation>,
+    new_score: u16,
+) -> Result<()> {
     require!(new_score <= 1000, AgentIdError::InvalidReputationScore);
 
     let identity = &mut ctx.accounts.identity;

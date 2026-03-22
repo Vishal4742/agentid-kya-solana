@@ -5,6 +5,10 @@ pub mod register;
 pub mod update_capabilities;
 pub mod update_reputation;
 pub mod verify;
+pub mod treasury_init;
+pub mod treasury_payment;
+pub mod treasury_update;
+pub mod treasury_deposit;
 
 pub use init_config::*;
 pub use log_action::*;
@@ -13,3 +17,7 @@ pub use register::*;
 pub use update_capabilities::*;
 pub use update_reputation::*;
 pub use verify::*;
+pub use treasury_init::*;
+pub use treasury_payment::*;
+pub use treasury_update::*;
+pub use treasury_deposit::*;

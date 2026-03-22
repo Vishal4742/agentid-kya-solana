@@ -1,31 +1,33 @@
-import {
-  Connection,
-  PublicKey,
-} from "@solana/web3.js";
-import { AnchorProvider, Program, BN, web3 } from "@coral-xyz/anchor";
+import { Connection, PublicKey, SystemProgram } from "@solana/web3.js";
+import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
+import type { Transaction, VersionedTransaction } from "@solana/web3.js";
 
-// AnchorWallet minimal interface (matches what AnchorProvider expects)
+import IDL from "./idl/agentid_program.json";
+
 export interface AnchorWallet {
   publicKey: PublicKey;
   signTransaction<T extends Transaction | VersionedTransaction>(tx: T): Promise<T>;
   signAllTransactions<T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]>;
 }
 
-// re-import web3 types needed only for AnchorWallet signature
-import type { Transaction, VersionedTransaction } from "@solana/web3.js";
-
-import IDL from "./idl/agentid_program.json";
-
-// ── Constants ────────────────────────────────────────────────────────────────
-
 export const PROGRAM_ID = "Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF";
 export const DEVNET_RPC = "https://api.devnet.solana.com";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+const PROGRAM_KEY = new PublicKey(PROGRAM_ID);
+const FRAMEWORKS = ["ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"] as const;
+const VERIFIED_LEVELS = ["Unverified", "EmailVerified", "KYBVerified", "Audited"] as const;
+const SERVICE_CATEGORIES = [
+  "Information Technology Services",
+  "Financial Services",
+  "Consulting Services",
+  "Marketing & Advertising",
+  "Research & Development",
+] as const;
 
-export type AgentFramework = "ELIZA" | "AutoGen" | "CrewAI" | "LangGraph" | "Custom";
-export type VerifiedLevel = "Unverified" | "KYB" | "Audited";
+export type AgentFramework = (typeof FRAMEWORKS)[number];
+export type VerifiedLevel = (typeof VERIFIED_LEVELS)[number];
 export type ActionType = "defi_trade" | "payment" | "content" | "other";
+export type ServiceCategory = (typeof SERVICE_CATEGORIES)[number];
 
 export interface RegisterAgentParams {
   name: string;
@@ -41,6 +43,7 @@ export interface RegisterAgentParams {
   };
   gstin?: string;
   panHash?: string;
+  serviceCategory?: ServiceCategory;
 }
 
 export interface AgentIdentity {
@@ -55,12 +58,20 @@ export interface AgentIdentity {
   lastActive: number;
   totalTransactions: number;
   successfulTransactions: number;
-  paused: boolean;
-  indiaCompliance?: {
+  humanRatingX10: number;
+  ratingCount: number;
+  maxTxSizeUsdc: number;
+  credentialNft: string;
+  capabilities: {
+    defiTrading: boolean;
+    paymentSending: boolean;
+    contentPublishing: boolean;
+    dataAnalysis: boolean;
+  };
+  indiaCompliance: {
     gstin: string;
     panHash: string;
-    tdsRate: number;
-    serviceCategory: string;
+    serviceCategory: ServiceCategory;
   };
 }
 
@@ -76,86 +87,148 @@ export interface LogActionParams {
   programCalled: string;
   outcome: boolean;
   usdcTransferred: number;
+  memo?: string;
 }
-
-// ── Authorization thresholds ──────────────────────────────────────────────────
 
 const AUTH_THRESHOLDS: Record<ActionType, number> = {
   defi_trade: 600,
-  payment:    400,
-  content:    100,
-  other:      100,
+  payment: 400,
+  content: 200,
+  other: 100,
 };
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function derivePDA(ownerPubkey: PublicKey): [PublicKey, number] {
+function deriveIdentityPda(ownerPubkey: PublicKey): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
     [Buffer.from("agent-identity"), ownerPubkey.toBytes()],
-    new PublicKey(PROGRAM_ID)
+    PROGRAM_KEY,
   );
 }
 
-function parseVerifiedLevel(raw: unknown): VerifiedLevel {
-  if (raw && typeof raw === "object") {
-    if ("audited" in raw) return "Audited";
-    if ("kyb" in raw) return "KYB";
-  }
-  return "Unverified";
+function deriveActionPda(identityPda: PublicKey, totalTransactions: bigint): [PublicKey, number] {
+  const nonceBuffer = Buffer.alloc(8);
+  nonceBuffer.writeBigUInt64LE(totalTransactions);
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("agent-action"), identityPda.toBuffer(), nonceBuffer],
+    PROGRAM_KEY,
+  );
 }
 
-function parseFramework(raw: unknown): AgentFramework {
-  if (raw && typeof raw === "object") {
-    if ("eliza" in raw) return "ELIZA";
-    if ("autoGen" in raw) return "AutoGen";
-    if ("crewAi" in raw) return "CrewAI";
-    if ("langGraph" in raw) return "LangGraph";
+function toNumber(value: unknown): number {
+  const maybeBn = value as BN | undefined;
+  if (typeof value === "number") return value;
+  if (typeof value === "bigint") return Number(value);
+  if (maybeBn instanceof BN) return maybeBn.toNumber();
+  if (value && typeof value === "object" && "toNumber" in value && typeof (value as { toNumber(): number }).toNumber === "function") {
+    return (value as { toNumber(): number }).toNumber();
   }
-  return "Custom";
+  return 0;
 }
 
-function mapRawToIdentity(raw: Record<string, unknown>): AgentIdentity {
-  const india = raw.indiaCompliance as Record<string, unknown> | null | undefined;
+function toPublicKeyString(value: unknown): string {
+  if (value instanceof PublicKey) return value.toBase58();
+  if (typeof value === "string") return value;
+  if (value && typeof value === "object" && "toBase58" in value && typeof (value as { toBase58(): string }).toBase58 === "function") {
+    return (value as { toBase58(): string }).toBase58();
+  }
+  return PublicKey.default.toBase58();
+}
+
+function bytesToHex(value: unknown): string {
+  if (Array.isArray(value)) return Buffer.from(value).toString("hex");
+  if (value instanceof Uint8Array) return Buffer.from(value).toString("hex");
+  return "";
+}
+
+function parsePanHash(panHash?: string): number[] {
+  if (!panHash) return Array.from(Buffer.alloc(32));
+  const normalized = panHash.trim().toLowerCase().replace(/^0x/, "");
+  if (!/^[0-9a-f]{64}$/.test(normalized)) {
+    throw new Error("panHash must be a 32-byte hex string");
+  }
+  return Array.from(Buffer.from(normalized, "hex"));
+}
+
+function frameworkToIndex(framework: AgentFramework): number {
+  const index = FRAMEWORKS.indexOf(framework);
+  return index >= 0 ? index : FRAMEWORKS.length - 1;
+}
+
+function serviceCategoryToIndex(category?: ServiceCategory): number {
+  if (!category) return 0;
+  const index = SERVICE_CATEGORIES.indexOf(category);
+  return index >= 0 ? index : 0;
+}
+
+function actionTypeToCode(actionType: ActionType): number {
+  switch (actionType) {
+    case "defi_trade":
+      return 0;
+    case "payment":
+      return 1;
+    case "content":
+      return 2;
+    case "other":
+    default:
+      return 3;
+  }
+}
+
+type RawIdentity = Record<string, unknown> & {
+  owner: unknown;
+  agentWallet: unknown;
+  name: string;
+  framework: number;
+  model: string;
+  credentialNft: unknown;
+  verifiedLevel: number;
+  registeredAt: unknown;
+  lastActive: unknown;
+  canTradeDefi: boolean;
+  canSendPayments: boolean;
+  canPublishContent: boolean;
+  canAnalyzeData: boolean;
+  maxTxSizeUsdc: unknown;
+  reputationScore: unknown;
+  totalTransactions: unknown;
+  successfulTransactions: unknown;
+  humanRatingX10: unknown;
+  ratingCount: unknown;
+  gstin: string;
+  panHash: unknown;
+  serviceCategory: number;
+};
+
+function mapRawToIdentity(raw: RawIdentity): AgentIdentity {
   return {
-    owner: (raw.owner as PublicKey).toBase58(),
-    agentWallet: (raw.agentWallet as PublicKey).toBase58(),
-    name: raw.name as string,
-    framework: parseFramework(raw.framework),
-    llmModel: raw.llmModel as string,
-    reputationScore: (raw.reputationScore as BN).toNumber(),
-    verifiedLevel: parseVerifiedLevel(raw.verifiedLevel),
-    registeredAt: (raw.registeredAt as BN).toNumber() * 1000,
-    lastActive: (raw.lastActive as BN).toNumber() * 1000,
-    totalTransactions: (raw.totalTransactions as BN).toNumber(),
-    successfulTransactions: (raw.successfulTransactions as BN).toNumber(),
-    paused: raw.paused as boolean,
-    indiaCompliance: india
-      ? {
-          gstin: india.gstin as string,
-          panHash: india.panHash as string,
-          tdsRate: (india.tdsRate as BN).toNumber(),
-          serviceCategory: india.serviceCategory as string,
-        }
-      : undefined,
+    owner: toPublicKeyString(raw.owner),
+    agentWallet: toPublicKeyString(raw.agentWallet),
+    name: raw.name,
+    framework: FRAMEWORKS[raw.framework] ?? "Custom",
+    llmModel: raw.model,
+    reputationScore: toNumber(raw.reputationScore),
+    verifiedLevel: VERIFIED_LEVELS[raw.verifiedLevel] ?? "Unverified",
+    registeredAt: toNumber(raw.registeredAt) * 1000,
+    lastActive: toNumber(raw.lastActive) * 1000,
+    totalTransactions: toNumber(raw.totalTransactions),
+    successfulTransactions: toNumber(raw.successfulTransactions),
+    humanRatingX10: toNumber(raw.humanRatingX10),
+    ratingCount: toNumber(raw.ratingCount),
+    maxTxSizeUsdc: toNumber(raw.maxTxSizeUsdc) / 1_000_000,
+    credentialNft: toPublicKeyString(raw.credentialNft),
+    capabilities: {
+      defiTrading: Boolean(raw.canTradeDefi),
+      paymentSending: Boolean(raw.canSendPayments),
+      contentPublishing: Boolean(raw.canPublishContent),
+      dataAnalysis: Boolean(raw.canAnalyzeData),
+    },
+    indiaCompliance: {
+      gstin: raw.gstin,
+      panHash: bytesToHex(raw.panHash),
+      serviceCategory: SERVICE_CATEGORIES[raw.serviceCategory] ?? SERVICE_CATEGORIES[0],
+    },
   };
 }
 
-// ── Client ────────────────────────────────────────────────────────────────────
-
-/**
- * AgentIdClient — main entry point for interacting with the AgentID program.
- *
- * @example
- * ```ts
- * import { AgentIdClient, DEVNET_RPC } from "@agentid/sdk";
- * import { Connection } from "@solana/web3.js";
- *
- * const connection = new Connection(DEVNET_RPC);
- * const client = new AgentIdClient(connection, wallet);
- *
- * const identity = await client.getAgentIdentity("YOUR_WALLET_ADDRESS");
- * ```
- */
 export class AgentIdClient {
   private program: Program;
   private provider: AnchorProvider;
@@ -164,76 +237,51 @@ export class AgentIdClient {
     this.provider = new AnchorProvider(connection, wallet, {
       commitment: "confirmed",
     });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this.program = new Program(IDL as any, new PublicKey(PROGRAM_ID), this.provider);
+    this.program = new Program(IDL as any, PROGRAM_KEY, this.provider);
   }
 
-  /**
-   * Register a new agent identity on-chain.
-   * Returns the transaction signature.
-   */
   async registerAgent(params: RegisterAgentParams): Promise<string> {
     const ownerPubkey = this.provider.wallet.publicKey;
-    const [identityPDA] = derivePDA(ownerPubkey);
-    const agentWalletPubkey = new PublicKey(params.agentWallet);
+    const [identityPDA] = deriveIdentityPda(ownerPubkey);
 
-    const caps = {
-      defiTrading: params.capabilities.defiTrading,
-      paymentSending: params.capabilities.paymentSending,
-      contentPublishing: params.capabilities.contentPublishing,
-      dataAnalysis: params.capabilities.dataAnalysis,
-      maxUsdcTx: new BN(params.capabilities.maxUsdcTx),
+    const registerParams = {
+      name: params.name,
+      framework: frameworkToIndex(params.framework),
+      model: params.model.slice(0, 32),
+      agentWallet: new PublicKey(params.agentWallet),
+      canTradeDefi: params.capabilities.defiTrading,
+      canSendPayments: params.capabilities.paymentSending,
+      canPublishContent: params.capabilities.contentPublishing,
+      canAnalyzeData: params.capabilities.dataAnalysis,
+      maxTxSizeUsdc: new BN(Math.round(params.capabilities.maxUsdcTx * 1_000_000)),
+      gstin: params.gstin ?? "",
+      panHash: parsePanHash(params.panHash),
+      serviceCategory: serviceCategoryToIndex(params.serviceCategory),
     };
 
-    const indiaArgs = params.gstin
-      ? {
-          gstin: params.gstin,
-          panHash: params.panHash ?? "",
-          tdsRate: 10,
-          serviceCategory: "Information Technology Services",
-        }
-      : null;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tx = await (this.program.methods as any)
-      .registerAgent(
-        params.name,
-        { [params.framework.toLowerCase().replace(" ", "")]: {} },
-        params.model,
-        caps,
-        indiaArgs
-      )
-      .accounts({
+      .registerAgent(registerParams)
+      .accountsStrict({
         identity: identityPDA,
-        agentWallet: agentWalletPubkey,
         owner: ownerPubkey,
-        systemProgram: web3.SystemProgram.programId,
+        systemProgram: SystemProgram.programId,
       })
       .rpc();
 
     return tx as string;
   }
 
-  /**
-   * Fetch an agent's identity by owner wallet address.
-   * Derives the PDA and fetches the on-chain account.
-   */
   async getAgentIdentity(ownerPubkey: string): Promise<AgentIdentity | null> {
     try {
       const owner = new PublicKey(ownerPubkey);
-      const [pda] = derivePDA(owner);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const [pda] = deriveIdentityPda(owner);
       const raw = await (this.program.account as any).agentIdentity.fetch(pda);
-      return mapRawToIdentity(raw as Record<string, unknown>);
+      return mapRawToIdentity(raw as RawIdentity);
     } catch {
       return null;
     }
   }
 
-  /**
-   * Verify an agent is registered, check their level and reputation,
-   * and determine if they are authorized for the requested action type.
-   */
   async verifyAgent(ownerPubkey: string, actionType: ActionType): Promise<VerificationResult> {
     const identity = await this.getAgentIdentity(ownerPubkey);
 
@@ -247,7 +295,20 @@ export class AgentIdClient {
     }
 
     const threshold = AUTH_THRESHOLDS[actionType];
-    const isAuthorized = identity.reputationScore >= threshold;
+    const capabilityEnabled = (() => {
+      switch (actionType) {
+        case "defi_trade":
+          return identity.capabilities.defiTrading;
+        case "payment":
+          return identity.capabilities.paymentSending;
+        case "content":
+          return identity.capabilities.contentPublishing;
+        case "other":
+        default:
+          return identity.capabilities.dataAnalysis;
+      }
+    })();
+    const isAuthorized = identity.reputationScore >= threshold && capabilityEnabled;
 
     return {
       isRegistered: true,
@@ -257,18 +318,13 @@ export class AgentIdClient {
     };
   }
 
-  /**
-   * Submit a human rating (1-5 stars) for an agent.
-   * Returns the transaction signature.
-   */
   async rateAgent(agentPDA: string, rating: 1 | 2 | 3 | 4 | 5): Promise<string> {
     const rater = this.provider.wallet.publicKey;
     const identityPDA = new PublicKey(agentPDA);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tx = await (this.program.methods as any)
       .rateAgent(rating)
-      .accounts({
+      .accountsStrict({
         identity: identityPDA,
         rater,
       })
@@ -277,41 +333,38 @@ export class AgentIdClient {
     return tx as string;
   }
 
-  /**
-   * Log an on-chain action for reputation tracking.
-   * Returns the transaction signature.
-   */
   async logAction(params: LogActionParams): Promise<string> {
     const owner = this.provider.wallet.publicKey;
-    const [identityPDA] = derivePDA(owner);
+    const [identityPDA] = deriveIdentityPda(owner);
+    const identity = await (this.program.account as any).agentIdentity.fetch(identityPDA);
+    const [actionPDA] = deriveActionPda(
+      identityPDA,
+      BigInt(toNumber((identity as RawIdentity).totalTransactions)),
+    );
 
-    const actionTypeArg = { [params.actionType]: {} };
+    const logParams = {
+      actionType: actionTypeToCode(params.actionType),
+      programCalled: new PublicKey(params.programCalled),
+      success: params.outcome,
+      usdcTransferred: new BN(Math.round(params.usdcTransferred * 1_000_000)),
+      memo: params.memo ?? "",
+    };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tx = await (this.program.methods as any)
-      .logAction(
-        actionTypeArg,
-        new PublicKey(params.programCalled),
-        params.outcome,
-        new BN(Math.round(params.usdcTransferred * 1_000_000))
-      )
-      .accounts({
+      .logAction(logParams)
+      .accountsStrict({
         identity: identityPDA,
-        owner,
+        action: actionPDA,
+        payer: owner,
+        systemProgram: SystemProgram.programId,
       })
       .rpc();
 
     return tx as string;
   }
 
-  /**
-   * Fetch all registered AgentIdentity accounts on-chain.
-   */
   async getAllAgents(): Promise<AgentIdentity[]> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const accounts = await (this.program.account as any).agentIdentity.all();
-    return accounts.map((a: { account: Record<string, unknown> }) =>
-      mapRawToIdentity(a.account)
-    );
+    return accounts.map((a: { account: RawIdentity }) => mapRawToIdentity(a.account));
   }
 }

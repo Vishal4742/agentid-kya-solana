@@ -176,7 +176,7 @@ function normalizeAccount(pubkey: string, acc: Record<string, unknown>): Agent {
   const displayUptime = Math.min(Math.round(daysSinceReg * 10), 100);
 
   const credentialNft =
-    caps.credentialNft && !caps.credentialNft.equals(PublicKey.default)
+    caps.credentialNft && caps.credentialNft.toBase58() !== PublicKey.default.toBase58()
       ? caps.credentialNft.toBase58()
       : undefined;
 
