@@ -9,6 +9,18 @@ import { toast } from "sonner";
 import { ChevronRight, ChevronLeft, Wallet, Zap, CheckCircle2, ExternalLink, Copy, AlertCircle } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 
+// Bubblegum program & shared devnet Merkle tree
+const MPL_BUBBLEGUM_PROGRAM = new PublicKey("BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY");
+const SPL_NOOP_PROGRAM = new PublicKey("noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV");
+const SPL_ACCOUNT_COMPRESSION_PROGRAM = new PublicKey("cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK");
+// Public shared Metaplex devnet tree (pre-funded, 1M capacity)
+const SHARED_MERKLE_TREE = new PublicKey("B7SmmTELkd8gQxVa54VFHDqAF4vPNfuFzAycbAvmkNt2");
+// Tree authority PDA = PDA(tree_address, bubblegum_program)
+const [TREE_AUTHORITY] = PublicKey.findProgramAddressSync(
+  [SHARED_MERKLE_TREE.toBytes()],
+  MPL_BUBBLEGUM_PROGRAM
+);
+
 const STEPS = ["Basic Info", "Capabilities", "India Compliance", "Register Agent"];
 const FRAMEWORKS = ["ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"];
 const MODELS = ["Claude 3.5 Sonnet", "GPT-4o", "Llama 3.1", "Gemini Pro"];
@@ -87,6 +99,14 @@ export default function Register() {
           gstin,
           panHash,
           serviceCategory: serviceCategory >= 0 ? serviceCategory : 0,
+          metadataUri: `https://agentid.xyz/metadata/${encodeURIComponent(form.name)}.json`,
+        })
+        .accounts({
+          treeAuthority: TREE_AUTHORITY,
+          merkleTree: SHARED_MERKLE_TREE,
+          logWrapper: SPL_NOOP_PROGRAM,
+          compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM,
+          bubblegumProgram: MPL_BUBBLEGUM_PROGRAM,
         })
         .rpc();
 
@@ -352,9 +372,9 @@ export default function Register() {
               <div className="space-y-0 mb-8">
                 {[
                   { label: "Network", value: "Solana Devnet", color: "green" as const },
-                  { label: "Registration fee", value: "~0.000005 SOL", color: null },
-                  { label: "Asset type", value: "AgentIdentity PDA", color: null },
-                  { label: "Credential NFT", value: "Pending future Bubblegum mint", color: "amber" as const },
+                  { label: "Registration fee", value: "~0.003 SOL (tree + PDA)", color: null },
+                  { label: "Asset type", value: "AgentIdentity PDA + cNFT", color: null },
+                  { label: "Credential NFT", value: "Soul-bound Bubblegum cNFT", color: "green" as const },
                 ].map((row) => (
                   <div key={row.label} className="flex justify-between py-3 border-b border-border">
                     <span className="label-meta">{row.label}</span>
@@ -387,7 +407,7 @@ export default function Register() {
                   <CheckCircle2 className="w-10 h-10 text-green mx-auto mb-5" />
                 </motion.div>
                 <h2 className="display-serif text-3xl text-foreground mb-2">Agent Registered.</h2>
-                <p className="text-xs text-muted-foreground font-mono">Your agent identity is live on Solana devnet. Credential NFT minting is still pending.</p>
+                <p className="text-xs text-muted-foreground font-mono">Your agent identity and soul-bound cNFT are live on Solana devnet.</p>
               </div>
 
               <div className="mb-8">
