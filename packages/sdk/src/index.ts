@@ -376,4 +376,145 @@ export class AgentIdClient {
     const accounts = await (this.program.account as any).agentIdentity.all();
     return accounts.map((a: { account: RawIdentity }) => mapRawToIdentity(a.account));
   }
+
+  // ─── Treasury ────────────────────────────────────────────────────────────────
+
+  async initializeTreasury(
+    usdcMint: string,
+    spendingLimitPerTx: number,
+    spendingLimitPerDay: number,
+    multisigRequiredAbove: number,
+  ): Promise<string> {
+    const owner = this.provider.wallet.publicKey;
+    const [identityPDA] = deriveIdentityPda(owner);
+    const [treasuryPDA] = deriveTreasuryPda(identityPDA);
+    const usdcMintKey = new PublicKey(usdcMint);
+
+    const tx = await (this.program.methods as any)
+      .initializeTreasury(
+        new BN(spendingLimitPerTx),
+        new BN(spendingLimitPerDay),
+        new BN(multisigRequiredAbove),
+      )
+      .accountsStrict({
+        treasury: treasuryPDA,
+        agentIdentity: identityPDA,
+        owner,
+        usdcMint: usdcMintKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+
+    return tx as string;
+  }
+
+  async getTreasury(ownerPubkey: string): Promise<TreasuryInfo | null> {
+    try {
+      const owner = new PublicKey(ownerPubkey);
+      const [identityPDA] = deriveIdentityPda(owner);
+      const [treasuryPDA] = deriveTreasuryPda(identityPDA);
+      const raw = await (this.program.account as any).agentTreasury.fetch(treasuryPDA);
+      return mapRawToTreasury(raw as RawTreasury);
+    } catch {
+      return null;
+    }
+  }
+
+  async updateSpendingLimits(
+    ownerPubkey: string,
+    spendingLimitPerTx: number,
+    spendingLimitPerDay: number,
+    multisigRequiredAbove: number,
+  ): Promise<string> {
+    const owner = this.provider.wallet.publicKey;
+    const [identityPDA] = deriveIdentityPda(new PublicKey(ownerPubkey));
+    const [treasuryPDA] = deriveTreasuryPda(identityPDA);
+
+    const tx = await (this.program.methods as any)
+      .updateSpendingLimits(
+        new BN(spendingLimitPerTx),
+        new BN(spendingLimitPerDay),
+        new BN(multisigRequiredAbove),
+      )
+      .accountsStrict({
+        treasury: treasuryPDA,
+        owner,
+      })
+      .rpc();
+
+    return tx as string;
+  }
+
+  async emergencyPause(ownerPubkey: string, paused: boolean): Promise<string> {
+    const owner = this.provider.wallet.publicKey;
+    const [identityPDA] = deriveIdentityPda(new PublicKey(ownerPubkey));
+    const [treasuryPDA] = deriveTreasuryPda(identityPDA);
+
+    const tx = await (this.program.methods as any)
+      .emergencyPause(paused)
+      .accountsStrict({
+        treasury: treasuryPDA,
+        owner,
+      })
+      .rpc();
+
+    return tx as string;
+  }
 }
+
+// ─── Treasury helpers ─────────────────────────────────────────────────────────
+
+function deriveTreasuryPda(identityPDA: PublicKey): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("agent-treasury"), identityPDA.toBytes()],
+    PROGRAM_KEY,
+  );
+}
+
+export interface TreasuryInfo {
+  agentIdentity: string;
+  owner: string;
+  usdcMint: string;
+  usdcBalance: number;
+  totalEarned: number;
+  totalSpent: number;
+  spendingLimitPerTx: number;
+  spendingLimitPerDay: number;
+  spentToday: number;
+  dayResetTimestamp: number;
+  emergencyPause: boolean;
+  multisigRequiredAbove: number;
+}
+
+type RawTreasury = Record<string, unknown> & {
+  agentIdentity: unknown;
+  owner: unknown;
+  usdcMint: unknown;
+  usdcBalance: unknown;
+  totalEarned: unknown;
+  totalSpent: unknown;
+  spendingLimitPerTx: unknown;
+  spendingLimitPerDay: unknown;
+  spentToday: unknown;
+  dayResetTimestamp: unknown;
+  emergencyPause: boolean;
+  multisigRequiredAbove: unknown;
+};
+
+function mapRawToTreasury(raw: RawTreasury): TreasuryInfo {
+  return {
+    agentIdentity: toPublicKeyString(raw.agentIdentity),
+    owner: toPublicKeyString(raw.owner),
+    usdcMint: toPublicKeyString(raw.usdcMint),
+    usdcBalance: toNumber(raw.usdcBalance) / 1_000_000,
+    totalEarned: toNumber(raw.totalEarned) / 1_000_000,
+    totalSpent: toNumber(raw.totalSpent) / 1_000_000,
+    spendingLimitPerTx: toNumber(raw.spendingLimitPerTx) / 1_000_000,
+    spendingLimitPerDay: toNumber(raw.spendingLimitPerDay) / 1_000_000,
+    spentToday: toNumber(raw.spentToday) / 1_000_000,
+    dayResetTimestamp: toNumber(raw.dayResetTimestamp) * 1000,
+    emergencyPause: raw.emergencyPause,
+    multisigRequiredAbove: toNumber(raw.multisigRequiredAbove) / 1_000_000,
+  };
+}
+

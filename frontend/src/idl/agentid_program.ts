@@ -857,6 +857,23 @@ export type AgentidProgram = {
           "signer": true
         },
         {
+          "name": "treeAuthority",
+          "writable": true
+        },
+        {
+          "name": "merkleTree",
+          "writable": true
+        },
+        {
+          "name": "logWrapper"
+        },
+        {
+          "name": "compressionProgram"
+        },
+        {
+          "name": "bubblegumProgram"
+        },
+        {
           "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
@@ -1586,6 +1603,10 @@ export type AgentidProgram = {
             "type": "string"
           },
           {
+            "name": "credentialNft",
+            "type": "pubkey"
+          },
+          {
             "name": "registeredAt",
             "type": "i64"
           }
@@ -1825,6 +1846,13 @@ export type AgentidProgram = {
           {
             "name": "serviceCategory",
             "type": "u8"
+          },
+          {
+            "name": "metadataUri",
+            "docs": [
+              "URI of the off-chain metadata JSON"
+            ],
+            "type": "string"
           }
         ]
       }
@@ -1911,3 +1939,4 @@ export type AgentidProgram = {
     }
   ]
 };
+
