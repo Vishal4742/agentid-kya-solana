@@ -18,6 +18,10 @@ import {
   XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
 
+// ─── Feature flags ────────────────────────────────────────────────────────
+// Set to true once the treasury program is deployed to devnet.
+const TREASURY_ENABLED = true;
+
 /* ── Mini gauge ── */
 function MiniGauge({ score }: { score: number }) {
   const pct = (score / 1000) * 100;
@@ -558,7 +562,17 @@ export default function Dashboard() {
 
           {/* Right panel */}
           <div className="py-10 lg:pl-10 space-y-0">
-            {loading ? <TreasurySkeleton /> : (
+            {loading ? <TreasurySkeleton /> : !TREASURY_ENABLED ? (
+              <div className="border border-border/40 bg-secondary/20 p-6 mb-8">
+                <p className="label-meta text-amber mb-3 flex items-center gap-2">
+                  <Shield className="w-3 h-3" /> Treasury
+                </p>
+                <p className="font-serif italic text-lg text-foreground/40 mb-2">Coming Soon</p>
+                <p className="font-mono text-[11px] text-muted-foreground/50 leading-relaxed">
+                  On-chain treasury accounts, autonomous USDC payments, and spending limit controls are being deployed to devnet.
+                </p>
+              </div>
+            ) : (
               <>
                 <div className="border-b border-border pb-8 mb-8">
                   <p className="label-meta mb-6 flex justify-between items-center">
