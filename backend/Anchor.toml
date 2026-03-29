@@ -1,5 +1,5 @@
 [toolchain]
-anchor_version = "0.30.1"
+anchor_version = "0.32.1"
 package_manager = "yarn"
 
 [features]
@@ -7,6 +7,9 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
+agentid_program = "Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF"
+
+[programs.devnet]
 agentid_program = "Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF"
 
 [registry]
@@ -18,3 +21,4 @@ wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 \"tests/**/*.ts\""
+deploy-devnet = "anchor deploy --provider.cluster devnet"

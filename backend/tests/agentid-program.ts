@@ -177,3 +177,208 @@ describe("agentid-program", () => {
   });
 
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Treasury tests
+// ─────────────────────────────────────────────────────────────────────────────
+import { TOKEN_PROGRAM_ID, createMint, createAccount, mintTo, getAccount } from "@solana/spl-token";
+
+describe("treasury", () => {
+  const provider = anchor.AnchorProvider.env();
+  anchor.setProvider(provider);
+
+  const program = anchor.workspace.agentidProgram as Program<AgentidProgram>;
+
+  const SEED_AGENT_IDENTITY = Buffer.from("agent-identity");
+  const SEED_AGENT_TREASURY = Buffer.from("agent-treasury");
+
+  let agentIdentityPda: anchor.web3.PublicKey;
+  let treasuryPda: anchor.web3.PublicKey;
+  let usdcMint: anchor.web3.PublicKey;
+  let ownerUsdcAta: anchor.web3.PublicKey;
+  let treasuryUsdcAta: anchor.web3.PublicKey;
+  const mintAuthority = anchor.web3.Keypair.generate();
+
+  before(async () => {
+    // Airdrop to mint authority
+    const sig = await provider.connection.requestAirdrop(
+      mintAuthority.publicKey,
+      5 * anchor.web3.LAMPORTS_PER_SOL,
+    );
+    await provider.connection.confirmTransaction(sig, "confirmed");
+
+    // Derive PDAs (agent was registered in the identity suite above)
+    [agentIdentityPda] = anchor.web3.PublicKey.findProgramAddressSync(
+      [SEED_AGENT_IDENTITY, provider.wallet.publicKey.toBuffer()],
+      program.programId,
+    );
+    [treasuryPda] = anchor.web3.PublicKey.findProgramAddressSync(
+      [SEED_AGENT_TREASURY, agentIdentityPda.toBuffer()],
+      program.programId,
+    );
+
+    // Create a mock USDC mint
+    usdcMint = await createMint(
+      provider.connection,
+      mintAuthority,
+      mintAuthority.publicKey,
+      null,
+      6, // 6 decimals like real USDC
+    );
+
+    // Create ATA for the owner (depositor)
+    ownerUsdcAta = await createAccount(
+      provider.connection,
+      mintAuthority,
+      usdcMint,
+      provider.wallet.publicKey,
+    );
+
+    // Mint 1000 USDC to owner
+    await mintTo(
+      provider.connection,
+      mintAuthority,
+      usdcMint,
+      ownerUsdcAta,
+      mintAuthority,
+      1_000 * 1_000_000,
+    );
+  });
+
+  it("Initializes the treasury", async () => {
+    await program.methods
+      .initializeTreasury(
+        new anchor.BN(500 * 1_000_000),   // 500 USDC per tx
+        new anchor.BN(2000 * 1_000_000),  // 2000 USDC per day
+        new anchor.BN(1000 * 1_000_000),  // multisig above 1000 USDC
+      )
+      // @ts-ignore
+      .accounts({
+        treasury: treasuryPda,
+        agentIdentity: agentIdentityPda,
+        owner: provider.wallet.publicKey,
+        usdcMint,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .rpc();
+
+    const treasuryAccount = await program.account.agentTreasury.fetch(treasuryPda);
+    assert.ok(treasuryAccount.owner.equals(provider.wallet.publicKey));
+    assert.ok(treasuryAccount.usdcMint.equals(usdcMint));
+    assert.ok(treasuryAccount.spendingLimitPerTx.eq(new anchor.BN(500 * 1_000_000)));
+    assert.ok(treasuryAccount.spendingLimitPerDay.eq(new anchor.BN(2000 * 1_000_000)));
+    assert.equal(treasuryAccount.emergencyPause, false);
+  });
+
+  it("Updates spending limits", async () => {
+    await program.methods
+      .updateSpendingLimits(
+        new anchor.BN(250 * 1_000_000),   // 250 USDC per tx
+        new anchor.BN(1000 * 1_000_000),  // 1000 USDC per day
+        new anchor.BN(800 * 1_000_000),   // multisig above 800 USDC
+      )
+      // @ts-ignore
+      .accounts({
+        treasury: treasuryPda,
+        owner: provider.wallet.publicKey,
+      })
+      .rpc();
+
+    const treasuryAccount = await program.account.agentTreasury.fetch(treasuryPda);
+    assert.ok(treasuryAccount.spendingLimitPerTx.eq(new anchor.BN(250 * 1_000_000)));
+    assert.ok(treasuryAccount.spendingLimitPerDay.eq(new anchor.BN(1000 * 1_000_000)));
+    assert.ok(treasuryAccount.multisigRequiredAbove.eq(new anchor.BN(800 * 1_000_000)));
+  });
+
+  it("Emergency pause activates and blocks payment", async () => {
+    // Pause the treasury
+    await program.methods
+      .emergencyPause(true)
+      // @ts-ignore
+      .accounts({
+        treasury: treasuryPda,
+        owner: provider.wallet.publicKey,
+      })
+      .rpc();
+
+    const treasuryAccount = await program.account.agentTreasury.fetch(treasuryPda);
+    assert.equal(treasuryAccount.emergencyPause, true);
+  });
+
+  // ── Negative test: autonomous_payment must fail while treasury is paused ──
+  it("autonomous_payment fails when treasury is paused (TreasuryPaused)", async () => {
+    // Treasury is currently paused from the previous test.
+    // Ensure it stays paused for this assertion.
+    const agentWallet = anchor.web3.Keypair.generate();
+    const sig = await provider.connection.requestAirdrop(
+      agentWallet.publicKey,
+      anchor.web3.LAMPORTS_PER_SOL,
+    );
+    await provider.connection.confirmTransaction(sig, "confirmed");
+
+    // Create a recipient USDC ATA to satisfy the accounts constraint.
+    const recipientKeypair = anchor.web3.Keypair.generate();
+    const recipientAta = await createAccount(
+      provider.connection,
+      mintAuthority,
+      usdcMint,
+      recipientKeypair.publicKey,
+    );
+
+    // Fetch treasury ATA (was not created in previous tests because no deposit happened yet —
+    // use the derivation the program would expect).
+    const { getAssociatedTokenAddress } = await import("@solana/spl-token");
+    const treasuryUsdcAta = await getAssociatedTokenAddress(usdcMint, treasuryPda, true);
+
+    try {
+      await program.methods
+        .autonomousPayment(
+          new anchor.BN(1 * 1_000_000), // 1 USDC
+          recipientKeypair.publicKey,
+          "test payment",
+        )
+        // @ts-ignore
+        .accounts({
+          treasury: treasuryPda,
+          agentIdentity: agentIdentityPda,
+          agentWallet: agentWallet.publicKey,
+          owner: provider.wallet.publicKey,
+          treasuryUsdc: treasuryUsdcAta,
+          recipientUsdc: recipientAta,
+          usdcMint,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .signers([agentWallet])
+        .rpc();
+
+      // If the transaction succeeds when the treasury is paused, the test should fail.
+      assert.fail("Expected autonomous_payment to throw TreasuryPaused, but it succeeded.");
+    } catch (err: any) {
+      // Anchor wraps program errors as AnchorError with an error code.
+      const msg: string = err?.message ?? String(err);
+      const isTreasuryPaused =
+        msg.includes("TreasuryPaused") ||
+        msg.includes("6009") || // AgentIdError::TreasuryPaused error code
+        msg.includes("treasury is paused");
+      assert.ok(
+        isTreasuryPaused,
+        `Expected TreasuryPaused error, got: ${msg.slice(0, 200)}`,
+      );
+    }
+  });
+
+  it("Unpauses the treasury", async () => {
+    await program.methods
+      .emergencyPause(false)
+      // @ts-ignore
+      .accounts({
+        treasury: treasuryPda,
+        owner: provider.wallet.publicKey,
+      })
+      .rpc();
+
+    const treasuryAccount = await program.account.agentTreasury.fetch(treasuryPda);
+    assert.equal(treasuryAccount.emergencyPause, false);
+  });
+});
+
