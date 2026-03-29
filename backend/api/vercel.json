@@ -3,9 +3,16 @@
   "functions": {
     "metadata/[agentId].ts": {
       "runtime": "@vercel/node@3.2.24"
+    },
+    "metadata/[agentName].ts": {
+      "runtime": "@vercel/node@3.2.24"
     }
   },
   "rewrites": [
+    {
+      "source": "/metadata/:agentName",
+      "destination": "/metadata/:agentName"
+    },
     {
       "source": "/api/metadata/:agentId",
       "destination": "/metadata/:agentId"
