@@ -17,7 +17,7 @@ AgentID is a production-ready Solana project for AI-agent identity, reputation, 
 - **Metadata API**: Vercel-ready serverless API for agent metadata (hex-ID and name-based routes)
 - **SDK & ELIZA Plugin**: TypeScript packages for external integrations
 
-This guide reflects the actual implemented codebase as of March 30, 2026.
+This guide reflects the actual implemented codebase as of March 30, 2026. Phase 1 identity work is code-complete and operationally documented.
 
 ## Current Status
 
@@ -56,8 +56,10 @@ The current `lib.rs` exposes these 12 instructions:
   - MintV1CpiBuilder integration (mpl-bubblegum 5.0.2)
   - Deterministic agent_id derived from (owner + name + timestamp)
   - Soul-bound NFT with immutable metadata
+  - Shared-tree minting signed by the program-config PDA as Bubblegum tree delegate
   - Defensive program address validation
-  - All required accounts: tree_authority, merkle_tree, log_wrapper, compression_program, bubblegum_program
+  - All required accounts: tree_authority, merkle_tree, tree_delegate, log_wrapper, compression_program, bubblegum_program
+  - Localnet-safe fallback for tests when Bubblegum is not deployed on the active cluster
 
 ✅ **Treasury**: Fully operational on devnet with:
   - USDC spending limits (per-transaction, per-day rolling window)
@@ -76,6 +78,14 @@ The current `lib.rs` exposes these 12 instructions:
   - `verify_agent` fail-closed for unknown action types (test in `backend/tests/security.ts`)
   - `log_action` owner-only enforcement (unauthorized callers rejected)
   - `init_config` re-initialization protection (first-writer wins)
+  - registration rejects empty metadata URIs, default agent wallets, empty capability sets, invalid service categories, and zero payment limits for payment-enabled agents
+  - `update_capabilities` rejects disabling all capabilities
+  - `log_action` rejects unknown action types and memos longer than 64 characters
+
+✅ **Phase 1 Operations**:
+  - identity deployment and recovery runbook exists at `PHASE1_IDENTITY_RUNBOOK.md`
+  - `backend/scripts/create-merkle-tree.ts` creates the shared devnet tree using the configured wallet
+  - `backend/scripts/set-tree-delegate.ts` delegates shared-tree mint authority to the program PDA
 
 ## Architecture
 
@@ -420,7 +430,9 @@ vercel deploy          # Deploy to Vercel (requires vercel CLI)
 
 **Devnet USDC Mint**: `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU`
 
-**Shared Devnet Merkle Tree**: Configured for Bubblegum cNFT minting (address in deploy scripts)
+**Shared Devnet Merkle Tree**: `2EtpZX5evXj3hqMPmXgHUA5F2YDvkSn2sXgQkwcPy2sx`
+
+**Shared Tree Delegate PDA**: `HdtBWtW3smBmdjrZd5T5pJCF7e5XAdRxhHQu8KVmfQfk`
 
 **Frontend Dev Server**: `http://localhost:8080` (host: `::`, IPv6 localhost)
 
@@ -437,6 +449,6 @@ vercel deploy          # Deploy to Vercel (requires vercel CLI)
 ✅ **x402**: HTTP 402 Payment Required with on-chain USDC verification  
 ✅ **SDK & Plugin**: TypeScript packages for external integrations  
 
-**Remaining work focuses on operational readiness**: npm package publishing, x402 replay persistence, reputation formula audit, CI/CD pipeline, and mainnet deployment planning.
+**Remaining work focuses on operational readiness**: npm package publishing, x402 replay persistence, reputation formula audit, CI/CD pipeline, mainnet deployment planning, and confirming public HTTP reachability of `agentid.xyz` metadata endpoints from external environments.
 
-The codebase is beyond the mock-only stage. All identity registration, reputation scoring, verification, treasury management, and India compliance features are fully operational on devnet.
+The codebase is beyond the mock-only stage. Identity registration, reputation scoring, verification, treasury management, and India compliance flows are operational on devnet; the only unresolved Phase 1 operational check from this environment is metadata-host HTTP reachability.
