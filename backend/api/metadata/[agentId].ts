@@ -14,13 +14,7 @@ type VercelResponse = ServerResponse & {
 // ── Constants ──────────────────────────────────────────────────────────────
 // PROGRAM_ID is embedded in the IDL address field
 const PROGRAM_ID = (idl as unknown as { address: string }).address;
-const RPC_URL = process.env.SOLANA_RPC_URL;
-if (!RPC_URL) {
-    if (process.env.NODE_ENV === "production") {
-        throw new Error("SOLANA_RPC_URL must be defined in production");
-    }
-}
-const ACTIVE_RPC_URL = RPC_URL ?? "https://api.devnet.solana.com";
+const ACTIVE_RPC_URL = process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
 
 const FRAMEWORKS = ["ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"];
 const VERIFIED_LEVELS = ["Unverified", "EmailVerified", "KYBVerified", "Audited"];
