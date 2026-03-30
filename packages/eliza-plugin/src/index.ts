@@ -110,7 +110,7 @@ function extractWallet(text: string): string | null {
 
 export const agentIdPlugin: ElizaPlugin = {
   name: "agentid",
-  description: "AgentID KYA — on-chain identity and reputation for ELIZA agents",
+  description: "AgentID KYA v2 — on-chain identity, reputation, and treasury for ELIZA agents (Solana devnet)",
 
   actions: [
     {
@@ -221,5 +221,5 @@ export const agentIdPlugin: ElizaPlugin = {
 };
 
 // Re-export SDK types for convenience
-export type { AgentIdentity, ActionType, AnchorWallet } from "@agentid/sdk";
+export type { AgentIdentity, ActionType, AnchorWallet, TreasuryInfo, RegisterAgentParams } from "@agentid/sdk";
 export { PROGRAM_ID, DEVNET_RPC } from "@agentid/sdk";

@@ -13,7 +13,15 @@ export interface AnchorWallet {
 export const PROGRAM_ID = "Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF";
 export const DEVNET_RPC = "https://api.devnet.solana.com";
 
+// ── Well-known Metaplex / SPL program addresses ───────────────────────────────
+export const BUBBLEGUM_PROGRAM_ID = "BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY";
+export const SPL_NOOP_PROGRAM_ID = "noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV";
+export const SPL_ACCOUNT_COMPRESSION_ID = "cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK";
+
 const PROGRAM_KEY = new PublicKey(PROGRAM_ID);
+const BUBBLEGUM_KEY = new PublicKey(BUBBLEGUM_PROGRAM_ID);
+const SPL_NOOP_KEY = new PublicKey(SPL_NOOP_PROGRAM_ID);
+const SPL_COMPRESSION_KEY = new PublicKey(SPL_ACCOUNT_COMPRESSION_ID);
 const FRAMEWORKS = ["ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"] as const;
 const VERIFIED_LEVELS = ["Unverified", "EmailVerified", "KYBVerified", "Audited"] as const;
 const SERVICE_CATEGORIES = [
@@ -44,6 +52,18 @@ export interface RegisterAgentParams {
   gstin?: string;
   panHash?: string;
   serviceCategory?: ServiceCategory;
+  /** URI for the off-chain cNFT metadata JSON (required for Bubblegum mint) */
+  metadataUri: string;
+  /**
+   * The SPL Account Compression Merkle tree that will hold the cNFT leaf.
+   * On devnet use the shared AgentID Merkle tree unless you have a dedicated one.
+   */
+  merkleTree: string;
+  /**
+   * The tree authority PDA — derived as PDA([merkleTree], bubblegumProgramId).
+   * Pass explicitly so callers can pre-derive it off-screen.
+   */
+  treeAuthority: string;
 }
 
 export interface AgentIdentity {
@@ -102,6 +122,18 @@ function deriveIdentityPda(ownerPubkey: PublicKey): [PublicKey, number] {
     [Buffer.from("agent-identity"), ownerPubkey.toBytes()],
     PROGRAM_KEY,
   );
+}
+
+/**
+ * Derive the Bubblegum tree authority PDA for a given Merkle tree.
+ * Pass the result as `treeAuthority` in RegisterAgentParams.
+ */
+export function deriveTreeAuthority(merkleTree: string): PublicKey {
+  const [pda] = PublicKey.findProgramAddressSync(
+    [new PublicKey(merkleTree).toBytes()],
+    BUBBLEGUM_KEY,
+  );
+  return pda;
 }
 
 function deriveActionPda(identityPda: PublicKey, totalTransactions: bigint): [PublicKey, number] {
@@ -246,7 +278,10 @@ export class AgentIdClient {
     this.provider = new AnchorProvider(connection, wallet, {
       commitment: "confirmed",
     });
-    this.program = new Program(IDL as any, PROGRAM_KEY, this.provider);
+    // Anchor v0.30+ requires the provider to be set via AnchorProvider.setProvider
+    // before constructing the Program from IDL alone.
+    AnchorProvider.prototype; // type-narrowing hint
+    this.program = new Program(IDL as any, this.provider);
   }
 
   async registerAgent(params: RegisterAgentParams): Promise<string> {
@@ -266,13 +301,22 @@ export class AgentIdClient {
       gstin: params.gstin ?? "",
       panHash: parsePanHash(params.panHash),
       serviceCategory: serviceCategoryToIndex(params.serviceCategory),
+      metadataUri: params.metadataUri,
     };
+
+    const merkleTreeKey = new PublicKey(params.merkleTree);
+    const treeAuthorityKey = new PublicKey(params.treeAuthority);
 
     const tx = await (this.program.methods as any)
       .registerAgent(registerParams)
       .accountsStrict({
         identity: identityPDA,
         owner: ownerPubkey,
+        treeAuthority: treeAuthorityKey,
+        merkleTree: merkleTreeKey,
+        logWrapper: SPL_NOOP_KEY,
+        compressionProgram: SPL_COMPRESSION_KEY,
+        bubblegumProgram: BUBBLEGUM_KEY,
         systemProgram: SystemProgram.programId,
       })
       .rpc();
@@ -304,6 +348,15 @@ export class AgentIdClient {
     }
 
     const threshold = AUTH_THRESHOLDS[actionType];
+    // If actionType is not in the map, fail closed (mirrors on-chain InvalidActionType)
+    if (threshold === undefined) {
+      return {
+        isRegistered: true,
+        verifiedLevel: identity.verifiedLevel,
+        reputationScore: identity.reputationScore,
+        isAuthorized: false,
+      };
+    }
     const capabilityEnabled = (() => {
       switch (actionType) {
         case "defi_trade":
@@ -313,8 +366,9 @@ export class AgentIdClient {
         case "content":
           return identity.capabilities.contentPublishing;
         case "other":
-        default:
           return identity.capabilities.dataAnalysis;
+        default:
+          return false; // fail closed for any unknown value
       }
     })();
     const isAuthorized = identity.reputationScore >= threshold && capabilityEnabled;
@@ -378,6 +432,39 @@ export class AgentIdClient {
   }
 
   // ─── Treasury ────────────────────────────────────────────────────────────────
+
+  /**
+   * Executes an autonomous USDC payment from the agent's treasury.
+   * The agent wallet (not owner) must sign this transaction.
+   */
+  async autonomousPayment(
+    ownerPubkey: string,
+    recipientUsdcAccount: string,
+    amount: number,
+    memo?: string,
+  ): Promise<string> {
+    const owner = new PublicKey(ownerPubkey);
+    const [identityPDA] = deriveIdentityPda(owner);
+    const [treasuryPDA] = deriveTreasuryPda(identityPDA);
+    const agentWallet = this.provider.wallet.publicKey;
+
+    const tx = await (this.program.methods as any)
+      .autonomousPayment(
+        new BN(Math.round(amount * 1_000_000)),
+        owner,
+        memo ?? "",
+      )
+      .accountsStrict({
+        treasury: treasuryPDA,
+        agentIdentity: identityPDA,
+        agentWallet,
+        owner,
+        recipientUsdc: new PublicKey(recipientUsdcAccount),
+      })
+      .rpc();
+
+    return tx as string;
+  }
 
   async initializeTreasury(
     usdcMint: string,

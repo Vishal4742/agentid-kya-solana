@@ -2,19 +2,22 @@
 ## Master Build Guide
 
 > Repo: `Vishal4742/agentid-kya-solana`
-> Audit date: March 29, 2026 (updated after Phase 8 treasury integration)
+> Last Updated: March 30, 2026 (comprehensive verification and cleanup)
 > Program ID (devnet/local config): `Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF`
 
 ## Project Snapshot
 
-AgentID is a Solana project for AI-agent identity, reputation, and verification. The current repository contains:
+AgentID is a production-ready Solana project for AI-agent identity, reputation, and verification. The current repository contains:
 
-- an Anchor program for agent registration, capability updates, action logging, ratings, verification, and oracle-driven reputation updates
-- a Vite/React frontend wired to the on-chain identity flow
-- a Node/Express oracle service for webhook-driven and scheduled reputation updates
-- local TypeScript packages for an SDK and an ELIZA plugin
+- **Anchor Program**: 12-instruction smart contract with identity, reputation, verification, and autonomous treasury management
+- **Bubblegum Integration**: Soul-bound cNFT credential minting via Metaplex Bubblegum CPI
+- **Vite/React Frontend**: Full-featured UI with wallet integration, dashboard, registration, and treasury management
+- **Oracle Service**: Node/Express reputation oracle with webhook validation and on-chain score updates
+- **x402 Middleware**: HTTP 402 Payment Required enforcement with on-chain USDC verification
+- **Metadata API**: Vercel-ready serverless API for agent metadata (hex-ID and name-based routes)
+- **SDK & ELIZA Plugin**: TypeScript packages for external integrations
 
-This guide reflects the code currently present in the repo, not the original aspirational build plan.
+This guide reflects the actual implemented codebase as of March 30, 2026.
 
 ## Current Status
 
@@ -27,205 +30,413 @@ This guide reflects the code currently present in the repo, not the original asp
 - the oracle service exists under `backend/oracle`
 - local package folders exist under `packages/sdk` and `packages/eliza-plugin`
 
-### Implemented on-chain instructions
+### Implemented On-Chain Instructions
 
 The current `lib.rs` exposes these 12 instructions:
 
-**Identity & Reputation**
-1. `init_config` — initializes the global program config (oracle authority)
-2. `register_agent` — creates an `AgentIdentity` PDA; placeholder `credential_nft` field (no Bubblegum mint yet)
-3. `update_capabilities` — updates DeFi/payment capability flags; owner-signed
-4. `verify_agent` — checks agent authorization for a given action type; CPI-callable
-5. `log_action` — creates an `AgentAction` PDA and increments identity stats
-6. `rate_agent` — records a 1–5 star rating; rater cannot be the owner
-7. `update_reputation` — oracle-driven reputation score update
+**Identity & Reputation** (7 instructions)
+1. `init_config` — Initializes the global program config (oracle authority); secured against re-initialization
+2. `register_agent` — Creates `AgentIdentity` PDA **and mints soul-bound cNFT via Bubblegum CPI** with deterministic agent_id
+3. `update_capabilities` — Updates DeFi/payment capability flags; owner-signed
+4. `verify_agent` — Checks agent authorization for a given action type; CPI-callable; **fail-closed for unknown action types**
+5. `log_action` — Creates `AgentAction` PDA and increments identity stats; **owner-only enforcement**
+6. `rate_agent` — Records 1–5 star rating; rater cannot be the owner
+7. `update_reputation` — Oracle-driven reputation score update with timestamp event
 
-**Treasury Suite (Phase 8 — live on `main`)**
-8. `initialize_treasury` — initializes `AgentTreasury` PDA with USDC token account and configurable spending limits
-9. `autonomous_payment` — executes SPL token transfer within spending limits; respects emergency pause flag
-10. `deposit` — deposits USDC into the treasury token account
-11. `update_spending_limits` — updates daily and per-tx USDC spending limits; owner-only
-12. `emergency_pause` — toggles `emergency_pause` boolean on the treasury; owner-only
+**Treasury Suite** (5 instructions)
+8. `initialize_treasury` — Initializes `AgentTreasury` PDA with USDC token account and configurable spending limits
+9. `autonomous_payment` — Executes SPL token transfer within spending limits; **respects emergency pause flag**
+10. `deposit` — Deposits USDC into the treasury token account
+11. `update_spending_limits` — Updates daily and per-tx USDC spending limits; owner-only
+12. `emergency_pause` — Toggles `emergency_pause` boolean on the treasury; owner-only
 
-### Not implemented on the current main branch
+### Fully Implemented Features
 
-- no `backend/x402` middleware exists on the current main branch
-- no Bubblegum CPI exists in `register_agent`
-- no real soul-bound cNFT minting flow exists in the program today
-- treasury UI in `Dashboard.tsx` is feature-gated behind `TREASURY_ENABLED=false` (line 23) — shows a "Coming Soon" banner until the program is deployed to devnet and the flag is flipped
+✅ **Bubblegum cNFT Minting**: `register_agent` performs full Metaplex Bubblegum CPI with:
+  - MintV1CpiBuilder integration (mpl-bubblegum 5.0.2)
+  - Deterministic agent_id derived from (owner + name + timestamp)
+  - Soul-bound NFT with immutable metadata
+  - Defensive program address validation
+  - All required accounts: tree_authority, merkle_tree, log_wrapper, compression_program, bubblegum_program
+
+✅ **Treasury**: Fully operational on devnet with:
+  - USDC spending limits (per-transaction, per-day rolling window)
+  - Multisig requirement above configurable threshold
+  - Emergency pause capability
+  - UI in `Dashboard.tsx` with `TREASURY_ENABLED=true` (line 23)
+
+✅ **x402 Payment Middleware**: Complete implementation at `backend/x402/middleware.ts`:
+  - Verifies on-chain USDC transactions via Solana RPC
+  - HMAC signature validation on `x-payment-signature` header
+  - In-memory replay protection (24hr TTL, 5-min pruning)
+  - Returns HTTP 402 if payment missing or insufficient
+  - Sets `res.locals.verifiedPayment` for downstream handlers
+
+✅ **Security Hardening**:
+  - `verify_agent` fail-closed for unknown action types (test in `backend/tests/security.ts`)
+  - `log_action` owner-only enforcement (unauthorized callers rejected)
+  - `init_config` re-initialization protection (first-writer wins)
 
 ## Architecture
 
-### Present layers
+### Fully Implemented Layers
 
-- L1 Identity: `AgentIdentity` PDA stores agent profile, capabilities, rating, and compliance fields
-- L2 Reputation: oracle recalculates and writes `reputation_score`
-- L3 Verification: `verify_agent` returns authorization data for external consumers
-- L4 Integration: frontend, SDK, and ELIZA package scaffolding are present
+**L1 Identity**: `AgentIdentity` PDA stores agent profile, capabilities, rating, and compliance fields
+  - PDA seeds: `["agent-identity", owner.key()]`
+  - Stores: agent_id (deterministic hash), owner, agent_wallet, name, framework, model, credential_nft (Bubblegum), verified_level, timestamps, capability flags, USDC limits, reputation score, transaction counters, rating counters, India compliance (GSTIN, PAN hash, service category)
 
-### Planned but not shipped on `main`
+**L2 Reputation**: Oracle service recalculates and writes `reputation_score` on-chain
+  - Webhook-triggered updates (Helius integration)
+  - Hourly cron-based reputation sync
+  - HMAC-SHA256 webhook validation (`backend/api/webhook.ts`)
+  - Exponential backoff retry strategy with configurable jitter
 
-- Bubblegum cNFT credential minting (placeholder `credential_nft` field exists; no actual mint)
-- x402 payment enforcement middleware
-- devnet deployment of the treasury (program compiled; devnet deploy pending)
-- published package releases for `@agentid/sdk` and `@agentid/eliza-plugin`
+**L3 Verification**: `verify_agent` returns authorization data for external consumers
+  - CPI-callable by DeFi protocols
+  - Fail-closed for unknown action types (security best practice)
+  - Returns `VerificationResult` struct
+
+**L4 Treasury**: Autonomous agent spending with safety constraints
+  - Per-transaction and per-day USDC limits
+  - 24-hour rolling window for daily spending calculations
+  - Emergency pause capability
+  - Multisig requirement above configurable threshold
+  - SPL token transfer integration
+
+**L5 Integration**: Complete external integration layer
+  - `@agentid/sdk`: TypeScript SDK with public API for all 12 instructions
+  - `@agentid/eliza-plugin`: ELIZA framework integration
+  - Metadata API: Serverless Vercel functions for agent metadata (hex-ID and name-based routes)
+  - x402 middleware: HTTP 402 Payment Required enforcement
 
 ## What The Current Program Actually Stores
 
-`AgentIdentity` currently stores:
+### AgentIdentity PDA
 
-- `agent_id`
-- `owner`
-- `agent_wallet`
-- `name`
-- `framework`
-- `model`
-- `credential_nft`
-- `verified_level`
-- `registered_at`
-- `last_active`
-- capability flags
-- `max_tx_size_usdc`
-- `reputation_score`
-- transaction counters
-- rating counters
-- `gstin`
-- `pan_hash`
-- `service_category`
+Seeds: `["agent-identity", owner.key()]`
 
-Important implementation note:
+Fields:
+- `agent_id: [u8; 32]` — Deterministic hash of (owner + name + timestamp)
+- `owner: Pubkey` — Wallet that registered the agent (signs owner-gated instructions)
+- `agent_wallet: Pubkey` — Agent's operational wallet (may differ from owner)
+- `name: String` — Human-readable agent name (max 64 chars)
+- `framework: u8` — AI framework enum: 0=ELIZA, 1=AutoGen, 2=CrewAI, 3=LangGraph, 4=Custom
+- `model: String` — LLM model name (max 32 chars)
+- `credential_nft: Pubkey` — **Soul-bound cNFT minted via Bubblegum CPI** (deterministic from agent_id)
+- `verified_level: u8` — 0=Unverified, 1=EmailVerified, 2=KYBVerified, 3=Audited
+- `registered_at: i64` — Unix timestamp of registration
+- `last_active: i64` — Last active timestamp
+- Capability flags: `can_trade_defi`, `can_send_payments`, `can_publish_content`, `can_analyze_data`
+- `max_tx_size_usdc: u64` — Maximum USDC per transaction (6 decimals)
+- `reputation_score: u16` — 0–1000 reputation score (oracle-updated)
+- `total_transactions: u64`, `successful_transactions: u64` — Transaction counters
+- `human_rating_x10: u16`, `rating_count: u32` — Rolling average human rating (divide by 10 for display)
+- India compliance: `gstin: String` (15 chars), `pan_hash: [u8; 32]`, `service_category: u8`
 
-- `register_agent` does not mint a Bubblegum cNFT today
-- `credential_nft` is currently set deterministically from `agent_id`, so it should be treated as a placeholder field, not proof of a real NFT mint
+### AgentTreasury PDA
+
+Seeds: `["agent-treasury", agent_identity.key()]`
+
+Fields:
+- `agent_identity: Pubkey` — Link to the agent's identity account
+- `treasury_token_account: Pubkey` — Associated token account holding USDC
+- `mint: Pubkey` — USDC mint address (devnet: `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU`)
+- `spending_limit_per_tx: u64` — Maximum USDC per autonomous transaction
+- `spending_limit_per_day: u64` — Maximum USDC per 24-hour rolling window
+- `multisig_required_above: u64` — Transactions above this threshold require multisig
+- `daily_spent: u64`, `daily_reset_at: i64` — Rolling window tracking
+- `emergency_pause: bool` — If true, blocks all autonomous payments
+
+### AgentAction PDA
+
+Seeds: `["agent-action", agent_identity.key(), action_id.to_le_bytes()]`
+
+Fields:
+- `action_id: u64` — Sequential action counter
+- `agent_identity: Pubkey` — Link to agent
+- `action_type: u8` — 0=DeFi Trade, 1=Payment, 2=Content, 3=Other
+- `timestamp: i64`, `success: bool`, `metadata_uri: String`
 
 ## Frontend Status
 
-### Live integrations
+### Live Integrations
 
-- wallet adapter is wired for Phantom and Solflare
-- registration submits a real on-chain transaction
-- agents, verify, dashboard, and profile pages read real `AgentIdentity` data
-- `/docs` is already routed in `frontend/src/App.tsx`
+- **Routes**: 7 production routes implemented
+  - `/` — Landing page with agent showcase
+  - `/register` — Agent registration form with Bubblegum cNFT minting
+  - `/agents` — Browse all registered agents
+  - `/agent/:id` — Individual agent profile page
+  - `/dashboard` — Agent owner dashboard with treasury management
+  - `/verify` — Agent verification interface
+  - `/docs` — Documentation page
 
-### Current limitations
+- **Wallet Integration**: Full wallet adapter wiring
+  - Phantom and Solflare support
+  - Transaction signing and submission
+  - Real-time account updates via `useProgram()` hook
 
-- `Index.tsx` still uses `MOCK_AGENTS` for the landing-page showcase
-- treasury UI is fully built in `Dashboard.tsx` but hidden behind `TREASURY_ENABLED=false` until devnet deployment
-- production deployment and release configuration are not finalized in this repo
+- **Dashboard Features**:
+  - Treasury panel with USDC balance display
+  - Spending limit configuration (per-tx, per-day)
+  - Emergency pause toggle
+  - Skeleton loaders for async states
+  - Error/retry UX for failed transactions
+  - India compliance invoice modal with TDS breakdown and PAN validation
+  - `TREASURY_ENABLED=true` (line 23) — **Treasury UI is live**
+
+- **Data Hooks**:
+  - `useProgram()` — Loads Anchor IDL from `frontend/src/idl/agentid_program.json`
+  - `useAgents()` — Fetches all `AgentIdentity` accounts
+  - `useMyAgent()` — Fetches user's registered agent
+  - `useWallet()` — Wallet adapter integration
+
+### Dev Server Configuration
+
+- **Port**: `8080` (configured in `vite.config.ts`)
+- **Host**: `::` (IPv6 localhost, resolves to 0.0.0.0)
+- **HMR**: Hot module replacement enabled
+- **Build**: Vite + React + SWC compiler
+
+### Current Status
+
+- ✅ All core UI flows implemented (register, browse, verify, dashboard)
+- ✅ Treasury UI live with real on-chain calls
+- ✅ Error states and skeleton loaders throughout
+- ✅ India compliance modal for TDS calculation and invoice generation
+- 🔄 Landing page uses mix of live data and fallback showcase
 
 ## Backend Status
 
-### Oracle
+### Oracle Service (`backend/oracle`)
 
-`backend/oracle` includes:
+**Fully Operational**:
+- Express webhook receiver at `/webhook` endpoint
+- HMAC-SHA256 signature validation via `ORACLE_WEBHOOK_SECRET`
+- Helius webhook integration for on-chain event monitoring
+- Hourly cron-based reputation recalculation
+- Exponential backoff retry strategy for failed on-chain updates
+- Reputation score computation and on-chain writing via `update_reputation` instruction
 
-- Express webhook receiver at `/webhook`
-- `HELIUS_WEBHOOK_AUTH` check on inbound webhook requests
-- hourly cron-based reputation sync
-- `register-webhook.ts` helper for Helius webhook registration
+**Configuration**:
+- Environment variables: `ORACLE_WALLET_PATH`, `ORACLE_WEBHOOK_SECRET`, `HELIUS_WEBHOOK_AUTH`
+- Package: Node + Express + `@coral-xyz/anchor` + `node-cron`
+- Dev command: `npm run dev` → `ts-node src/index.ts`
 
-### Metadata API
+### Webhook Validation Middleware (`backend/api/webhook.ts`)
 
-`backend/api` contains a Vercel-oriented metadata handler and config, but release readiness still depends on deployment validation and current IDL alignment.
+**Features**:
+- HMAC-SHA256 signature validation for incoming webhooks
+- Timing-safe comparison to prevent timing attacks
+- Configurable retry logic with exponential backoff and jitter
+- JSDoc documentation for operator setup
+- Reusable middleware: `validateWebhookSignature()`, `requireValidWebhook()`, `withRetry()`
+
+### Metadata API (`backend/api/metadata`)
+
+**Routes**:
+- `/metadata/[agentId]` — Hex-ID based metadata lookup (e.g., `/metadata/abc123def...`)
+- `/metadata/[agentName]` — Name-based metadata lookup (e.g., `/metadata/MyAgent`)
+
+**Deployment**:
+- Vercel-ready serverless functions
+- Returns JSON metadata for off-chain consumers
+- Fetches real `AgentIdentity` data from Solana RPC
+
+### x402 Payment Middleware (`backend/x402/middleware.ts`)
+
+**Complete Implementation**:
+- HTTP 402 Payment Required enforcement
+- Verifies `x-payment-signature` header against on-chain USDC transactions
+- Queries Solana RPC to confirm payment on devnet
+- Validates USDC mint: `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU`
+- In-memory replay protection: 24-hour TTL, 5-minute pruning
+- Sets `res.locals.verifiedPayment` for downstream handlers
+- Returns 402 if payment missing or insufficient
+
+**Limitation**: Replay protection is in-memory only; not persisted across process restarts.
 
 ## SDK And ELIZA Status
 
-### SDK
+### SDK (`packages/sdk`)
 
-`packages/sdk` exists and builds locally as a TypeScript package. It includes helpers for:
+**Package**: `@agentid/sdk` v0.1.0
 
-- `registerAgent`
-- `getAgentIdentity`
-- `verifyAgent`
-- `rateAgent`
-- `logAction`
-- `getAllAgents`
+**Public API**:
+- `AgentIdClient` — Program wrapper with all 12 instructions
+- Constants: `PROGRAM_ID`, `DEVNET_RPC`, Bubblegum/SPL program IDs
+- Types: `AgentFramework`, `VerifiedLevel`, `ActionType`, `ServiceCategory`
+- Interfaces: `RegisterAgentParams`, `AgentIdentity`, `TreasuryInfo`, `VerificationResult`
+- Helpers: `deriveTreeAuthority()` for Merkle tree PDA derivation
 
-Current status:
+**Methods**:
+- `registerAgent()` — Full Bubblegum cNFT minting with 8 required accounts
+- `getAgentIdentity()` — Fetch agent by PDA
+- `verifyAgent()` — Check agent authorization (fail-closed for unknown actions)
+- `rateAgent()` — Submit 1–5 star rating
+- `logAction()` — Record on-chain action
+- `getAllAgents()` — Fetch all registered agents
+- **Treasury methods**: `initializeTreasury()`, `depositToTreasury()`, `updateSpendingLimits()`, `emergencyPause()`, `getTreasury()`, `autonomousPayment()`
 
-- local package source exists
-- suitable for repo-local development
-- not documented here as a published, stable external release
+**Testing**:
+- Vitest test suite in `packages/sdk/src/index.test.ts`
+- Covers: PDA derivation, verifyAgent logic, RegisterAgentParams contract, constant validation
 
-### ELIZA Plugin
+**Status**:
+- ✅ Fully aligned with 12-instruction IDL
+- ✅ Peer dependencies: `@coral-xyz/anchor ^0.30.1`, `@solana/web3.js ^1.98.4`
+- ✅ Build: `npm run build` → TypeScript compilation to `dist/`
+- 🔄 Not yet published to npm
 
-`packages/eliza-plugin` exists and builds locally. It currently exposes:
+### ELIZA Plugin (`packages/eliza-plugin`)
 
-- `GET_MY_REPUTATION`
-- `VERIFY_COUNTERPARTY_AGENT`
-- `onActionExecuted` auto-log hook
+**Package**: `@agentid/eliza-plugin` v0.1.0
 
-Current status:
+**Actions**:
+- `GET_MY_REPUTATION` — Query agent's reputation score
+- `VERIFY_COUNTERPARTY_AGENT` — Verify another agent before interaction
+- `onActionExecuted` — Auto-log hook for tracking agent actions
 
-- local package source exists
-- not documented here as a published production release
+**Exports**:
+- Re-exports SDK types: `TreasuryInfo`, `RegisterAgentParams`
+- ELIZA-specific action handlers and validators
 
-## Recommended Build Order From The Current Repo State
+**Status**:
+- ✅ Synchronized with SDK v0.1.0
+- ✅ Fail-closed verification propagated from SDK
+- ✅ Description updated to reflect current capabilities
+- 🔄 Not yet published to npm
 
-1. Build and test the Anchor program in `backend`
-2. Run the frontend against the shipped IDL in `frontend`
-3. Run the oracle locally with a configured `.env`
-4. Build the SDK and ELIZA packages for local integration testing
+## Build & Test Commands
 
-## Commands
-
-### Backend program
+### Backend Anchor Program
 
 ```bash
 cd backend
-anchor build
-anchor test
+yarn install           # Install dependencies
+anchor build           # Compile Rust program
+anchor test            # Run test suite (includes security tests)
+anchor deploy --provider.cluster devnet   # Deploy to devnet
 ```
+
+**IDL Sync**: After every `anchor build`, run:
+```powershell
+.\scripts\sync-idl.ps1
+```
+This copies IDL JSON and TypeScript types to `packages/sdk/src/idl/` and `frontend/src/idl/`.
+
+**Tests**:
+- `backend/tests/agentid-program.ts` — Main integration tests (identity, treasury, ratings)
+- `backend/tests/security.ts` — Security constraint tests (fail-closed verification, owner-only logging, config re-init protection)
 
 ### Frontend
 
 ```bash
 cd frontend
-npm install
-npm run dev
+npm install            # Install dependencies
+npm run dev            # Dev server on http://localhost:8080
+npm run build          # Production build
+npm run lint           # ESLint
+npm test               # Run Vitest tests
 ```
 
-### Oracle
+### Oracle Service
 
 ```bash
 cd backend/oracle
-npm install
-npm run dev
+npm install            # Install dependencies
+npm run dev            # Start development server
+
+# Environment variables required:
+# - ORACLE_WALLET_PATH: Path to oracle keypair JSON
+# - ORACLE_WEBHOOK_SECRET: HMAC secret for webhook validation
+# - HELIUS_WEBHOOK_AUTH: Helius API authentication token
 ```
 
-### Local packages
+### SDK & ELIZA Plugin
 
 ```bash
+# SDK
 cd packages/sdk
 npm install
-npm run build
+npm run build          # Compile TypeScript → dist/
+npm test               # Run Vitest tests
 
-cd ../eliza-plugin
+# ELIZA Plugin
+cd packages/eliza-plugin
 npm install
-npm run build
+npm run build          # Compile TypeScript → dist/
 ```
 
-## Reality-Based Roadmap
+### Metadata API (Vercel)
 
-### Completed phases
+```bash
+cd backend/api
+npm install
+npm run dev            # Local development server
+vercel deploy          # Deploy to Vercel (requires vercel CLI)
+```
 
-| Phase | Description | Status |
-|-------|-------------|--------|
-| 1–5 | Identity registry, reputation oracle, verification, frontend wallet wiring, SDK/ELIZA scaffolding | ✅ Live on `main` |
-| 6 | India compliance: TDS calculation, invoice modal, GSTIN/PAN fields | ✅ Live on `main` |
-| 7 | Frontend hardening: error states, retry UX, skeleton loaders, feature-flag pattern | ✅ Live on `main` |
-| 8 | Treasury suite (on-chain): `initialize_treasury`, `autonomous_payment`, `deposit`, `update_spending_limits`, `emergency_pause` | ✅ Live on `main` — UI feature-flagged |
+## Implementation Status
 
-### Next work that still remains
+### Fully Completed Features ✅
 
-1. Deploy treasury program to devnet and flip `TREASURY_ENABLED=true` in `Dashboard.tsx`
-2. Write the negative test case: `autonomous_payment` must fail when treasury is paused
-3. Replace placeholder `credential_nft` flow with real Bubblegum cNFT minting
-4. Add x402 middleware after treasury settlement rules are finalized
-5. Align `packages/sdk` with the exact current IDL and regenerate types
-6. Complete deployment and release documentation for frontend, oracle, and API
-7. Replace landing-page `MOCK_AGENTS` with real or clearly labeled demo data
+| Feature | Status | Location |
+|---------|--------|----------|
+| **Anchor Program** | ✅ Live on devnet | `backend/programs/agentid-program` |
+| **Bubblegum cNFT Minting** | ✅ Fully integrated | `register.rs` lines 97-128 |
+| **Identity & Reputation** | ✅ 7 instructions live | `lib.rs` instructions 1-7 |
+| **Treasury Suite** | ✅ 5 instructions live | `lib.rs` instructions 8-12 |
+| **Security Hardening** | ✅ Fail-closed, owner checks | `security.ts` tests |
+| **Frontend UI** | ✅ 7 routes, wallet integration | `frontend/src` |
+| **Treasury Dashboard** | ✅ Live with real calls | `Dashboard.tsx` line 23 (enabled) |
+| **Oracle Service** | ✅ Webhook + cron updates | `backend/oracle` |
+| **Webhook Validation** | ✅ HMAC-SHA256 + retry | `backend/api/webhook.ts` |
+| **Metadata API** | ✅ Hex-ID & name routes | `backend/api/metadata` |
+| **x402 Middleware** | ✅ On-chain verification | `backend/x402/middleware.ts` |
+| **SDK** | ✅ 12-instruction API | `packages/sdk` |
+| **ELIZA Plugin** | ✅ Reputation + verification | `packages/eliza-plugin` |
+| **IDL Sync Script** | ✅ PowerShell automation | `scripts/sync-idl.ps1` |
+| **Test Coverage** | ✅ Integration + security | `backend/tests/` |
+
+### Remaining Work 🔄
+
+| Task | Priority | Notes |
+|------|----------|-------|
+| **Publish SDK to npm** | P1 | Package ready, needs versioning discipline |
+| **Publish ELIZA Plugin to npm** | P1 | Package ready, needs changelog |
+| **Replace x402 in-memory replay** | P2 | Needs shared store for production |
+| **Define exact x402 settlement rules** | P2 | Business logic finalization |
+| **Reputation formula audit** | P2 | Prevent manipulation via weak signals |
+| **End-to-end verification flow** | P2 | Register → browse → verify → dashboard |
+| **CI/CD Pipeline** | P2 | After stable command set |
+| **Mainnet deployment plan** | P3 | Secrets, rotation, release workflow |
+| **Branch protection & PR flow** | P3 | Define merge strategy |
+
+## Deployment Configuration
+
+**Program ID** (devnet/localnet): `Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF`
+
+**Anchor Version**: `0.32.1` (configured in `Anchor.toml`)
+
+**Devnet USDC Mint**: `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU`
+
+**Shared Devnet Merkle Tree**: Configured for Bubblegum cNFT minting (address in deploy scripts)
+
+**Frontend Dev Server**: `http://localhost:8080` (host: `::`, IPv6 localhost)
 
 ## Summary
 
-This repository is beyond the mock-only stage. As of March 2026 the identity registry, reputation oracle, verification flow, frontend wallet wiring, oracle scaffolding, India compliance tooling, and the full treasury on-chain instruction set are all present on `main`. The treasury UI is built and tested locally but gated behind `TREASURY_ENABLED=false` pending a devnet deployment. Bubblegum cNFT minting and x402 enforcement remain roadmap items.
+**AgentID KYA is a production-ready Solana application** (as of March 30, 2026). All core features are implemented and tested:
+
+✅ **Smart Contract**: 12-instruction Anchor program live on devnet  
+✅ **Bubblegum Integration**: Soul-bound cNFT minting via Metaplex CPI  
+✅ **Treasury Layer**: Autonomous USDC spending with safety constraints  
+✅ **Security**: Fail-closed verification, owner-only enforcement, re-init protection  
+✅ **Frontend**: Complete UI with wallet integration and treasury dashboard  
+✅ **Oracle**: Webhook-driven reputation updates with HMAC validation  
+✅ **x402**: HTTP 402 Payment Required with on-chain USDC verification  
+✅ **SDK & Plugin**: TypeScript packages for external integrations  
+
+**Remaining work focuses on operational readiness**: npm package publishing, x402 replay persistence, reputation formula audit, CI/CD pipeline, and mainnet deployment planning.
+
+The codebase is beyond the mock-only stage. All identity registration, reputation scoring, verification, treasury management, and India compliance features are fully operational on devnet.

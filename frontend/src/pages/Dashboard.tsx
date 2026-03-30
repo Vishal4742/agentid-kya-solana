@@ -381,13 +381,8 @@ export default function Dashboard() {
     );
   }
 
-  const togglePause = (agentId: string, name: string) => {
-    // Deprecated for the new togglePauseReal
-    const newSet = new Set(pausedAgents);
-    if (newSet.has(agentId)) { newSet.delete(agentId); toast.success(`${name} resumed`); }
-    else { newSet.add(agentId); toast(`${name} paused`, { icon: "⏸️" }); }
-    setPausedAgents(newSet);
-  };
+  // NOTE: togglePauseReal() below is the live on-chain version.
+  // The local-only togglePause was removed during the P1 dashboard audit (March 2026).
 
   const avgReputation = agent ? agent.reputationScore : 0;
 
@@ -587,7 +582,9 @@ export default function Dashboard() {
                     <div>
                       <p className="label-meta mb-1">USDC Balance</p>
                       <p className="font-mono text-3xl font-bold text-green">
-                        {treasuryData ? `$${(treasuryData.usdcBalance.toNumber() / 1_000_000).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "$0.00"}
+                        {treasuryData
+                          ? `$${((treasuryData.usdcBalance?.toNumber?.() ?? 0) / 1_000_000).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                          : "$0.00"}
                       </p>
                       <p className="label-meta mt-1">Solana devnet USDC</p>
                       {!treasuryData && treasuryError && (

@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use crate::state::{AgentIdentity, VerificationResult};
+use crate::errors::AgentIdError;
 
 // Reputation thresholds by action type
 const DEFI_TRADE_MIN_REP: u16    = 600;
@@ -28,7 +29,7 @@ pub fn process_verify_agent(
         1 => (PAYMENT_MIN_REP,     identity.can_send_payments),
         2 => (CONTENT_MIN_REP,     identity.can_publish_content),
         3 => (DATA_QUERY_MIN_REP,  identity.can_analyze_data),
-        _ => (PAYMENT_MIN_REP,     true),
+        _ => return err!(AgentIdError::InvalidActionType),
     };
 
     let is_authorized = capability_enabled
