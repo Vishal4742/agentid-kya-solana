@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use crate::state::{AgentIdentity, AgentAction};
+use crate::errors::AgentIdError;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct LogActionParams {
@@ -40,6 +41,13 @@ pub struct LogAction<'info> {
 }
 
 pub fn process_log_action(ctx: Context<LogAction>, params: LogActionParams) -> Result<()> {
+    // Only the identity owner may log actions on their agent
+    require_keys_eq!(
+        ctx.accounts.payer.key(),
+        ctx.accounts.identity.owner,
+        AgentIdError::UnauthorizedLogAction
+    );
+
     let now = Clock::get()?.unix_timestamp;
     let identity = &mut ctx.accounts.identity;
     let action = &mut ctx.accounts.action;
