@@ -17,7 +17,7 @@ AgentID is a production-ready Solana project for AI-agent identity, reputation, 
 - **Metadata API**: Vercel-ready serverless API for agent metadata (hex-ID and name-based routes)
 - **SDK & ELIZA Plugin**: TypeScript packages for external integrations
 
-This guide reflects the actual implemented codebase as of March 30, 2026. Phase 1 identity work is code-complete and operationally documented.
+This guide reflects the actual implemented codebase as of March 30, 2026. Phase 1 identity work is operationally complete.
 
 ## Current Status
 
@@ -86,6 +86,7 @@ The current `lib.rs` exposes these 12 instructions:
   - identity deployment and recovery runbook exists at `PHASE1_IDENTITY_RUNBOOK.md`
   - `backend/scripts/create-merkle-tree.ts` creates the shared devnet tree using the configured wallet
   - `backend/scripts/set-tree-delegate.ts` delegates shared-tree mint authority to the program PDA
+  - `backend/scripts/verify-phase1-devnet.ts` exercises non-admin registration, verification, action logging, rating, and oracle reputation updates on devnet
 
 ## Architecture
 
@@ -449,6 +450,6 @@ vercel deploy          # Deploy to Vercel (requires vercel CLI)
 ✅ **x402**: HTTP 402 Payment Required with on-chain USDC verification  
 ✅ **SDK & Plugin**: TypeScript packages for external integrations  
 
-**Remaining work focuses on operational readiness**: npm package publishing, x402 replay persistence, reputation formula audit, CI/CD pipeline, mainnet deployment planning, and confirming public HTTP reachability of `agentid.xyz` metadata endpoints from external environments.
+**Remaining work focuses on operational readiness**: npm package publishing, x402 replay persistence, reputation formula audit, CI/CD pipeline, and mainnet deployment planning.
 
-The codebase is beyond the mock-only stage. Identity registration, reputation scoring, verification, treasury management, and India compliance flows are operational on devnet; the only unresolved Phase 1 operational check from this environment is metadata-host HTTP reachability.
+The codebase is beyond the mock-only stage. Identity registration, reputation scoring, verification, treasury management, and India compliance flows are operational on devnet, and the metadata API is live at `https://agentid-metadata-api.vercel.app`.

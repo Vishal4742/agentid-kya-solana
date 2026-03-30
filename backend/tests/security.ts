@@ -11,7 +11,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { AgentidProgram } from "../target/types/agentid_program";
 import { assert } from "chai";
-import { ZERO_PAN_HASH, ensureAgentRegistered } from "./helpers";
+import { METADATA_API_BASE, ZERO_PAN_HASH, ensureAgentRegistered } from "./helpers";
 
 describe("security — verify_agent fail-closed", () => {
   const provider = anchor.AnchorProvider.env();
@@ -66,7 +66,7 @@ describe("security — verify_agent fail-closed", () => {
       gstin: "",
       panHash: ZERO_PAN_HASH,
       serviceCategory: 0,
-      metadataUri: "https://agentid.xyz/metadata/SecurityTestAgent.json",
+      metadataUri: `${METADATA_API_BASE}/metadata/SecurityTestAgent.json`,
     });
   });
 

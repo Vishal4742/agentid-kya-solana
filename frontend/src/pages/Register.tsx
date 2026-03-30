@@ -25,6 +25,7 @@ const PROGRAM_CONFIG_SEED = new TextEncoder().encode("program-config");
 const STEPS = ["Basic Info", "Capabilities", "India Compliance", "Register Agent"];
 const FRAMEWORKS = ["ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"];
 const MODELS = ["Claude 3.5 Sonnet", "GPT-4o", "Llama 3.1", "Gemini Pro"];
+const METADATA_API_BASE = "https://agentid-metadata-api.vercel.app";
 const SERVICE_CATEGORIES = [
   "Information Technology Services",
   "Financial Services",
@@ -104,7 +105,7 @@ export default function Register() {
           gstin,
           panHash,
           serviceCategory: serviceCategory >= 0 ? serviceCategory : 0,
-          metadataUri: `https://agentid.xyz/metadata/${encodeURIComponent(form.name)}.json`,
+          metadataUri: `${METADATA_API_BASE}/metadata/${encodeURIComponent(form.name)}.json`,
         })
         .accounts({
           treeAuthority: TREE_AUTHORITY,

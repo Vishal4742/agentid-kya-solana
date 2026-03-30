@@ -8,9 +8,9 @@ Updated: March 30, 2026 — Phase-wise Devnet Deployment Tracking
 
 | Phase | Description | % Done | Status |
 |-------|-------------|--------|--------|
-| **Phase 1** | Anchor Program Build & Deploy | **95%** | 🟡 In Progress |
-| **Phase 2** | Merkle Tree & Bubblegum cNFT Setup | **90%** | 🟡 Needs re-verify |
-| **Phase 3a** | Metadata API (Vercel) | **85%** | 🟠 Not deployed |
+| **Phase 1** | Anchor Program Build & Deploy | **100%** | ✅ COMPLETE |
+| **Phase 2** | Merkle Tree & Bubblegum cNFT Setup | **100%** | ✅ COMPLETE |
+| **Phase 3a** | Metadata API (Vercel) | **100%** | ✅ LIVE |
 | **Phase 3b** | Oracle Service | **75%** | 🟠 Env missing |
 | **Phase 3c** | x402 Middleware | **60%** | 🔴 Deferred |
 | **Phase 4** | Frontend Devnet Deployment | **80%** | 🟡 Config needed |
@@ -20,33 +20,33 @@ Updated: March 30, 2026 — Phase-wise Devnet Deployment Tracking
 
 ---
 
-## Phase 1 — Anchor Program Build & Deploy [95%]
+## Phase 1 — Anchor Program Build & Deploy [100%] ✅ COMPLETE
 
-**Remaining tasks:**
-- [x] `Anchor.toml` cluster switched from `Localnet` → `Devnet` ✅ (just fixed)
-- [ ] Confirm devnet wallet has enough SOL (`solana balance --url devnet`)
-- [ ] Run `anchor build` in `backend/`
-- [ ] Run `.\scripts\sync-idl.ps1` after build
-- [ ] Run `anchor deploy --provider.cluster devnet`
-- [ ] Confirm program on-chain: `solana program show Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF --url devnet`
-
----
-
-## Phase 2 — Merkle Tree & Bubblegum cNFT Setup [90%]
-
-**Remaining tasks:**
-- [ ] Verify Merkle tree still exists: `solana account 2EtpZX5evXj3hqMPmXgHUA5F2YDvkSn2sXgQkwcPy2sx --url devnet`
-- [ ] Re-run tree delegate: `./node_modules/.bin/ts-node scripts/set-tree-delegate.ts`
-- [ ] Test non-admin wallet can register and receive soul-bound cNFT
+**Completed March 30, 2026:**
+- [x] `Anchor.toml` cluster switched from `Localnet` → `Devnet` ✅
+- [x] Devnet wallet funded — 7.39 SOL at `9ziKFvAU74jNa8RxnDZRxf2AGoDtCafpzvLXYZP5a1MX` ✅
+- [x] `anchor build` — 12 instructions compiled ✅
+- [x] `sync-idl.ps1` fixed (PS5 ternary bug) + IDL synced to frontend + SDK (41,898 bytes) ✅
+- [x] `anchor deploy --provider.cluster devnet` — **DEPLOYED** ✅
+- [x] On-chain confirmed: Slot `452055752`, Data `391,608 bytes`, Balance `2.72 SOL` ✅
 
 ---
 
-## Phase 3a — Metadata API [85%]
+## Phase 2 — Merkle Tree & Bubblegum cNFT Setup [100%] ✅ COMPLETE
 
-**Remaining tasks:**
-- [ ] `cd backend/api && vercel deploy --prod`
-- [ ] Confirm live URL responds: `curl https://<vercel-url>/metadata/MyAgent`
-- [ ] Update `Register.tsx` metadata host URL to live endpoint
+**Verified March 30, 2026:**
+- [x] Shared Merkle tree exists on devnet: `2EtpZX5evXj3hqMPmXgHUA5F2YDvkSn2sXgQkwcPy2sx`
+- [x] Tree delegate re-set to the program config PDA via `./node_modules/.bin/ts-node scripts/set-tree-delegate.ts`
+- [x] Non-admin wallet registration succeeded on devnet and produced `AgentIdentity` `8DLr8MYie8VHBiLkFcoE6YHtNeKdgz5PWy5tpSV3iqZA` with credential reference `A1Kae8U6HkVWhEKzoG4Wc7mAnuj2y8yt6fQMJPX4TFTg`
+
+---
+
+## Phase 3a — Metadata API [100%] ✅ LIVE
+
+**Verified March 30, 2026:**
+- [x] `cd backend/api && npx vercel --prod --yes`
+- [x] Live alias responds: `https://agentid-metadata-api.vercel.app/metadata/TestAgent`
+- [x] `Register.tsx` metadata URI updated to the live endpoint
 
 ---
 
@@ -56,7 +56,7 @@ Updated: March 30, 2026 — Phase-wise Devnet Deployment Tracking
 - [ ] Fill `backend/oracle/.env` with `ORACLE_WALLET_PATH`, `ORACLE_WEBHOOK_SECRET`, `HELIUS_WEBHOOK_AUTH`, `RPC_URL`
 - [ ] Run `npm run dev` in `backend/oracle/`
 - [ ] Run `ts-node src/register-webhook.ts` to register Helius webhook
-- [ ] Call `init_config` on devnet with oracle wallet as authority
+- [x] `init_config` already applied on devnet with oracle authority `9ziKFvAU74jNa8RxnDZRxf2AGoDtCafpzvLXYZP5a1MX`
 - [ ] Audit reputation formula for manipulation via weak signals (P1 open)
 
 ---
@@ -75,7 +75,7 @@ Updated: March 30, 2026 — Phase-wise Devnet Deployment Tracking
 
 **Remaining tasks:**
 - [ ] Confirm devnet RPC URL in `frontend/src/lib/` or `.env`
-- [ ] Update metadata URI in `Register.tsx` to live Vercel endpoint
+- [x] Update metadata URI in `Register.tsx` to live Vercel endpoint
 - [ ] Run `npm run build` and confirm zero errors
 - [ ] Deploy to Vercel/Netlify or test via `npm run dev` at `http://localhost:8080` with Phantom set to Devnet
 
@@ -84,14 +84,14 @@ Updated: March 30, 2026 — Phase-wise Devnet Deployment Tracking
 ## Phase 5 — End-to-End Verification [40%]
 
 **Remaining tasks:**
-- [ ] Register agent from non-admin wallet → confirm `AgentIdentity` PDA created
+- [x] Register agent from non-admin wallet → confirmed `AgentIdentity` PDA `8DLr8MYie8VHBiLkFcoE6YHtNeKdgz5PWy5tpSV3iqZA`
 - [ ] Confirm agent appears in `/agents` list
 - [ ] Agent profile loads at `/agent/:id` with correct on-chain data
-- [ ] `verify_agent` returns correct authorization
-- [ ] `rate_agent` updates `human_rating_x10` on-chain
-- [ ] Oracle `update_reputation` submits successfully
+- [x] `verify_agent` returns correct authorization — verified on devnet for action type `1`
+- [x] `rate_agent` updates `human_rating_x10` on-chain — verified to `50`
+- [x] Oracle `update_reputation` submits successfully — verified to `875`
 - [ ] Treasury: init → deposit → limits update → pause toggle all work
-- [ ] `agentid.xyz` metadata host HTTP reachability confirmed from external env
+- [x] Public metadata host HTTP reachability confirmed via `https://agentid-metadata-api.vercel.app/metadata/TestAgent`
 
 ---
 
@@ -103,7 +103,10 @@ Updated: March 30, 2026 — Phase-wise Devnet Deployment Tracking
 - IDLs: synced to `frontend/src/idl/`, `packages/sdk/src/idl/`
 - Shared Merkle Tree: `2EtpZX5evXj3hqMPmXgHUA5F2YDvkSn2sXgQkwcPy2sx`
 - Tree Delegate PDA: `HdtBWtW3smBmdjrZd5T5pJCF7e5XAdRxhHQu8KVmfQfk`
-- Phase 1 identity/reputation code: complete — deploying now
+- Phase 1 localnet verification: `anchor test --skip-local-validator --provider.cluster http://127.0.0.1:8899` passed on a fresh validator (`24 passing`)
+- Phase 1 devnet verification: `backend/scripts/verify-phase1-devnet.ts` proved non-admin register, `verify_agent`, `log_action`, `rate_agent`, and oracle-signed `update_reputation`
+- Metadata API live on Vercel: `https://agentid-metadata-api.vercel.app/metadata/TestAgent`
+- Phase 1 release gate: satisfied on this branch
 
 
 

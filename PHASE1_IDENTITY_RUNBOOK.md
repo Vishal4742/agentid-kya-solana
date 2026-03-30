@@ -75,7 +75,9 @@ Expected result:
 7. Deploy the program to devnet.
 8. Set the shared tree delegate to the program PDA.
    - Run `cd backend && ./node_modules/.bin/ts-node scripts/set-tree-delegate.ts`
-9. Run a manual registration from the frontend or a non-admin wallet.
+9. Run the automated devnet verification or perform the same flow manually.
+   - Recommended: `cd backend && ./node_modules/.bin/ts-node scripts/verify-phase1-devnet.ts`
+   - Manual alternative: run registration from the frontend or a non-admin wallet.
 10. Verify:
    - the `AgentIdentity` PDA exists
    - metadata URI is correct

@@ -7,6 +7,7 @@ export const SPL_NOOP_PROGRAM_ID = new anchor.web3.PublicKey("noopb9bkMVfRPU8Asb
 export const SPL_ACCOUNT_COMPRESSION_PROGRAM_ID = new anchor.web3.PublicKey("cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK");
 export const SHARED_MERKLE_TREE = new anchor.web3.PublicKey("2EtpZX5evXj3hqMPmXgHUA5F2YDvkSn2sXgQkwcPy2sx");
 export const ZERO_PAN_HASH = Array.from(Buffer.alloc(32));
+export const METADATA_API_BASE = "https://agentid-metadata-api.vercel.app";
 
 type RegisterOverrides = Partial<{
   name: string;
@@ -78,7 +79,7 @@ export function buildRegisterParams(
     gstin: params?.gstin ?? "27ABCDE1234F1Z5",
     panHash: params?.panHash ?? ZERO_PAN_HASH,
     serviceCategory: params?.serviceCategory ?? 1,
-    metadataUri: params?.metadataUri ?? "https://agentid.xyz/metadata/Test%20Agent.json",
+    metadataUri: params?.metadataUri ?? `${METADATA_API_BASE}/metadata/Test%20Agent.json`,
   };
 }
 

@@ -38,7 +38,7 @@ function buildReadonlyProvider(connection: Connection): AnchorProvider {
  * GET /api/metadata/[agentName]
  * Returns Metaplex-compatible JSON for the named agent.
  * The agent name is the same string stored in AgentIdentity.name.
- * This allows the Register wizard to set metadataUri = `https://agentid.xyz/metadata/${name}.json`
+ * This allows the Register wizard to set metadataUri = `https://agentid-metadata-api.vercel.app/metadata/${name}.json`
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });

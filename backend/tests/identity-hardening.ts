@@ -5,6 +5,7 @@ import { AgentidProgram } from "../target/types/agentid_program";
 import {
   buildRegisterParams,
   getRegisterAccounts,
+  METADATA_API_BASE,
   registerAgentForOwner,
 } from "./helpers";
 
@@ -68,7 +69,7 @@ describe("identity hardening", () => {
       canPublishContent: true,
       canAnalyzeData: true,
       maxTxSizeUsdc: new anchor.BN(50),
-      metadataUri: "https://agentid.xyz/metadata/hardened-agent.json",
+      metadataUri: `${METADATA_API_BASE}/metadata/hardened-agent.json`,
     });
   });
 
