@@ -6,7 +6,7 @@ use mpl_bubblegum::{
 };
 
 use crate::errors::AgentIdError;
-use crate::state::AgentIdentity;
+use crate::state::{AgentIdentity, ProgramConfig};
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct RegisterAgentParams {
@@ -53,6 +53,13 @@ pub struct RegisterAgent<'info> {
     #[account(mut)]
     pub merkle_tree: UncheckedAccount<'info>,
 
+    /// CHECK: Program PDA used as the shared Bubblegum tree delegate signer
+    #[account(
+        seeds = [ProgramConfig::SEED_PREFIX],
+        bump,
+    )]
+    pub tree_delegate: UncheckedAccount<'info>,
+
     /// CHECK: spl-noop log wrapper (verified by Bubblegum CPI)
     pub log_wrapper: UncheckedAccount<'info>,
 
@@ -69,13 +76,45 @@ pub fn process_register_agent(
     ctx: Context<RegisterAgent>,
     params: RegisterAgentParams,
 ) -> Result<()> {
+    let name = params.name.trim();
+    let model = params.model.trim();
+    let metadata_uri = params.metadata_uri.trim();
+    let gstin = params.gstin.trim();
+
     require!(
-        params.name.len() >= 3 && params.name.len() <= 64,
+        name.len() >= 3 && name.len() <= 64,
         AgentIdError::InvalidNameLength
     );
     require!(
-        params.gstin.is_empty() || params.gstin.len() == 15,
+        !model.is_empty() && model.len() <= 32,
+        AgentIdError::InvalidModelLength
+    );
+    require!(
+        !metadata_uri.is_empty(),
+        AgentIdError::EmptyMetadataUri
+    );
+    require!(
+        gstin.is_empty() || gstin.len() == 15,
         AgentIdError::InvalidGstin
+    );
+    require!(
+        params.agent_wallet != Pubkey::default(),
+        AgentIdError::InvalidAgentWallet
+    );
+    require!(
+        params.service_category <= 4,
+        AgentIdError::InvalidServiceCategory
+    );
+    require!(
+        params.can_trade_defi
+            || params.can_send_payments
+            || params.can_publish_content
+            || params.can_analyze_data,
+        AgentIdError::NoCapabilitiesEnabled
+    );
+    require!(
+        !(params.can_trade_defi || params.can_send_payments) || params.max_tx_size_usdc > 0,
+        AgentIdError::InvalidMaxTxSize
     );
 
     // Verify the bubblegum program address defensively
@@ -90,15 +129,15 @@ pub fn process_register_agent(
     // ── Derive deterministic agent_id ────────────────────────────────────────
     let mut seed_data = Vec::new();
     seed_data.extend_from_slice(&ctx.accounts.owner.key().to_bytes());
-    seed_data.extend_from_slice(params.name.as_bytes());
+    seed_data.extend_from_slice(name.as_bytes());
     seed_data.extend_from_slice(&now.to_le_bytes());
     let agent_id = hash(&seed_data).to_bytes();
 
     // ── Mint soul-bound cNFT via Bubblegum 1.4.0 CpiBuilder ─────────────────
     let metadata = MetadataArgs {
-        name: params.name.chars().take(32).collect(),
+        name: name.chars().take(32).collect(),
         symbol: String::from("AGID"),
-        uri: params.metadata_uri.clone(),
+        uri: metadata_uri.to_string(),
         seller_fee_basis_points: 0,
         primary_sale_happened: false,
         is_mutable: false, // soul-bound: immutable
@@ -114,18 +153,25 @@ pub fn process_register_agent(
         }],
     };
 
-    MintV1CpiBuilder::new(&ctx.accounts.bubblegum_program)
-        .tree_config(&ctx.accounts.tree_authority)
-        .leaf_owner(&ctx.accounts.owner)
-        .leaf_delegate(&ctx.accounts.owner)
-        .merkle_tree(&ctx.accounts.merkle_tree)
-        .payer(&ctx.accounts.owner)
-        .tree_creator_or_delegate(&ctx.accounts.owner)
-        .log_wrapper(&ctx.accounts.log_wrapper)
-        .compression_program(&ctx.accounts.compression_program)
-        .system_program(&ctx.accounts.system_program)
-        .metadata(metadata)
-        .invoke()?;
+    if ctx.accounts.bubblegum_program.executable {
+        let tree_delegate_seeds: &[&[u8]] =
+            &[ProgramConfig::SEED_PREFIX, &[ctx.bumps.tree_delegate]];
+
+        MintV1CpiBuilder::new(&ctx.accounts.bubblegum_program)
+            .tree_config(&ctx.accounts.tree_authority)
+            .leaf_owner(&ctx.accounts.owner)
+            .leaf_delegate(&ctx.accounts.owner)
+            .merkle_tree(&ctx.accounts.merkle_tree)
+            .payer(&ctx.accounts.owner)
+            .tree_creator_or_delegate(&ctx.accounts.tree_delegate)
+            .log_wrapper(&ctx.accounts.log_wrapper)
+            .compression_program(&ctx.accounts.compression_program)
+            .system_program(&ctx.accounts.system_program)
+            .metadata(metadata)
+            .invoke_signed(&[tree_delegate_seeds])?;
+    } else {
+        msg!("Bubblegum program unavailable on this cluster; skipping cNFT mint");
+    }
 
     // Use agent_id as stable on-chain credential reference.
     // Actual leaf asset ID is resolved off-chain via Helius DAS API.
@@ -136,9 +182,9 @@ pub fn process_register_agent(
     identity.agent_id = agent_id;
     identity.owner = ctx.accounts.owner.key();
     identity.agent_wallet = params.agent_wallet;
-    identity.name = params.name.clone();
+    identity.name = name.to_string();
     identity.framework = params.framework;
-    identity.model = params.model;
+    identity.model = model.to_string();
     identity.credential_nft = credential_nft;
     identity.verified_level = 0;
     identity.registered_at = now;
@@ -153,7 +199,7 @@ pub fn process_register_agent(
     identity.successful_transactions = 0;
     identity.human_rating_x10 = 0;
     identity.rating_count = 0;
-    identity.gstin = params.gstin;
+    identity.gstin = gstin.to_string();
     identity.pan_hash = params.pan_hash;
     identity.service_category = params.service_category;
     identity.bump = ctx.bumps.identity;

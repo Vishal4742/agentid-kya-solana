@@ -865,6 +865,32 @@ export type AgentidProgram = {
           "writable": true
         },
         {
+          "name": "treeDelegate",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  103,
+                  114,
+                  97,
+                  109,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "logWrapper"
         },
         {
@@ -1319,38 +1345,83 @@ export type AgentidProgram = {
     },
     {
       "code": 6010,
+      "name": "invalidModelLength",
+      "msg": "Model name must be between 1 and 32 characters"
+    },
+    {
+      "code": 6011,
+      "name": "emptyMetadataUri",
+      "msg": "Metadata URI is required"
+    },
+    {
+      "code": 6012,
+      "name": "invalidAgentWallet",
+      "msg": "Agent wallet must be a real public key"
+    },
+    {
+      "code": 6013,
+      "name": "noCapabilitiesEnabled",
+      "msg": "At least one agent capability must be enabled"
+    },
+    {
+      "code": 6014,
+      "name": "invalidMaxTxSize",
+      "msg": "Payment-enabled agents must declare a non-zero max USDC transaction limit"
+    },
+    {
+      "code": 6015,
+      "name": "invalidServiceCategory",
+      "msg": "Service category is out of range"
+    },
+    {
+      "code": 6016,
+      "name": "invalidMemoLength",
+      "msg": "Action memo must be at most 64 characters"
+    },
+    {
+      "code": 6017,
       "name": "treasuryPaused",
       "msg": "Treasury is paused for emergency"
     },
     {
-      "code": 6011,
+      "code": 6018,
       "name": "exceedsPerTxLimit",
       "msg": "Payment amount exceeds per-transaction limit"
     },
     {
-      "code": 6012,
+      "code": 6019,
       "name": "exceedsDailyLimit",
       "msg": "Payment amount exceeds daily spending limit"
     },
     {
-      "code": 6013,
+      "code": 6020,
       "name": "requiresMultisig",
       "msg": "Transaction amount requires multisig approval"
     },
     {
-      "code": 6014,
+      "code": 6021,
       "name": "unauthorizedTreasuryOwner",
       "msg": "Only the treasury owner can perform this action"
     },
     {
-      "code": 6015,
+      "code": 6022,
       "name": "invalidRecipient",
       "msg": "Recipient does not match the provided token account owner"
     },
     {
-      "code": 6016,
+      "code": 6023,
       "name": "arithmeticError",
       "msg": "Arithmetic overflow or underflow"
+    },
+    {
+      "code": 6024,
+      "name": "invalidActionType",
+      "msg": "Unknown action type — must be 0=DeFiTrade 1=Payment 2=ContentPublish 3=DataQuery"
+    },
+    {
+      "code": 6025,
+      "name": "unauthorizedLogAction",
+      "msg": "Only the identity owner can log actions"
     }
   ],
   "types": [

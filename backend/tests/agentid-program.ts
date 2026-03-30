@@ -2,6 +2,14 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { AgentidProgram } from "../target/types/agentid_program";
 import { assert } from "chai";
+import {
+  TOKEN_PROGRAM_ID,
+  createMint,
+  createAccount,
+  getOrCreateAssociatedTokenAccount,
+  mintTo,
+} from "@solana/spl-token";
+import { ensureAgentRegistered } from "./helpers";
 
 describe("agentid-program", () => {
   // Configure the client to use the local cluster.
@@ -15,7 +23,6 @@ describe("agentid-program", () => {
   let agentIdentityPda: anchor.web3.PublicKey;
   let programConfigPda: anchor.web3.PublicKey;
 
-  const SEED_AGENT_IDENTITY = Buffer.from("agent-identity");
   const SEED_PROGRAM_CONFIG = Buffer.from("program-config");
   const SEED_AGENT_ACTION = Buffer.from("agent-action");
 
@@ -32,10 +39,7 @@ describe("agentid-program", () => {
       program.programId
     );
 
-    [agentIdentityPda] = anchor.web3.PublicKey.findProgramAddressSync(
-      [SEED_AGENT_IDENTITY, provider.wallet.publicKey.toBuffer()],
-      program.programId
-    );
+    agentIdentityPda = await ensureAgentRegistered(program, provider);
   });
 
   it("Initializes the program config", async () => {
@@ -53,28 +57,6 @@ describe("agentid-program", () => {
   });
 
   it("Registers a new agent", async () => {
-    const params = {
-      name: "Test Agent",
-      framework: 1,
-      model: "GPT-4",
-      agentWallet: provider.wallet.publicKey,
-      canTradeDefi: true,
-      canSendPayments: true,
-      canPublishContent: true,
-      canAnalyzeData: true,
-      maxTxSizeUsdc: new anchor.BN(100),
-      gstin: "27ABCDE1234F1Z5",
-      panHash: Array.from(Buffer.alloc(32, 1)),
-      serviceCategory: 1,
-    };
-
-    await program.methods
-      .registerAgent(params)
-      .accounts({
-        owner: provider.wallet.publicKey,
-      })
-      .rpc();
-
     const identityAccount = await program.account.agentIdentity.fetch(agentIdentityPda);
     assert.equal(identityAccount.name, "Test Agent");
     assert.equal(identityAccount.verifiedLevel, 0); // Unverified
@@ -181,7 +163,6 @@ describe("agentid-program", () => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Treasury tests
 // ─────────────────────────────────────────────────────────────────────────────
-import { TOKEN_PROGRAM_ID, createMint, createAccount, mintTo, getAccount } from "@solana/spl-token";
 
 describe("treasury", () => {
   const provider = anchor.AnchorProvider.env();
@@ -212,6 +193,7 @@ describe("treasury", () => {
       [SEED_AGENT_IDENTITY, provider.wallet.publicKey.toBuffer()],
       program.programId,
     );
+    await ensureAgentRegistered(program, provider);
     [treasuryPda] = anchor.web3.PublicKey.findProgramAddressSync(
       [SEED_AGENT_TREASURY, agentIdentityPda.toBuffer()],
       program.programId,
@@ -309,13 +291,6 @@ describe("treasury", () => {
   it("autonomous_payment fails when treasury is paused (TreasuryPaused)", async () => {
     // Treasury is currently paused from the previous test.
     // Ensure it stays paused for this assertion.
-    const agentWallet = anchor.web3.Keypair.generate();
-    const sig = await provider.connection.requestAirdrop(
-      agentWallet.publicKey,
-      anchor.web3.LAMPORTS_PER_SOL,
-    );
-    await provider.connection.confirmTransaction(sig, "confirmed");
-
     // Create a recipient USDC ATA to satisfy the accounts constraint.
     const recipientKeypair = anchor.web3.Keypair.generate();
     const recipientAta = await createAccount(
@@ -325,10 +300,14 @@ describe("treasury", () => {
       recipientKeypair.publicKey,
     );
 
-    // Fetch treasury ATA (was not created in previous tests because no deposit happened yet —
-    // use the derivation the program would expect).
-    const { getAssociatedTokenAddress } = await import("@solana/spl-token");
-    const treasuryUsdcAta = await getAssociatedTokenAddress(usdcMint, treasuryPda, true);
+    const treasuryTokenAccount = await getOrCreateAssociatedTokenAccount(
+      provider.connection,
+      mintAuthority,
+      usdcMint,
+      treasuryPda,
+      true,
+    );
+    const treasuryUsdcAta = treasuryTokenAccount.address;
 
     try {
       await program.methods
@@ -341,14 +320,13 @@ describe("treasury", () => {
         .accounts({
           treasury: treasuryPda,
           agentIdentity: agentIdentityPda,
-          agentWallet: agentWallet.publicKey,
+          agentWallet: provider.wallet.publicKey,
           owner: provider.wallet.publicKey,
           treasuryUsdc: treasuryUsdcAta,
           recipientUsdc: recipientAta,
           usdcMint,
           tokenProgram: TOKEN_PROGRAM_ID,
         })
-        .signers([agentWallet])
         .rpc();
 
       // If the transaction succeeds when the treasury is paused, the test should fail.
