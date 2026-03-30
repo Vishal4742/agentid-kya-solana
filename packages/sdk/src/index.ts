@@ -124,6 +124,13 @@ function deriveIdentityPda(ownerPubkey: PublicKey): [PublicKey, number] {
   );
 }
 
+function deriveProgramConfigPda(): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("program-config")],
+    PROGRAM_KEY,
+  );
+}
+
 /**
  * Derive the Bubblegum tree authority PDA for a given Merkle tree.
  * Pass the result as `treeAuthority` in RegisterAgentParams.
@@ -306,6 +313,7 @@ export class AgentIdClient {
 
     const merkleTreeKey = new PublicKey(params.merkleTree);
     const treeAuthorityKey = new PublicKey(params.treeAuthority);
+    const [treeDelegatePda] = deriveProgramConfigPda();
 
     const tx = await (this.program.methods as any)
       .registerAgent(registerParams)
@@ -314,6 +322,7 @@ export class AgentIdClient {
         owner: ownerPubkey,
         treeAuthority: treeAuthorityKey,
         merkleTree: merkleTreeKey,
+        treeDelegate: treeDelegatePda,
         logWrapper: SPL_NOOP_KEY,
         compressionProgram: SPL_COMPRESSION_KEY,
         bubblegumProgram: BUBBLEGUM_KEY,

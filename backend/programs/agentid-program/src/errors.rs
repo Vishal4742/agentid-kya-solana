@@ -32,6 +32,27 @@ pub enum AgentIdError {
     #[msg("GSTIN must be exactly 15 characters (leave blank to skip)")]  
     InvalidGstin,
 
+    #[msg("Model name must be between 1 and 32 characters")]
+    InvalidModelLength,
+
+    #[msg("Metadata URI is required")]
+    EmptyMetadataUri,
+
+    #[msg("Agent wallet must be a real public key")]
+    InvalidAgentWallet,
+
+    #[msg("At least one agent capability must be enabled")]
+    NoCapabilitiesEnabled,
+
+    #[msg("Payment-enabled agents must declare a non-zero max USDC transaction limit")]
+    InvalidMaxTxSize,
+
+    #[msg("Service category is out of range")]
+    InvalidServiceCategory,
+
+    #[msg("Action memo must be at most 64 characters")]
+    InvalidMemoLength,
+
     #[msg("Treasury is paused for emergency")]
     TreasuryPaused,
 

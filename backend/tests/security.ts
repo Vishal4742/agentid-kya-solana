@@ -8,9 +8,10 @@
  */
 
 import * as anchor from "@coral-xyz/anchor";
-import { Program, AnchorProvider } from "@coral-xyz/anchor";
+import { Program } from "@coral-xyz/anchor";
 import { AgentidProgram } from "../target/types/agentid_program";
 import { assert } from "chai";
+import { ZERO_PAN_HASH, ensureAgentRegistered } from "./helpers";
 
 describe("security — verify_agent fail-closed", () => {
   const provider = anchor.AnchorProvider.env();
@@ -53,39 +54,33 @@ describe("security — verify_agent fail-closed", () => {
         .rpc();
     } catch (_) { /* already initialized — ok */ }
 
-    try {
-      await program.methods
-        .registerAgent({
-          name: "SecurityTestAgent",
-          framework: 0,
-          model: "GPT-4",
-          agentWallet: provider.wallet.publicKey,
-          canTradeDefi: true,
-          canSendPayments: true,
-          canPublishContent: false,
-          canAnalyzeData: false,
-          maxTxSizeUsdc: new anchor.BN(50),
-          gstin: null,
-          panHash: null,
-          serviceCategory: 0,
-          metadataUri: "https://agentid.xyz/metadata/SecurityTestAgent.json",
-        })
-        .accounts({ owner: provider.wallet.publicKey })
-        .rpc();
-    } catch (_) { /* already registered — ok */ }
+    agentIdentityPda = await ensureAgentRegistered(program, provider, {
+      name: "SecurityTestAgent",
+      framework: 0,
+      model: "GPT-4",
+      canTradeDefi: true,
+      canSendPayments: true,
+      canPublishContent: false,
+      canAnalyzeData: false,
+      maxTxSizeUsdc: new anchor.BN(50),
+      gstin: "",
+      panHash: ZERO_PAN_HASH,
+      serviceCategory: 0,
+      metadataUri: "https://agentid.xyz/metadata/SecurityTestAgent.json",
+    });
   });
 
   // ─── verify_agent: known valid action types ─────────────────────────────────
 
   it("verify_agent authorizes a known action within capabilities (action_type = 1 / payment)", async () => {
     const result = await program.methods
-      .verifyAgent(1, new anchor.BN(10))
+      .verifyAgent(1)
       // @ts-ignore
       .accounts({ identity: agentIdentityPda })
       .view();
 
-    // The agent has canSendPayments=true and maxTxSizeUsdc=50 USDC > 10 USDC
-    assert.ok(result || !result, "verifyAgent should return without error");
+    assert.equal(result.isRegistered, true);
+    assert.equal(result.isAuthorized, true);
   });
 
   // ─── verify_agent: unknown action_type must fail closed ─────────────────────
@@ -93,17 +88,33 @@ describe("security — verify_agent fail-closed", () => {
   it("verify_agent rejects unknown action_type with InvalidActionType error", async () => {
     try {
       await program.methods
-        .verifyAgent(99, new anchor.BN(1)) // 99 = unknown action type
+        .verifyAgent(99) // 99 = unknown action type
         // @ts-ignore
         .accounts({ identity: agentIdentityPda })
         .view();
 
       assert.fail("Expected InvalidActionType error, but the call succeeded");
     } catch (err: any) {
-      const msg: string = err?.message ?? String(err);
+      const msg = [
+        err?.message,
+        err?.error?.errorMessage,
+        err?.error?.errorCode?.code,
+        err?.simulationResponse?.value?.logs?.join("\n"),
+        err?.logs?.join("\n"),
+        (() => {
+          try {
+            return JSON.stringify(err);
+          } catch {
+            return "";
+          }
+        })(),
+      ]
+        .filter(Boolean)
+        .join("\n");
       const isExpectedError =
         msg.includes("InvalidActionType") ||
-        msg.includes("6010"); // anchor error code for InvalidActionType
+        msg.includes("6010") ||
+        msg.includes("0x177a"); // 6010 in hex
       assert.ok(
         isExpectedError,
         `Expected InvalidActionType, got: ${msg.slice(0, 200)}`,

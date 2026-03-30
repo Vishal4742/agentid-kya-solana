@@ -47,6 +47,8 @@ pub fn process_log_action(ctx: Context<LogAction>, params: LogActionParams) -> R
         ctx.accounts.identity.owner,
         AgentIdError::UnauthorizedLogAction
     );
+    require!(params.action_type <= 3, AgentIdError::InvalidActionType);
+    require!(params.memo.chars().count() <= 64, AgentIdError::InvalidMemoLength);
 
     let now = Clock::get()?.unix_timestamp;
     let identity = &mut ctx.accounts.identity;

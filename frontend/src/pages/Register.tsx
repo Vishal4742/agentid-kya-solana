@@ -13,13 +13,14 @@ import { Slider } from "@/components/ui/slider";
 const MPL_BUBBLEGUM_PROGRAM = new PublicKey("BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY");
 const SPL_NOOP_PROGRAM = new PublicKey("noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV");
 const SPL_ACCOUNT_COMPRESSION_PROGRAM = new PublicKey("cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK");
-// Public shared Metaplex devnet tree (pre-funded, 1M capacity)
-const SHARED_MERKLE_TREE = new PublicKey("B7SmmTELkd8gQxVa54VFHDqAF4vPNfuFzAycbAvmkNt2");
+// Project-owned devnet tree created for AgentID registration
+const SHARED_MERKLE_TREE = new PublicKey("2EtpZX5evXj3hqMPmXgHUA5F2YDvkSn2sXgQkwcPy2sx");
 // Tree authority PDA = PDA(tree_address, bubblegum_program)
 const [TREE_AUTHORITY] = PublicKey.findProgramAddressSync(
   [SHARED_MERKLE_TREE.toBytes()],
   MPL_BUBBLEGUM_PROGRAM
 );
+const PROGRAM_CONFIG_SEED = new TextEncoder().encode("program-config");
 
 const STEPS = ["Basic Info", "Capabilities", "India Compliance", "Register Agent"];
 const FRAMEWORKS = ["ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"];
@@ -84,6 +85,10 @@ export default function Register() {
       const panHash = Array.from({ length: 32 }, () => 0);
       // service_category u8 enum
       const serviceCategory = form.skipIndia ? 0 : SERVICE_CATEGORIES.indexOf(form.serviceCategory);
+      const [treeDelegate] = PublicKey.findProgramAddressSync(
+        [PROGRAM_CONFIG_SEED],
+        program.programId,
+      );
 
       const tx = await program.methods
         .registerAgent({
@@ -104,6 +109,7 @@ export default function Register() {
         .accounts({
           treeAuthority: TREE_AUTHORITY,
           merkleTree: SHARED_MERKLE_TREE,
+          treeDelegate,
           logWrapper: SPL_NOOP_PROGRAM,
           compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM,
           bubblegumProgram: MPL_BUBBLEGUM_PROGRAM,

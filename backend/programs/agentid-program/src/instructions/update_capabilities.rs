@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use crate::errors::AgentIdError;
 use crate::state::AgentIdentity;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
@@ -28,6 +29,18 @@ pub fn process_update_capabilities(
     ctx: Context<UpdateCapabilities>,
     params: UpdateCapabilitiesParams,
 ) -> Result<()> {
+    require!(
+        params.can_trade_defi
+            || params.can_send_payments
+            || params.can_publish_content
+            || params.can_analyze_data,
+        AgentIdError::NoCapabilitiesEnabled
+    );
+    require!(
+        !(params.can_trade_defi || params.can_send_payments) || params.max_tx_size_usdc > 0,
+        AgentIdError::InvalidMaxTxSize
+    );
+
     let identity = &mut ctx.accounts.identity;
 
     identity.can_trade_defi      = params.can_trade_defi;
