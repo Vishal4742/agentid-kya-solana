@@ -1,23 +1,116 @@
 # AgentID Project Tasks
 
-Updated: March 30, 2026 (P1 code deliverables complete — tests, oracle hardening, SDK tests, dashboard cleanup)
+Updated: March 30, 2026 — Phase-wise Devnet Deployment Tracking
+
+---
+
+## 🚀 Devnet Deployment — Phase Status
+
+| Phase | Description | % Done | Status |
+|-------|-------------|--------|--------|
+| **Phase 1** | Anchor Program Build & Deploy | **95%** | 🟡 In Progress |
+| **Phase 2** | Merkle Tree & Bubblegum cNFT Setup | **90%** | 🟡 Needs re-verify |
+| **Phase 3a** | Metadata API (Vercel) | **85%** | 🟠 Not deployed |
+| **Phase 3b** | Oracle Service | **75%** | 🟠 Env missing |
+| **Phase 3c** | x402 Middleware | **60%** | 🔴 Deferred |
+| **Phase 4** | Frontend Devnet Deployment | **80%** | 🟡 Config needed |
+| **Phase 5** | End-to-End Verification | **40%** | 🔴 Needs E2E run |
+
+**Overall Devnet Readiness: ~75%**
+
+---
+
+## Phase 1 — Anchor Program Build & Deploy [95%]
+
+**Remaining tasks:**
+- [x] `Anchor.toml` cluster switched from `Localnet` → `Devnet` ✅ (just fixed)
+- [ ] Confirm devnet wallet has enough SOL (`solana balance --url devnet`)
+- [ ] Run `anchor build` in `backend/`
+- [ ] Run `.\scripts\sync-idl.ps1` after build
+- [ ] Run `anchor deploy --provider.cluster devnet`
+- [ ] Confirm program on-chain: `solana program show Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF --url devnet`
+
+---
+
+## Phase 2 — Merkle Tree & Bubblegum cNFT Setup [90%]
+
+**Remaining tasks:**
+- [ ] Verify Merkle tree still exists: `solana account 2EtpZX5evXj3hqMPmXgHUA5F2YDvkSn2sXgQkwcPy2sx --url devnet`
+- [ ] Re-run tree delegate: `./node_modules/.bin/ts-node scripts/set-tree-delegate.ts`
+- [ ] Test non-admin wallet can register and receive soul-bound cNFT
+
+---
+
+## Phase 3a — Metadata API [85%]
+
+**Remaining tasks:**
+- [ ] `cd backend/api && vercel deploy --prod`
+- [ ] Confirm live URL responds: `curl https://<vercel-url>/metadata/MyAgent`
+- [ ] Update `Register.tsx` metadata host URL to live endpoint
+
+---
+
+## Phase 3b — Oracle Service [75%]
+
+**Remaining tasks:**
+- [ ] Fill `backend/oracle/.env` with `ORACLE_WALLET_PATH`, `ORACLE_WEBHOOK_SECRET`, `HELIUS_WEBHOOK_AUTH`, `RPC_URL`
+- [ ] Run `npm run dev` in `backend/oracle/`
+- [ ] Run `ts-node src/register-webhook.ts` to register Helius webhook
+- [ ] Call `init_config` on devnet with oracle wallet as authority
+- [ ] Audit reputation formula for manipulation via weak signals (P1 open)
+
+---
+
+## Phase 3c — x402 Middleware [60%] ⚠️ Deferred
+
+**Decision:** Defer to separate off-chain service. On-chain `autonomous_payment` is canonical payment path.
+
+**Remaining (not blocking launch):**
+- [ ] Replace in-memory replay Map with Redis/shared store for production
+- [ ] Define exact x402 settlement validation rules
+
+---
+
+## Phase 4 — Frontend Devnet Deployment [80%]
+
+**Remaining tasks:**
+- [ ] Confirm devnet RPC URL in `frontend/src/lib/` or `.env`
+- [ ] Update metadata URI in `Register.tsx` to live Vercel endpoint
+- [ ] Run `npm run build` and confirm zero errors
+- [ ] Deploy to Vercel/Netlify or test via `npm run dev` at `http://localhost:8080` with Phantom set to Devnet
+
+---
+
+## Phase 5 — End-to-End Verification [40%]
+
+**Remaining tasks:**
+- [ ] Register agent from non-admin wallet → confirm `AgentIdentity` PDA created
+- [ ] Confirm agent appears in `/agents` list
+- [ ] Agent profile loads at `/agent/:id` with correct on-chain data
+- [ ] `verify_agent` returns correct authorization
+- [ ] `rate_agent` updates `human_rating_x10` on-chain
+- [ ] Oracle `update_reputation` submits successfully
+- [ ] Treasury: init → deposit → limits update → pause toggle all work
+- [ ] `agentid.xyz` metadata host HTTP reachability confirmed from external env
+
+---
 
 ## Current State
 
-- Anchor program deployed to devnet: `Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF`
-- `register_agent` mints a soul-bound Bubblegum cNFT (1.4.0 CpiBuilder, shared devnet Merkle tree)
-- Treasury is live on devnet; `TREASURY_ENABLED=true` in Dashboard
-- Negative test for `autonomous_payment` while paused: implemented ✅
-- All IDLs resynced (frontend + API) after latest build
-- Metadata API has both hex-ID and name-based routes
-- Frontend dev server at `http://localhost:8080`
+- `Anchor.toml` cluster: **Devnet** (switched March 30, 2026)
+- Program ID: `Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF`
+- Treasury: `TREASURY_ENABLED=true` in `Dashboard.tsx` line 23
+- IDLs: synced to `frontend/src/idl/`, `packages/sdk/src/idl/`
+- Shared Merkle Tree: `2EtpZX5evXj3hqMPmXgHUA5F2YDvkSn2sXgQkwcPy2sx`
+- Tree Delegate PDA: `HdtBWtW3smBmdjrZd5T5pJCF7e5XAdRxhHQu8KVmfQfk`
+- Phase 1 identity/reputation code: complete — deploying now
 
-The main remaining pieces are SDK/plugin sync, x402 hardening, oracle robustness, and mainnet prep.
+
 
 ## P0: Fix Before Public Demo Or External Use
 
 - [x] Regenerate and resync all shipped IDLs whenever the Anchor program changes — **Done: `scripts/sync-idl.ps1` created; `backend/target/idl/*.json` and `*.ts` copied to `packages/sdk/src/idl/` and `frontend/src/idl/` (12 instructions confirmed)**
-- [x] Align `packages/sdk` with the exact current on-chain schema (12-instruction IDL) and verify all public methods against the live IDL — **Done: `registerAgent()` now passes all 8 Bubblegum CPI accounts (identity, owner, treeAuthority, merkleTree, logWrapper, compressionProgram, bubblegumProgram, systemProgram); `metadataUri` + `merkleTree` + `treeAuthority` added to `RegisterAgentParams`; `deriveTreeAuthority()` helper exported; `autonomousPayment()` method added; `verifyAgent()` fail-closed for unknown action types**
+- [x] Align `packages/sdk` with the exact current on-chain schema (12-instruction IDL) and verify all public methods against the live IDL — **Done: `registerAgent()` now passes the Bubblegum CPI accounts including `treeDelegate`; `metadataUri` + `merkleTree` + `treeAuthority` added to `RegisterAgentParams`; `deriveTreeAuthority()` helper exported; `autonomousPayment()` method added; `verifyAgent()` fail-closed for unknown action types**
 - [x] Align `packages/eliza-plugin` behavior with the current SDK and on-chain verification rules — **Done: plugin re-exports `TreasuryInfo` + `RegisterAgentParams`; description updated to v2; `verifyAgent` fail-closed path propagated**
 - [x] Remove or clearly gate any frontend UI that implies treasury/x402 support if the active branch does not expose those instructions — **Done: `TREASURY_ENABLED=false` flag added to `Dashboard.tsx` line 23; treasury panel shows "Coming Soon" banner**
 - [x] Audit treasury UI and wire it to real on-chain calls — **Done: `handleInitTreasury`, `handleSaveLimits`, `togglePauseReal`, and `fetchTreasury` all call live program methods in `Dashboard.tsx`**
@@ -31,6 +124,9 @@ The main remaining pieces are SDK/plugin sync, x402 hardening, oracle robustness
 - [x] Revisit `verify_agent` behavior for unknown action types and fail closed — **Done (P0)**
 - [x] Add stronger authorization constraints around `log_action` — **Done (P0)**
 - [x] Review `init_config` initialization flow to prevent first-writer takeover — **Done: `init` constraint prevents re-init; test in security.ts confirms it rejects a second caller**
+- [x] Harden identity registration and capability updates against invalid inputs — **Done: registration now rejects empty metadata URIs, default agent wallets, empty capability sets, invalid service categories, and zero payment limits; capability updates reject disabling every capability**
+- [x] Add negative tests for Phase 1 identity edge cases — **Done: `backend/tests/identity-hardening.ts` covers registration validation and `log_action` memo/action guards**
+- [x] Add an operator runbook for Phase 1 identity deployment and recovery — **Done: `PHASE1_IDENTITY_RUNBOOK.md`**
 
 ## P1: Treasury And Payment Layer
 
