@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from "http";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { Program, AnchorProvider, Idl } from "@coral-xyz/anchor";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const idl = require("../../idl/agentid_program.json") as Idl;
+const idl = require("../idl/agentid_program.json") as Idl;
 
 type VercelRequest = IncomingMessage & { query: Record<string, string | string[]> };
 type VercelResponse = ServerResponse & {

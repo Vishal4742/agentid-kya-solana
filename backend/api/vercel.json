@@ -1,21 +1,18 @@
 {
   "version": 2,
   "functions": {
-    "metadata/[agentId].ts": {
-      "runtime": "@vercel/node@3.2.24"
-    },
-    "metadata/[agentName].ts": {
+    "api/metadata/[slug].ts": {
       "runtime": "@vercel/node@3.2.24"
     }
   },
   "rewrites": [
     {
-      "source": "/metadata/:agentName",
-      "destination": "/metadata/:agentName"
+      "source": "/metadata/:slug",
+      "destination": "/api/metadata/:slug"
     },
     {
-      "source": "/api/metadata/:agentId",
-      "destination": "/metadata/:agentId"
+      "source": "/api/metadata/:slug",
+      "destination": "/api/metadata/:slug"
     }
   ]
 }
