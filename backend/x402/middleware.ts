@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import { Connection, ParsedTransactionWithMeta, PublicKey } from "@solana/web3.js";
 import * as dotenv from "dotenv";
+import path from "path";
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com";
 const DEVNET_USDC_MINT = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
