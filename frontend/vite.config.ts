@@ -21,29 +21,7 @@ export default defineConfig(({ mode }) => ({
   build: {
     reportCompressedSize: false,
     sourcemap: false,          // never emit sourcemaps in prod
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (!id.includes("node_modules")) {
-            return;
-          }
-
-          if (id.includes("@coral-xyz/anchor") || id.includes("@solana/")) {
-            return "solana";
-          }
-
-          if (id.includes("react") || id.includes("scheduler")) {
-            return "react-vendor";
-          }
-
-          if (id.includes("recharts") || id.includes("d3-")) {
-            return "charts";
-          }
-
-          return "vendor";
-        },
-      },
-    },
+    chunkSizeWarningLimit: 1000,
     // Strip all console.* calls and debugger statements from the production bundle
     minify: "esbuild",
   },
