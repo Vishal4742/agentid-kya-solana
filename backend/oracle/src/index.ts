@@ -50,11 +50,33 @@ console.log(`📜 Loaded Program: ${PROGRAM_ID.toBase58()}`);
 
 // Seed prefixes from Anchor program
 const CONFIG_SEED = Buffer.from("program-config");
+const TREASURY_SEED = Buffer.from("agent-treasury");
 
 const [configPda] = PublicKey.findProgramAddressSync(
     [CONFIG_SEED],
     PROGRAM_ID
 );
+
+/**
+ * Compute the scoreVolume component (15%, 0-150 pts) by reading AgentTreasury.
+ * Falls back to 0 if treasury hasn't been initialized yet.
+ * Formula: min(totalEarned_usdc / 100_000, 1) * 150
+ */
+async function computeVolumeScore(agentIdentityPda: PublicKey): Promise<number> {
+    try {
+        const [treasuryPda] = PublicKey.findProgramAddressSync(
+            [TREASURY_SEED, agentIdentityPda.toBytes()],
+            PROGRAM_ID
+        );
+        const treasury = await (program.account as any).agentTreasury.fetch(treasuryPda);
+        // totalEarned is stored in lamport-like USDC micro-units (6 decimals)
+        const totalEarnedUsdc = Number(treasury.totalEarned) / 1_000_000;
+        return Math.min(totalEarnedUsdc / 100_000, 1) * 150;
+    } catch {
+        // Treasury not initialized yet — agent has no volume
+        return 0;
+    }
+}
 
 // ── Webhook Endpoint ────────────────────────────────────────────────────────
 
@@ -155,9 +177,9 @@ app.post("/webhook", async (req, res) => {
             const daysSinceReg = (Date.now() / 1000 - regAt) / (60 * 60 * 24);
             const scoreLongevity = Math.min(Math.max(daysSinceReg, 0) / 365, 1) * 150;
 
-            // Tx volume: min(total_usdc/100000, 1) * 150 (15%)
-            // (Total USDC volume is tracked via AgentTreasury in Phase 8 - assuming 0 for now)
-            const scoreVolume = 0;
+            // Tx volume: min(totalEarned_usdc/100000, 1) * 150 (15%)
+            // Reads from AgentTreasury PDA; falls back to 0 if not initialized
+            const scoreVolume = await computeVolumeScore(agentIdentityPda);
 
             // Verification: Unverified=0, Email=50, KYB=100, Audited=200 (10%)
             let scoreVerification = 0;
@@ -169,7 +191,7 @@ app.post("/webhook", async (req, res) => {
             const totalScore = Math.floor(scoreSuccess + scoreRating + scoreLongevity + scoreVolume + scoreVerification);
             const newScore = Math.min(Math.max(totalScore, 0), 1000);
 
-            console.log(`   └─ Computed Score: ${newScore} (Success: ${Math.round(scoreSuccess)}, Rating: ${Math.round(scoreRating)}, Longevity: ${Math.round(scoreLongevity)}, Verif: ${scoreVerification})`);
+            console.log(`   └─ Computed Score: ${newScore} (Success: ${Math.round(scoreSuccess)}, Rating: ${Math.round(scoreRating)}, Longevity: ${Math.round(scoreLongevity)}, Volume: ${Math.round(scoreVolume)}, Verif: ${scoreVerification})`);
             console.log(`   └─ Calling update_reputation(${newScore}) for ${agentIdentityPda.toBase58().slice(0, 8)}...`);
 
             // 4. Update the computed score on-chain
@@ -223,7 +245,8 @@ cron.schedule("0 * * * *", async () => {
             const daysSinceReg = (Date.now() / 1000 - regAt) / (60 * 60 * 24);
             const scoreLongevity = Math.min(Math.max(daysSinceReg, 0) / 365, 1) * 150;
 
-            const scoreVolume = 0; // Total USDC volume assumed 0 for now (Phase 8 feature)
+            // Tx volume: reads from AgentTreasury PDA; falls back to 0
+            const scoreVolume = await computeVolumeScore(agentIdentityPda);
 
             let scoreVerification = 0;
             if (verLevel === 1) scoreVerification = 50;

@@ -133,7 +133,7 @@ export const agentIdPlugin: ElizaPlugin = {
         if (!identity) {
           return (
             "This agent has no AgentID credential. " +
-            "Register at https://agentid.xyz/register"
+            "Register at https://agentid-kya-solana.vercel.app/register"
           );
         }
 

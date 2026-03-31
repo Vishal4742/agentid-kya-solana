@@ -16,6 +16,11 @@ type VercelResponse = ServerResponse & {
 const PROGRAM_ID = (idl as unknown as { address: string }).address;
 const ACTIVE_RPC_URL = process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
 
+// Frontend base URL — no custom domain needed.
+// Defaults to the auto-generated Vercel preview URL.
+// Set FRONTEND_BASE in Vercel project env vars once you know your deployment URL.
+const FRONTEND_BASE = process.env.FRONTEND_BASE ?? "https://agentid-kya-solana.vercel.app";
+
 const FRAMEWORKS = ["ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"];
 const VERIFIED_LEVELS = ["Unverified", "EmailVerified", "KYBVerified", "Audited"];
 const CATEGORIES = [
@@ -58,7 +63,6 @@ export default async function handler(
     req: VercelRequest,
     res: VercelResponse
 ) {
-    // Only GET
     if (req.method !== "GET") {
         return res.status(405).json({ error: "Method not allowed" });
     }
@@ -76,14 +80,11 @@ export default async function handler(
 
         const connection = new Connection(ACTIVE_RPC_URL, "confirmed");
         const provider = buildReadonlyProvider(connection);
-        // Anchor 0.30: Program ID is already in idl.address — pass only (idl, provider)
         const program = new Program(idl, provider);
 
         const agentIdBs58 = utils.bytes.bs58.encode(Buffer.from(agentIdBytes));
 
-        // ── Fetch specific AgentIdentity account by agent_id field ───────────
-        // Use memcmp to filter on the RPC side instead of fetching all accounts
-        // offset 8 is where agent_id: [u8; 32] starts after the 8-byte discriminator.
+        // Use memcmp to filter on the RPC side — offset 8 is where agent_id starts
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const matchedAccounts = await (program.account as any).agentIdentity.all([
             { memcmp: { offset: 8, bytes: agentIdBs58 } }
@@ -99,12 +100,9 @@ export default async function handler(
         const acc: any = match.account;
         const ownerPubkey: string = acc.owner.toBase58();
         const framework: string = FRAMEWORKS[acc.framework] ?? "Custom";
-        const verifiedLevel: string =
-            VERIFIED_LEVELS[acc.verifiedLevel] ?? "Unverified";
+        const verifiedLevel: string = VERIFIED_LEVELS[acc.verifiedLevel] ?? "Unverified";
         const reputationScore: number = acc.reputationScore;
-        const registeredDate: string = new Date(
-            acc.registeredAt.toNumber() * 1000
-        )
+        const registeredDate: string = new Date(acc.registeredAt.toNumber() * 1000)
             .toISOString()
             .split("T")[0];
         const serviceCategory: string =
@@ -117,9 +115,9 @@ export default async function handler(
                 "On-chain identity credential for an AI agent on Solana. " +
                 "This soul-bound NFT cannot be transferred and represents the agent's " +
                 "verified identity, reputation, and authorised capabilities.",
-            image: `https://agentid.xyz/nft/${agentId}.png`,
+            image: `${FRONTEND_BASE}/nft/${agentId}.png`,
             animation_url: null,
-            external_url: `https://agentid.xyz/agent/${agentId}`,
+            external_url: `${FRONTEND_BASE}/agent/${agentId}`,
             attributes: [
                 { trait_type: "Agent Name", value: acc.name },
                 { trait_type: "Framework", value: framework },

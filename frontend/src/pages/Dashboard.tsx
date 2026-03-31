@@ -19,8 +19,8 @@ import {
 } from "recharts";
 
 // ─── Feature flags ────────────────────────────────────────────────────────
-// Set to true once the treasury program is deployed to devnet.
-const TREASURY_ENABLED = true;
+// Keep disabled until the treasury deployment is live on devnet.
+const TREASURY_ENABLED = false;
 
 /* ── Mini gauge ── */
 function MiniGauge({ score }: { score: number }) {

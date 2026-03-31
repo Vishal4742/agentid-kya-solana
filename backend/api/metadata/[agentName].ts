@@ -15,6 +15,10 @@ const ACTIVE_RPC_URL = process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.
 const PROGRAM_ID = (idl as unknown as { address: string }).address;
 const SEED_PREFIX = Buffer.from("agent-identity");
 
+// Frontend base URL — no custom domain needed.
+// Set FRONTEND_BASE in Vercel env vars once you know your deployment URL.
+const FRONTEND_BASE = process.env.FRONTEND_BASE ?? "https://agentid-kya-solana.vercel.app";
+
 const FRAMEWORKS = ["ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"];
 const VERIFIED_LEVELS = ["Unverified", "EmailVerified", "KYBVerified", "Audited"];
 const CATEGORIES = [
@@ -38,7 +42,7 @@ function buildReadonlyProvider(connection: Connection): AnchorProvider {
  * GET /api/metadata/[agentName]
  * Returns Metaplex-compatible JSON for the named agent.
  * The agent name is the same string stored in AgentIdentity.name.
- * This allows the Register wizard to set metadataUri = `https://agentid.xyz/metadata/${name}.json`
+ * This allows the Register wizard to set metadataUri = `${FRONTEND_BASE}/metadata/${name}.json`
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
@@ -75,8 +79,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 name: `AgentID: ${agentName}`,
                 symbol: "AGID",
                 description: "Soul-bound AI agent credential on AgentID Protocol (Solana).",
-                image: "https://agentid.xyz/nft/placeholder.png",
-                external_url: `https://agentid.xyz/agent/${encodeURIComponent(agentName)}`,
+                image: `${FRONTEND_BASE}/nft/placeholder.png`,
+                external_url: `${FRONTEND_BASE}/agent/${encodeURIComponent(agentName)}`,
                 attributes: [
                     { trait_type: "Agent Name", value: agentName },
                     { trait_type: "Status", value: "Pending on-chain verification" },
@@ -110,8 +114,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             description:
                 "Soul-bound AI agent identity credential on the AgentID Protocol (Solana). " +
                 "Non-transferable. Represents verified identity, reputation, and capabilities.",
-            image: `https://agentid.xyz/nft/${pdaHex}.png`,
-            external_url: `https://agentid.xyz/agent/${pda.toBase58()}`,
+            image: `${FRONTEND_BASE}/nft/${pdaHex}.png`,
+            external_url: `${FRONTEND_BASE}/agent/${pda.toBase58()}`,
             attributes: [
                 { trait_type: "Agent Name", value: acc.name },
                 { trait_type: "Framework", value: framework },

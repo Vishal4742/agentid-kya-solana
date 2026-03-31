@@ -78,7 +78,7 @@ export function buildRegisterParams(
     gstin: params?.gstin ?? "27ABCDE1234F1Z5",
     panHash: params?.panHash ?? ZERO_PAN_HASH,
     serviceCategory: params?.serviceCategory ?? 1,
-    metadataUri: params?.metadataUri ?? "https://agentid.xyz/metadata/Test%20Agent.json",
+    metadataUri: params?.metadataUri ?? "https://agentid-kya-solana.vercel.app/metadata/Test%20Agent.json",
   };
 }
 

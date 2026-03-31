@@ -4,20 +4,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- TODO: Set the document title to the name of your application -->
-  <title>Lovable App</title>
-  <meta name="description" content="" />
-  <meta name="author" content="Vishal" />
+  <title>AgentID Protocol — On-Chain AI Agent Identity on Solana</title>
+  <meta name="description" content="AgentID Protocol gives every AI agent a verifiable on-chain identity on Solana. Register, verify, and rate autonomous agents with cNFT credentials and reputation scoring." />
+  <meta name="author" content="AgentID Protocol" />
 
-  <!-- TODO: Update og:title to match your application name -->
-  <meta property="og:title" content="Lovable App" />
-  <meta property="og:description" content="" />
+  <!-- Content Security Policy -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; connect-src 'self' https://api.devnet.solana.com https://agentid-metadata-api.vercel.app https://*.helius-rpc.com wss://api.devnet.solana.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-ancestors 'none';" />
+
+  <!-- X-Frame-Options equivalent (belt-and-suspenders) -->
+  <meta http-equiv="X-Frame-Options" content="DENY" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="AgentID Protocol — On-Chain AI Agent Identity" />
+  <meta property="og:description" content="Register, verify, and rate autonomous AI agents on Solana devnet. Soul-bound cNFT credentials with on-chain reputation scoring." />
   <meta property="og:type" content="website" />
-  <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+  <meta property="og:url" content="https://agentid-frontend.netlify.app" />
 
+  <!-- Twitter / X -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:site" content="@Lovable" />
-  <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+  <meta name="twitter:title" content="AgentID Protocol" />
+  <meta name="twitter:description" content="On-Chain AI Agent Identity on Solana" />
 </head>
 
 <body>
@@ -25,4 +33,4 @@
   <script type="module" src="/src/main.tsx"></script>
 </body>
 
-</html>
+</html>

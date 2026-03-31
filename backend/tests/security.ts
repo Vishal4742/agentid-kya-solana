@@ -66,7 +66,7 @@ describe("security — verify_agent fail-closed", () => {
       gstin: "",
       panHash: ZERO_PAN_HASH,
       serviceCategory: 0,
-      metadataUri: "https://agentid.xyz/metadata/SecurityTestAgent.json",
+      metadataUri: "https://agentid-kya-solana.vercel.app/metadata/SecurityTestAgent.json",
     });
   });
 

@@ -123,7 +123,6 @@ export default function Register() {
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error("registerAgent error:", err);
       toast.error("Transaction failed", { description: msg.slice(0, 120) });
     } finally {
       setMinting(false);
@@ -164,8 +163,7 @@ export default function Register() {
                 <button key={p} onClick={async () => {
                   try {
                     await connect(p);
-                  } catch (err: unknown) {
-                    console.error("Wallet connection failed:", err);
+                  } catch {
                     toast.error("Connection failed");
                   }
                 }} disabled={connecting}
