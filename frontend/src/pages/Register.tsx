@@ -8,6 +8,7 @@ import { PublicKey } from "@solana/web3.js";
 import { toast } from "sonner";
 import { ChevronRight, ChevronLeft, Wallet, Zap, CheckCircle2, ExternalLink, Copy, AlertCircle } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { buildMetadataUrl } from "@/lib/config";
 
 // Bubblegum program & shared devnet Merkle tree
 const MPL_BUBBLEGUM_PROGRAM = new PublicKey("BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY");
@@ -104,7 +105,7 @@ export default function Register() {
           gstin,
           panHash,
           serviceCategory: serviceCategory >= 0 ? serviceCategory : 0,
-          metadataUri: `https://agentid.xyz/metadata/${encodeURIComponent(form.name)}.json`,
+          metadataUri: buildMetadataUrl(form.name),
         })
         .accounts({
           treeAuthority: TREE_AUTHORITY,

@@ -1,12 +1,12 @@
 
 
 import { describe, it, expect, beforeAll } from "vitest";
-import { Connection, PublicKey, Keypair } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
+import { SOLANA_RPC_ENDPOINT } from "@/lib/config";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-const RPC_URL =
-  import.meta.env?.VITE_RPC_URL ?? "https://api.devnet.solana.com";
+const RPC_URL = SOLANA_RPC_ENDPOINT;
 
 const PROGRAM_ID = new PublicKey(
   "Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF"
