@@ -1,8 +1,12 @@
 # x402 Middleware - Completion Summary
 
-## Status: ✅ 100% Complete
+## Status: Implementation Complete, Operational Follow-Up Still Required
 
-All remaining work on the x402 HTTP 402 Payment Required middleware has been completed.
+The x402 middleware code and documentation are substantially complete, but repo-level operational closure is still not total:
+
+- `integration.test.ts` is still `describe.skip(...)` unless explicitly enabled for devnet work
+- replay protection still falls back to in-memory mode when Redis is unavailable
+- production adoption remains optional and deferred behind the on-chain `autonomous_payment` path
 
 ---
 
@@ -127,7 +131,7 @@ INTEGRATION=true npm test    # Integration tests (devnet)
 
 ## Production Readiness
 
-### ✅ Ready for Production
+### Conditionally Ready
 - Replay protection scales horizontally with Redis
 - Automatic failover ensures high availability
 - Comprehensive error handling prevents data loss
