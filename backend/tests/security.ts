@@ -146,12 +146,11 @@ describe("security — verify_agent fail-closed", () => {
           usdcTransferred: new anchor.BN(1),
           memo: "unauthorized attempt",
         })
-        // @ts-ignore
         .accounts({
           identity: agentIdentityPda,
           action: actionPda,
           payer: nonOwner.publicKey, // NOT the identity owner
-        })
+        } as any)
         .signers([nonOwner])
         .rpc();
 
@@ -192,12 +191,11 @@ describe("security — verify_agent fail-closed", () => {
         usdcTransferred: new anchor.BN(0),
         memo: "owner logs own action",
       })
-      // @ts-ignore
       .accounts({
         identity: agentIdentityPda,
         action: actionPda,
         payer: provider.wallet.publicKey, // the owner
-      })
+      } as any)
       .rpc();
 
     const actionAccount = await program.account.agentAction.fetch(actionPda);

@@ -8,7 +8,7 @@
 param([switch]$Build)
 
 $ErrorActionPreference = "Stop"
-$root = $PSScriptRoot ? (Split-Path $PSScriptRoot -Parent) : (Get-Location).Path
+if ($PSScriptRoot) { $root = Split-Path $PSScriptRoot -Parent } else { $root = (Get-Location).Path }
 
 $srcJson = Join-Path $root "backend\target\idl\agentid_program.json"
 $srcTs   = Join-Path $root "backend\target\types\agentid_program.ts"

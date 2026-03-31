@@ -109,12 +109,11 @@ describe("agentid-program", () => {
 
     await program.methods
       .logAction(params)
-      // @ts-ignore
       .accounts({
         identity: agentIdentityPda,
         action: actionPda,
         payer: provider.wallet.publicKey,
-      })
+      } as any)
       .rpc();
 
     const actionAccount = await program.account.agentAction.fetch(actionPda);
@@ -129,11 +128,10 @@ describe("agentid-program", () => {
   it("Rates an agent", async () => {
     await program.methods
       .rateAgent(4)
-      // @ts-ignore
       .accounts({
         identity: agentIdentityPda,
         rater: rater.publicKey,
-      })
+      } as any)
       .signers([rater])
       .rpc();
 
@@ -145,19 +143,17 @@ describe("agentid-program", () => {
   it("Updates reputation by oracle", async () => {
     await program.methods
       .updateReputation(800)
-      // @ts-ignore
       .accounts({
         identity: agentIdentityPda,
         programConfig: programConfigPda,
         oracle: oracle.publicKey,
-      })
+      } as any)
       .signers([oracle])
       .rpc();
 
     const identityAccount = await program.account.agentIdentity.fetch(agentIdentityPda);
     assert.equal(identityAccount.reputationScore, 800);
   });
-
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -177,6 +173,7 @@ describe("treasury", () => {
   let treasuryPda: anchor.web3.PublicKey;
   let usdcMint: anchor.web3.PublicKey;
   let ownerUsdcAta: anchor.web3.PublicKey;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let treasuryUsdcAta: anchor.web3.PublicKey;
   const mintAuthority = anchor.web3.Keypair.generate();
 
@@ -234,14 +231,13 @@ describe("treasury", () => {
         new anchor.BN(2000 * 1_000_000),  // 2000 USDC per day
         new anchor.BN(1000 * 1_000_000),  // multisig above 1000 USDC
       )
-      // @ts-ignore
       .accounts({
         treasury: treasuryPda,
         agentIdentity: agentIdentityPda,
         owner: provider.wallet.publicKey,
         usdcMint,
         systemProgram: anchor.web3.SystemProgram.programId,
-      })
+      } as any)
       .rpc();
 
     const treasuryAccount = await program.account.agentTreasury.fetch(treasuryPda);
@@ -259,11 +255,10 @@ describe("treasury", () => {
         new anchor.BN(1000 * 1_000_000),  // 1000 USDC per day
         new anchor.BN(800 * 1_000_000),   // multisig above 800 USDC
       )
-      // @ts-ignore
       .accounts({
         treasury: treasuryPda,
         owner: provider.wallet.publicKey,
-      })
+      } as any)
       .rpc();
 
     const treasuryAccount = await program.account.agentTreasury.fetch(treasuryPda);
@@ -276,11 +271,10 @@ describe("treasury", () => {
     // Pause the treasury
     await program.methods
       .emergencyPause(true)
-      // @ts-ignore
       .accounts({
         treasury: treasuryPda,
         owner: provider.wallet.publicKey,
-      })
+      } as any)
       .rpc();
 
     const treasuryAccount = await program.account.agentTreasury.fetch(treasuryPda);
@@ -307,7 +301,7 @@ describe("treasury", () => {
       treasuryPda,
       true,
     );
-    const treasuryUsdcAta = treasuryTokenAccount.address;
+    const localTreasuryUsdcAta = treasuryTokenAccount.address;
 
     try {
       await program.methods
@@ -316,17 +310,16 @@ describe("treasury", () => {
           recipientKeypair.publicKey,
           "test payment",
         )
-        // @ts-ignore
         .accounts({
           treasury: treasuryPda,
           agentIdentity: agentIdentityPda,
           agentWallet: provider.wallet.publicKey,
           owner: provider.wallet.publicKey,
-          treasuryUsdc: treasuryUsdcAta,
+          treasuryUsdc: localTreasuryUsdcAta,
           recipientUsdc: recipientAta,
           usdcMint,
           tokenProgram: TOKEN_PROGRAM_ID,
-        })
+        } as any)
         .rpc();
 
       // If the transaction succeeds when the treasury is paused, the test should fail.
@@ -348,15 +341,13 @@ describe("treasury", () => {
   it("Unpauses the treasury", async () => {
     await program.methods
       .emergencyPause(false)
-      // @ts-ignore
       .accounts({
         treasury: treasuryPda,
         owner: provider.wallet.publicKey,
-      })
+      } as any)
       .rpc();
 
     const treasuryAccount = await program.account.agentTreasury.fetch(treasuryPda);
     assert.equal(treasuryAccount.emergencyPause, false);
   });
 });
-

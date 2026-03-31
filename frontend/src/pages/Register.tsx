@@ -114,7 +114,7 @@ export default function Register() {
           logWrapper: SPL_NOOP_PROGRAM,
           compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM,
           bubblegumProgram: MPL_BUBBLEGUM_PROGRAM,
-        })
+        } as any)
         .rpc();
 
       setTxHash(tx);
