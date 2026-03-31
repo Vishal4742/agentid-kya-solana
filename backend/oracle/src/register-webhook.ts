@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
+import path from "path";
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
 const WEBHOOK_URL = process.env.WEBHOOK_URL;
@@ -8,7 +9,7 @@ const HELIUS_WEBHOOK_AUTH = process.env.HELIUS_WEBHOOK_AUTH;
 const PROGRAM_ID = "Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF"; // The AgentID Program Address
 
 if (!HELIUS_API_KEY || !WEBHOOK_URL || !HELIUS_WEBHOOK_AUTH) {
-    console.error("❌ Missing HELIUS_API_KEY, WEBHOOK_URL, or HELIUS_WEBHOOK_AUTH in .env");
+    console.error("❌ Missing HELIUS_API_KEY, WEBHOOK_URL, or HELIUS_WEBHOOK_AUTH in backend/.env");
     process.exit(1);
 }
 

@@ -31,7 +31,7 @@ Node/Express service that recalculates and writes `reputation_score` back to the
 
 ## Environment
 
-Copy `.env.example` to `.env` and set:
+Copy [`backend/.env.example`](/mnt/c/Users/vg890/OneDrive/Desktop/agentid-kya-solana/backend/.env.example) to `backend/.env` and set:
 
 ```bash
 ORACLE_PRIVATE_KEY=[12,34,56,...]
@@ -42,7 +42,7 @@ WEBHOOK_URL=https://your-public-url.example/webhook
 PORT=3001
 ```
 
-The full step-by-step local setup is documented in [`backend/oracle/.env.example`](/mnt/c/Users/vg890/OneDrive/Desktop/agentid-kya-solana/backend/oracle/.env.example).
+The full step-by-step local setup is documented in [`backend/.env.example`](/mnt/c/Users/vg890/OneDrive/Desktop/agentid-kya-solana/backend/.env.example).
 
 ## Development
 

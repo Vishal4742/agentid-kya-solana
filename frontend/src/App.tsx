@@ -16,6 +16,7 @@ import Verify from "./pages/Verify";
 import Agents from "./pages/Agents";
 import Docs from "./pages/Docs";
 import NotFound from "./pages/NotFound";
+import { SOLANA_RPC_ENDPOINT } from "@/lib/config";
 
 /* ── Solana wallet adapter ─────────────────────────────────────── */
 import {
@@ -27,8 +28,6 @@ import {
   SolflareWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import "@solana/wallet-adapter-react-ui/styles.css";
-
-const RPC_ENDPOINT = "https://api.devnet.solana.com";
 
 const queryClient = new QueryClient();
 
@@ -42,7 +41,7 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Solana connection + adapter layer */}
-      <ConnectionProvider endpoint={RPC_ENDPOINT}>
+      <ConnectionProvider endpoint={SOLANA_RPC_ENDPOINT}>
         <AdapterWalletProvider wallets={wallets} autoConnect>
           {/* Our thin shim that preserves the existing useWallet() API */}
           <WalletProvider>

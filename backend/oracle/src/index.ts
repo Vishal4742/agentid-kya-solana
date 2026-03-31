@@ -2,14 +2,17 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import bs58 from "bs58";
+import fs from "fs";
+import path from "path";
 import cron from "node-cron";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { Program, AnchorProvider, Idl, Wallet } from "@coral-xyz/anchor";
-// @ts-ignore
-import idl from "./idl/agentid_program.json";
 import { calculateReputationScore } from "./reputation";
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+
+const idlPath = path.resolve(__dirname, "../../../src/idl/agentid_program.json");
+const idl = JSON.parse(fs.readFileSync(idlPath, "utf8")) as Idl;
 
 const app = express();
 app.use(cors());
@@ -22,7 +25,7 @@ const RPC_URL = process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com";
 // Expected in .env as ORACLE_PRIVATE_KEY=[12,34,56...]
 const privateKeyString = process.env.ORACLE_PRIVATE_KEY;
 if (!privateKeyString) {
-    console.error("❌ Missing ORACLE_PRIVATE_KEY in .env — see .env.example");
+    console.error("❌ Missing ORACLE_PRIVATE_KEY in backend/.env — see backend/.env.example");
     process.exit(1);
 }
 
