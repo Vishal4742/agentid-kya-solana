@@ -9,10 +9,7 @@
     {
       "source": "/metadata/:slug",
       "destination": "/api/metadata/:slug"
-    },
-    {
-      "source": "/api/metadata/:slug",
-      "destination": "/api/metadata/:slug"
     }
   ]
 }
+

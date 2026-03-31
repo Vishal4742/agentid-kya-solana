@@ -1,0 +1,2006 @@
+{
+  "address": "Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF",
+  "metadata": {
+    "name": "agentid_program",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "autonomous_payment",
+      "docs": [
+        "Execute an autonomous USDC payment via the agent's treasury"
+      ],
+      "discriminator": [
+        88,
+        46,
+        9,
+        90,
+        148,
+        71,
+        4,
+        217
+      ],
+      "accounts": [
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  45,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent_identity"
+              }
+            ]
+          }
+        },
+        {
+          "name": "agent_identity",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  45,
+                  105,
+                  100,
+                  101,
+                  110,
+                  116,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "agent_wallet",
+          "signer": true
+        },
+        {
+          "name": "owner",
+          "relations": [
+            "treasury",
+            "agent_identity"
+          ]
+        },
+        {
+          "name": "treasury_usdc",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "treasury"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "usdc_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "recipient_usdc",
+          "writable": true
+        },
+        {
+          "name": "usdc_mint"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "recipient",
+          "type": "pubkey"
+        },
+        {
+          "name": "memo",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "deposit",
+      "docs": [
+        "Deposit USDC into the treasury"
+      ],
+      "discriminator": [
+        242,
+        35,
+        198,
+        137,
+        82,
+        225,
+        242,
+        182
+      ],
+      "accounts": [
+        {
+          "name": "treasury",
+          "writable": true
+        },
+        {
+          "name": "depositor",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "depositor_usdc",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "depositor"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "usdc_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "treasury_usdc",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "treasury"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "usdc_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "usdc_mint"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "emergency_pause",
+      "docs": [
+        "Emergency pause for the treasury (Owner only)"
+      ],
+      "discriminator": [
+        21,
+        143,
+        27,
+        142,
+        200,
+        181,
+        210,
+        255
+      ],
+      "accounts": [
+        {
+          "name": "treasury",
+          "writable": true
+        },
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "treasury"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "paused",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "init_config",
+      "docs": [
+        "Initialize the global program configuration (e.g., oracle authority)"
+      ],
+      "discriminator": [
+        23,
+        235,
+        115,
+        232,
+        168,
+        96,
+        1,
+        231
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  103,
+                  114,
+                  97,
+                  109,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "oracle"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize_treasury",
+      "docs": [
+        "Initialize a newly created AgentTreasury PDA for an agent"
+      ],
+      "discriminator": [
+        124,
+        186,
+        211,
+        195,
+        85,
+        165,
+        129,
+        166
+      ],
+      "accounts": [
+        {
+          "name": "treasury",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  45,
+                  116,
+                  114,
+                  101,
+                  97,
+                  115,
+                  117,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent_identity"
+              }
+            ]
+          }
+        },
+        {
+          "name": "agent_identity",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  45,
+                  105,
+                  100,
+                  101,
+                  110,
+                  116,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "agent_identity"
+          ]
+        },
+        {
+          "name": "usdc_mint"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "spending_limit_per_tx",
+          "type": "u64"
+        },
+        {
+          "name": "spending_limit_per_day",
+          "type": "u64"
+        },
+        {
+          "name": "multisig_required_above",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "log_action",
+      "docs": [
+        "Log an on-chain action performed by the agent.",
+        "Creates an AgentAction PDA and updates identity stats."
+      ],
+      "discriminator": [
+        123,
+        192,
+        243,
+        96,
+        38,
+        250,
+        134,
+        135
+      ],
+      "accounts": [
+        {
+          "name": "identity",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  45,
+                  105,
+                  100,
+                  101,
+                  110,
+                  116,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "identity.owner",
+                "account": "AgentIdentity"
+              }
+            ]
+          }
+        },
+        {
+          "name": "action",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  45,
+                  97,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "identity"
+              },
+              {
+                "kind": "account",
+                "path": "identity.total_transactions",
+                "account": "AgentIdentity"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": {
+              "name": "LogActionParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "rate_agent",
+      "docs": [
+        "Rate an agent (1–5 stars). Rater cannot be the agent owner."
+      ],
+      "discriminator": [
+        62,
+        30,
+        240,
+        125,
+        81,
+        120,
+        134,
+        78
+      ],
+      "accounts": [
+        {
+          "name": "identity",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  45,
+                  105,
+                  100,
+                  101,
+                  110,
+                  116,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "identity.owner",
+                "account": "AgentIdentity"
+              }
+            ]
+          }
+        },
+        {
+          "name": "rater",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "rating",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "register_agent",
+      "docs": [
+        "Register a new AI agent identity on-chain.",
+        "Creates an AgentIdentity PDA seeded by [b\"agent-identity\", owner.key()]."
+      ],
+      "discriminator": [
+        135,
+        157,
+        66,
+        195,
+        2,
+        113,
+        175,
+        30
+      ],
+      "accounts": [
+        {
+          "name": "identity",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  45,
+                  105,
+                  100,
+                  101,
+                  110,
+                  116,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "tree_authority",
+          "writable": true
+        },
+        {
+          "name": "merkle_tree",
+          "writable": true
+        },
+        {
+          "name": "tree_delegate",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  103,
+                  114,
+                  97,
+                  109,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "log_wrapper"
+        },
+        {
+          "name": "compression_program"
+        },
+        {
+          "name": "bubblegum_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": {
+              "name": "RegisterAgentParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "update_capabilities",
+      "docs": [
+        "Update the agent's capabilities (DeFi trading, payments, limits).",
+        "Requires owner signature."
+      ],
+      "discriminator": [
+        102,
+        104,
+        235,
+        240,
+        127,
+        163,
+        100,
+        149
+      ],
+      "accounts": [
+        {
+          "name": "identity",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  45,
+                  105,
+                  100,
+                  101,
+                  110,
+                  116,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": {
+              "name": "UpdateCapabilitiesParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "update_reputation",
+      "discriminator": [
+        194,
+        220,
+        43,
+        201,
+        54,
+        209,
+        49,
+        178
+      ],
+      "accounts": [
+        {
+          "name": "identity",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  45,
+                  105,
+                  100,
+                  101,
+                  110,
+                  116,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "identity.owner",
+                "account": "AgentIdentity"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "docs": [
+            "Oracle authority must sign this instruction"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  103,
+                  114,
+                  97,
+                  109,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "oracle",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "new_score",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "update_spending_limits",
+      "docs": [
+        "Update the treasury's operational limits (Owner only)"
+      ],
+      "discriminator": [
+        199,
+        114,
+        118,
+        214,
+        149,
+        133,
+        82,
+        132
+      ],
+      "accounts": [
+        {
+          "name": "treasury",
+          "writable": true
+        },
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "treasury"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "spending_limit_per_tx",
+          "type": "u64"
+        },
+        {
+          "name": "spending_limit_per_day",
+          "type": "u64"
+        },
+        {
+          "name": "multisig_required_above",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "verify_agent",
+      "docs": [
+        "Verify an agent for a specific action type.",
+        "Returns whether the agent is authorized based on reputation thresholds.",
+        "CPI-callable by DeFi protocols."
+      ],
+      "discriminator": [
+        206,
+        212,
+        108,
+        12,
+        105,
+        61,
+        100,
+        66
+      ],
+      "accounts": [
+        {
+          "name": "identity",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116,
+                  45,
+                  105,
+                  100,
+                  101,
+                  110,
+                  116,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "identity.owner",
+                "account": "AgentIdentity"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "action_type",
+          "type": "u8"
+        }
+      ],
+      "returns": {
+        "defined": {
+          "name": "VerificationResult"
+        }
+      }
+    }
+  ],
+  "accounts": [
+    {
+      "name": "AgentAction",
+      "discriminator": [
+        60,
+        172,
+        111,
+        6,
+        139,
+        162,
+        215,
+        12
+      ]
+    },
+    {
+      "name": "AgentIdentity",
+      "discriminator": [
+        11,
+        149,
+        31,
+        27,
+        186,
+        76,
+        241,
+        72
+      ]
+    },
+    {
+      "name": "AgentTreasury",
+      "discriminator": [
+        129,
+        97,
+        0,
+        63,
+        102,
+        222,
+        200,
+        166
+      ]
+    },
+    {
+      "name": "ProgramConfig",
+      "discriminator": [
+        196,
+        210,
+        90,
+        231,
+        144,
+        149,
+        140,
+        63
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "AgentRated",
+      "discriminator": [
+        116,
+        96,
+        76,
+        234,
+        149,
+        184,
+        152,
+        63
+      ]
+    },
+    {
+      "name": "AgentRegistered",
+      "discriminator": [
+        191,
+        78,
+        217,
+        54,
+        232,
+        100,
+        189,
+        85
+      ]
+    },
+    {
+      "name": "CapabilitiesUpdated",
+      "discriminator": [
+        238,
+        187,
+        138,
+        145,
+        174,
+        93,
+        144,
+        113
+      ]
+    },
+    {
+      "name": "PaymentExecuted",
+      "discriminator": [
+        153,
+        165,
+        141,
+        18,
+        246,
+        20,
+        204,
+        227
+      ]
+    },
+    {
+      "name": "ReputationUpdated",
+      "discriminator": [
+        26,
+        36,
+        187,
+        150,
+        235,
+        90,
+        106,
+        89
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidNameLength",
+      "msg": "Agent name must be between 3 and 64 characters"
+    },
+    {
+      "code": 6001,
+      "name": "InsufficientReputation",
+      "msg": "Reputation threshold not met for this action type"
+    },
+    {
+      "code": 6002,
+      "name": "InsufficientVerification",
+      "msg": "Agent is not verified at the required level"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidRating",
+      "msg": "Rating must be between 1 and 5"
+    },
+    {
+      "code": 6004,
+      "name": "CannotRateSelf",
+      "msg": "An agent cannot rate themselves"
+    },
+    {
+      "code": 6005,
+      "name": "CapabilityNotEnabled",
+      "msg": "Action type is not enabled for this agent"
+    },
+    {
+      "code": 6006,
+      "name": "ExceedsMaxTxLimit",
+      "msg": "Transaction exceeds agent's max USDC limit"
+    },
+    {
+      "code": 6007,
+      "name": "UnauthorizedOracle",
+      "msg": "Only the oracle authority can update reputation"
+    },
+    {
+      "code": 6008,
+      "name": "InvalidReputationScore",
+      "msg": "Reputation score must be between 0 and 1000"
+    },
+    {
+      "code": 6009,
+      "name": "InvalidGstin",
+      "msg": "GSTIN must be exactly 15 characters (leave blank to skip)"
+    },
+    {
+      "code": 6010,
+      "name": "InvalidModelLength",
+      "msg": "Model name must be between 1 and 32 characters"
+    },
+    {
+      "code": 6011,
+      "name": "EmptyMetadataUri",
+      "msg": "Metadata URI is required"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidAgentWallet",
+      "msg": "Agent wallet must be a real public key"
+    },
+    {
+      "code": 6013,
+      "name": "NoCapabilitiesEnabled",
+      "msg": "At least one agent capability must be enabled"
+    },
+    {
+      "code": 6014,
+      "name": "InvalidMaxTxSize",
+      "msg": "Payment-enabled agents must declare a non-zero max USDC transaction limit"
+    },
+    {
+      "code": 6015,
+      "name": "InvalidServiceCategory",
+      "msg": "Service category is out of range"
+    },
+    {
+      "code": 6016,
+      "name": "InvalidMemoLength",
+      "msg": "Action memo must be at most 64 characters"
+    },
+    {
+      "code": 6017,
+      "name": "TreasuryPaused",
+      "msg": "Treasury is paused for emergency"
+    },
+    {
+      "code": 6018,
+      "name": "ExceedsPerTxLimit",
+      "msg": "Payment amount exceeds per-transaction limit"
+    },
+    {
+      "code": 6019,
+      "name": "ExceedsDailyLimit",
+      "msg": "Payment amount exceeds daily spending limit"
+    },
+    {
+      "code": 6020,
+      "name": "RequiresMultisig",
+      "msg": "Transaction amount requires multisig approval"
+    },
+    {
+      "code": 6021,
+      "name": "UnauthorizedTreasuryOwner",
+      "msg": "Only the treasury owner can perform this action"
+    },
+    {
+      "code": 6022,
+      "name": "InvalidRecipient",
+      "msg": "Recipient does not match the provided token account owner"
+    },
+    {
+      "code": 6023,
+      "name": "ArithmeticError",
+      "msg": "Arithmetic overflow or underflow"
+    },
+    {
+      "code": 6024,
+      "name": "InvalidActionType",
+      "msg": "Unknown action type — must be 0=DeFiTrade 1=Payment 2=ContentPublish 3=DataQuery"
+    },
+    {
+      "code": 6025,
+      "name": "UnauthorizedLogAction",
+      "msg": "Only the identity owner can log actions"
+    }
+  ],
+  "types": [
+    {
+      "name": "AgentAction",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "agent_identity",
+            "type": "pubkey"
+          },
+          {
+            "name": "action_type",
+            "type": "u8"
+          },
+          {
+            "name": "program_called",
+            "type": "pubkey"
+          },
+          {
+            "name": "success",
+            "type": "bool"
+          },
+          {
+            "name": "usdc_transferred",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "memo",
+            "type": "string"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AgentIdentity",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "agent_id",
+            "docs": [
+              "Unique hash of (owner + name + registered_at)"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "owner",
+            "docs": [
+              "The wallet that registered this agent (signs owner-gated ix)"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "agent_wallet",
+            "docs": [
+              "The agent's operational wallet (may differ from owner)"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "docs": [
+              "Human-readable agent name (max 64 chars)"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "framework",
+            "docs": [
+              "AI framework enum: 0=ELIZA 1=AutoGen 2=CrewAI 3=LangGraph 4=Custom"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "model",
+            "docs": [
+              "LLM model name (max 32 chars)"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "credential_nft",
+            "docs": [
+              "Pubkey of the soulbound cNFT credential (set after Metaplex mint)"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "verified_level",
+            "docs": [
+              "0=Unverified 1=EmailVerified 2=KYBVerified 3=Audited"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "registered_at",
+            "docs": [
+              "Unix timestamp of registration"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "last_active",
+            "docs": [
+              "Last active timestamp"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "can_trade_defi",
+            "type": "bool"
+          },
+          {
+            "name": "can_send_payments",
+            "type": "bool"
+          },
+          {
+            "name": "can_publish_content",
+            "type": "bool"
+          },
+          {
+            "name": "can_analyze_data",
+            "type": "bool"
+          },
+          {
+            "name": "max_tx_size_usdc",
+            "docs": [
+              "Max USDC per transaction (in USDC lamports, 6 decimals)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "reputation_score",
+            "docs": [
+              "0–1000 reputation score (oracle-updated)"
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "total_transactions",
+            "type": "u64"
+          },
+          {
+            "name": "successful_transactions",
+            "type": "u64"
+          },
+          {
+            "name": "human_rating_x10",
+            "docs": [
+              "Rolling average human rating (1–50, divide by 10 for display)"
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "rating_count",
+            "type": "u32"
+          },
+          {
+            "name": "gstin",
+            "docs": [
+              "GSTIN (max 15 chars): format 22AAAAA0000A1Z5"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "pan_hash",
+            "docs": [
+              "SHA-256 hash of PAN (never store raw PAN on-chain)"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "service_category",
+            "docs": [
+              "TDS service category: 0=IT 1=Finance 2=Consulting 3=Marketing 4=RnD"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AgentRated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "agent_identity",
+            "type": "pubkey"
+          },
+          {
+            "name": "rater",
+            "type": "pubkey"
+          },
+          {
+            "name": "rating",
+            "type": "u8"
+          },
+          {
+            "name": "new_avg_x10",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AgentRegistered",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "agent_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "credential_nft",
+            "type": "pubkey"
+          },
+          {
+            "name": "registered_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AgentTreasury",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "agent_identity",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "usdc_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "usdc_balance",
+            "type": "u64"
+          },
+          {
+            "name": "total_earned",
+            "type": "u64"
+          },
+          {
+            "name": "total_spent",
+            "type": "u64"
+          },
+          {
+            "name": "spending_limit_per_tx",
+            "type": "u64"
+          },
+          {
+            "name": "spending_limit_per_day",
+            "type": "u64"
+          },
+          {
+            "name": "spent_today",
+            "type": "u64"
+          },
+          {
+            "name": "day_reset_timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "emergency_pause",
+            "type": "bool"
+          },
+          {
+            "name": "multisig_required_above",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CapabilitiesUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "identity",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "can_trade_defi",
+            "type": "bool"
+          },
+          {
+            "name": "can_send_payments",
+            "type": "bool"
+          },
+          {
+            "name": "can_publish_content",
+            "type": "bool"
+          },
+          {
+            "name": "can_analyze_data",
+            "type": "bool"
+          },
+          {
+            "name": "max_tx_size_usdc",
+            "type": "u64"
+          },
+          {
+            "name": "updated_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "LogActionParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "action_type",
+            "type": "u8"
+          },
+          {
+            "name": "program_called",
+            "type": "pubkey"
+          },
+          {
+            "name": "success",
+            "type": "bool"
+          },
+          {
+            "name": "usdc_transferred",
+            "type": "u64"
+          },
+          {
+            "name": "memo",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PaymentExecuted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "agent_identity",
+            "type": "pubkey"
+          },
+          {
+            "name": "recipient",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "memo",
+            "type": "string"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProgramConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "oracle_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RegisterAgentParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "framework",
+            "type": "u8"
+          },
+          {
+            "name": "model",
+            "type": "string"
+          },
+          {
+            "name": "agent_wallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "can_trade_defi",
+            "type": "bool"
+          },
+          {
+            "name": "can_send_payments",
+            "type": "bool"
+          },
+          {
+            "name": "can_publish_content",
+            "type": "bool"
+          },
+          {
+            "name": "can_analyze_data",
+            "type": "bool"
+          },
+          {
+            "name": "max_tx_size_usdc",
+            "type": "u64"
+          },
+          {
+            "name": "gstin",
+            "type": "string"
+          },
+          {
+            "name": "pan_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "service_category",
+            "type": "u8"
+          },
+          {
+            "name": "metadata_uri",
+            "docs": [
+              "URI of the off-chain metadata JSON"
+            ],
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ReputationUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "agent",
+            "type": "pubkey"
+          },
+          {
+            "name": "old_score",
+            "type": "u16"
+          },
+          {
+            "name": "new_score",
+            "type": "u16"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UpdateCapabilitiesParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "can_trade_defi",
+            "type": "bool"
+          },
+          {
+            "name": "can_send_payments",
+            "type": "bool"
+          },
+          {
+            "name": "can_publish_content",
+            "type": "bool"
+          },
+          {
+            "name": "can_analyze_data",
+            "type": "bool"
+          },
+          {
+            "name": "max_tx_size_usdc",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "VerificationResult",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "is_registered",
+            "type": "bool"
+          },
+          {
+            "name": "verified_level",
+            "type": "u8"
+          },
+          {
+            "name": "reputation_score",
+            "type": "u16"
+          },
+          {
+            "name": "is_authorized",
+            "type": "bool"
+          },
+          {
+            "name": "agent_name",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ]
+}

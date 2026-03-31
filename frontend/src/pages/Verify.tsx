@@ -6,7 +6,8 @@ import { truncateWallet } from "@/data/mockAgents";
 import { Search, Shield, CheckCircle2, XCircle, Activity, TrendingUp, Zap, Copy, Code2, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
-const EMBED_SNIPPET = `<script src="https://cdn.agentid.xyz/widget.js"></script>
+// Widget snippet — uses Vercel deployment URL (no custom domain needed)
+const EMBED_SNIPPET = `<script src="https://your-domain.netlify.app/widget.js"></script>
 <div
   data-agentid-verify
   data-address="YOUR_AGENT_WALLET"

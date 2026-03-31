@@ -190,7 +190,7 @@ describe("RegisterAgentParams required fields", () => {
         dataAnalysis: false,
         maxUsdcTx: 500,
       },
-      metadataUri: "https://agentid.xyz/metadata/TestAgent.json",
+      metadataUri: "https://agentid-kya-solana.vercel.app/metadata/TestAgent.json",
       merkleTree: "11111111111111111111111111111112",
       treeAuthority: "11111111111111111111111111111112",
     };

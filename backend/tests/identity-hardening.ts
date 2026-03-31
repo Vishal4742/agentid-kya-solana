@@ -68,7 +68,7 @@ describe("identity hardening", () => {
       canPublishContent: true,
       canAnalyzeData: true,
       maxTxSizeUsdc: new anchor.BN(50),
-      metadataUri: "https://agentid.xyz/metadata/hardened-agent.json",
+      metadataUri: "https://agentid-kya-solana.vercel.app/metadata/hardened-agent.json",
     });
   });
 
