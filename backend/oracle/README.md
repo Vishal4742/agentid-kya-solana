@@ -13,8 +13,14 @@ Node/Express service that recalculates and writes `reputation_score` back to the
 ## Important Limits
 
 - Reputation still depends on on-chain inputs that are not fully hardened yet
-- Transaction volume scoring is still `0` for now
 - This service is buildable and runnable locally, but it should not be treated as audited production infrastructure
+
+## Current Reputation Guardrails
+
+- Treasury volume now comes from `AgentTreasury.total_earned + total_spent`
+- Success score is capped by observed activity spread, verification level, and rating count so raw self-reported `success=true` spam does not receive the full 40% weight
+- Longevity now requires sustained activity instead of rewarding agents that only registered early
+- Remaining limitation: `log_action` is still owner-submitted data, so this is a mitigation layer, not a trustless reputation system
 
 ## Requirements
 
@@ -29,12 +35,14 @@ Copy `.env.example` to `.env` and set:
 
 ```bash
 ORACLE_PRIVATE_KEY=[12,34,56,...]
-SOLANA_RPC_URL=https://api.devnet.solana.com
+SOLANA_RPC_URL=https://devnet.helius-rpc.com/?api-key=YOUR_HELIUS_KEY
+HELIUS_API_KEY=YOUR_HELIUS_KEY
 HELIUS_WEBHOOK_AUTH=your_secure_random_string
+WEBHOOK_URL=https://your-public-url.example/webhook
 PORT=3001
 ```
 
-Additional Helius-related variables may still exist in `.env.example`, but the current server entrypoint only requires the values above to start and process signed webhook requests.
+The full step-by-step local setup is documented in [`backend/oracle/.env.example`](/mnt/c/Users/vg890/OneDrive/Desktop/agentid-kya-solana/backend/oracle/.env.example).
 
 ## Development
 

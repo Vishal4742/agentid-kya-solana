@@ -7,6 +7,7 @@ import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { Program, AnchorProvider, Idl, Wallet } from "@coral-xyz/anchor";
 // @ts-ignore
 import idl from "./idl/agentid_program.json";
+import { calculateReputationScore } from "./reputation";
 
 dotenv.config();
 
@@ -50,11 +51,70 @@ console.log(`📜 Loaded Program: ${PROGRAM_ID.toBase58()}`);
 
 // Seed prefixes from Anchor program
 const CONFIG_SEED = Buffer.from("program-config");
+const TREASURY_SEED = Buffer.from("agent-treasury");
 
 const [configPda] = PublicKey.findProgramAddressSync(
     [CONFIG_SEED],
     PROGRAM_ID
 );
+
+function toSafeNumber(value: any): number {
+    if (typeof value === "number") {
+        return value;
+    }
+    if (typeof value === "bigint") {
+        return Number(value);
+    }
+    if (value && typeof value.toNumber === "function") {
+        return value.toNumber();
+    }
+    return Number(value ?? 0);
+}
+
+async function fetchAgentActionTimestamps(agentIdentityPda: PublicKey): Promise<number[]> {
+    const actions = await (program.account as any).agentAction.all([
+        {
+            memcmp: {
+                offset: 8,
+                bytes: agentIdentityPda.toBase58(),
+            },
+        },
+    ]);
+
+    return actions.map((action: any) => toSafeNumber(action.account.timestamp));
+}
+
+async function fetchTreasuryVolumeLamports(agentIdentityPda: PublicKey): Promise<number> {
+    const [treasuryPda] = PublicKey.findProgramAddressSync(
+        [TREASURY_SEED, agentIdentityPda.toBuffer()],
+        PROGRAM_ID
+    );
+
+    try {
+        const treasury = await (program.account as any).agentTreasury.fetch(treasuryPda);
+        return toSafeNumber(treasury.totalEarned) + toSafeNumber(treasury.totalSpent);
+    } catch {
+        return 0;
+    }
+}
+
+async function buildReputation(agentIdentityPda: PublicKey, agentData: any) {
+    const [actionTimestamps, totalVolumeLamports] = await Promise.all([
+        fetchAgentActionTimestamps(agentIdentityPda),
+        fetchTreasuryVolumeLamports(agentIdentityPda),
+    ]);
+
+    return calculateReputationScore({
+        totalTransactions: toSafeNumber(agentData.totalTransactions),
+        successfulTransactions: toSafeNumber(agentData.successfulTransactions),
+        humanRatingX10: toSafeNumber(agentData.humanRatingX10),
+        ratingCount: toSafeNumber(agentData.ratingCount),
+        registeredAt: toSafeNumber(agentData.registeredAt),
+        verifiedLevel: toSafeNumber(agentData.verifiedLevel),
+        actionTimestamps,
+        totalVolumeLamports,
+    });
+}
 
 // ── Webhook Endpoint ────────────────────────────────────────────────────────
 
@@ -134,42 +194,18 @@ app.post("/webhook", async (req, res) => {
                 continue;
             }
 
-            // 3. Compute reputation score using weighted formula
-            const totalTx = agentData.totalTransactions.toNumber();
-            const successTx = agentData.successfulTransactions.toNumber();
-            const ratingX10 = agentData.humanRatingX10;
-            const ratingCount = agentData.ratingCount;
-            const regAt = agentData.registeredAt.toNumber();
-            const verLevel = agentData.verifiedLevel;
+            const {
+                newScore,
+                activeDays,
+                successTrustMultiplier,
+                scoreSuccess,
+                scoreRating,
+                scoreLongevity,
+                scoreVolume,
+                scoreVerification,
+            } = await buildReputation(agentIdentityPda, agentData);
 
-            // Success rate: (successful/total) * 400 (40%)
-            const successRate = totalTx === 0 ? 0 : (successTx / totalTx);
-            const scoreSuccess = successRate * 400;
-
-            // Human rating: ((rating-1)/4) * 200 (20%)
-            // Neutral rating (3) if no ratings yet
-            const actualRating = ratingCount === 0 ? 3 : (ratingX10 / 10);
-            const scoreRating = Math.max(0, ((actualRating - 1) / 4) * 200);
-
-            // Longevity: min(days_since_registration/365, 1) * 150 (15%)
-            const daysSinceReg = (Date.now() / 1000 - regAt) / (60 * 60 * 24);
-            const scoreLongevity = Math.min(Math.max(daysSinceReg, 0) / 365, 1) * 150;
-
-            // Tx volume: min(total_usdc/100000, 1) * 150 (15%)
-            // (Total USDC volume is tracked via AgentTreasury in Phase 8 - assuming 0 for now)
-            const scoreVolume = 0;
-
-            // Verification: Unverified=0, Email=50, KYB=100, Audited=200 (10%)
-            let scoreVerification = 0;
-            if (verLevel === 1) scoreVerification = 50;   // EmailVerified
-            if (verLevel === 2) scoreVerification = 100;  // KYBVerified
-            if (verLevel === 3) scoreVerification = 200;  // Audited
-
-            // Final score: 0 to 1000
-            const totalScore = Math.floor(scoreSuccess + scoreRating + scoreLongevity + scoreVolume + scoreVerification);
-            const newScore = Math.min(Math.max(totalScore, 0), 1000);
-
-            console.log(`   └─ Computed Score: ${newScore} (Success: ${Math.round(scoreSuccess)}, Rating: ${Math.round(scoreRating)}, Longevity: ${Math.round(scoreLongevity)}, Verif: ${scoreVerification})`);
+            console.log(`   └─ Computed Score: ${newScore} (Success: ${Math.round(scoreSuccess)}, Rating: ${Math.round(scoreRating)}, Longevity: ${Math.round(scoreLongevity)}, Volume: ${Math.round(scoreVolume)}, Verif: ${scoreVerification}, ActiveDays: ${activeDays}, SuccessTrust: ${successTrustMultiplier.toFixed(2)})`);
             console.log(`   └─ Calling update_reputation(${newScore}) for ${agentIdentityPda.toBase58().slice(0, 8)}...`);
 
             // 4. Update the computed score on-chain
@@ -206,32 +242,16 @@ cron.schedule("0 * * * *", async () => {
             const agentIdentityPda = agent.publicKey;
             const agentData = agent.account;
 
-            // Compute reputation score using weighted formula
-            const totalTx = agentData.totalTransactions.toNumber();
-            const successTx = agentData.successfulTransactions.toNumber();
-            const ratingX10 = agentData.humanRatingX10;
-            const ratingCount = agentData.ratingCount;
-            const regAt = agentData.registeredAt.toNumber();
-            const verLevel = agentData.verifiedLevel;
-
-            const successRate = totalTx === 0 ? 0 : (successTx / totalTx);
-            const scoreSuccess = successRate * 400;
-
-            const actualRating = ratingCount === 0 ? 3 : (ratingX10 / 10);
-            const scoreRating = Math.max(0, ((actualRating - 1) / 4) * 200);
-
-            const daysSinceReg = (Date.now() / 1000 - regAt) / (60 * 60 * 24);
-            const scoreLongevity = Math.min(Math.max(daysSinceReg, 0) / 365, 1) * 150;
-
-            const scoreVolume = 0; // Total USDC volume assumed 0 for now (Phase 8 feature)
-
-            let scoreVerification = 0;
-            if (verLevel === 1) scoreVerification = 50;
-            if (verLevel === 2) scoreVerification = 100;
-            if (verLevel === 3) scoreVerification = 200;
-
-            const totalScore = Math.floor(scoreSuccess + scoreRating + scoreLongevity + scoreVolume + scoreVerification);
-            const newScore = Math.min(Math.max(totalScore, 0), 1000);
+            const {
+                newScore,
+                activeDays,
+                successTrustMultiplier,
+                scoreSuccess,
+                scoreRating,
+                scoreLongevity,
+                scoreVolume,
+                scoreVerification,
+            } = await buildReputation(agentIdentityPda, agentData);
 
             // Skip update if score hasn't changed to save fees
             if (agentData.reputationScore === newScore) {
@@ -239,6 +259,7 @@ cron.schedule("0 * * * *", async () => {
             }
 
             console.log(`   └─ Updating ${agentData.name} (${agentIdentityPda.toBase58().slice(0, 8)}): ${agentData.reputationScore} ➡️ ${newScore}`);
+            console.log(`      Breakdown: Success ${Math.round(scoreSuccess)}, Rating ${Math.round(scoreRating)}, Longevity ${Math.round(scoreLongevity)}, Volume ${Math.round(scoreVolume)}, Verif ${scoreVerification}, ActiveDays ${activeDays}, SuccessTrust ${successTrustMultiplier.toFixed(2)}`);
 
             try {
                 await (program.methods as any)

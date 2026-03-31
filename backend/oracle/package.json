@@ -7,7 +7,7 @@
     "dev": "ts-node src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "test": "echo \"Ok\""
+    "test": "node --require ts-node/register --test src/reputation.test.ts"
   },
   "keywords": [],
   "author": "",
