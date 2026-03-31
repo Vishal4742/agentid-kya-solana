@@ -7,12 +7,17 @@ import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { Program, AnchorProvider, Idl, Wallet } from "@coral-xyz/anchor";
 // @ts-ignore
 import idl from "./idl/agentid_program.json";
+import {
+    parseWebhookPayload,
+    validateWebhookAuthHeader,
+    validateWebhookSignature,
+} from "./webhookAuth";
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: "500kb" }));
+app.use(express.raw({ type: "application/json", limit: "500kb" }));
 
 const PORT = process.env.PORT || 3001;
 const RPC_URL = process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com";
@@ -81,21 +86,38 @@ async function computeVolumeScore(agentIdentityPda: PublicKey): Promise<number> 
 // ── Webhook Endpoint ────────────────────────────────────────────────────────
 
 app.post("/webhook", async (req, res) => {
-    // 0. Verify Webhook Auth Header — always required
-    const authHeader = req.headers.authorization;
+    const rawBody = Buffer.isBuffer(req.body) ? req.body : Buffer.from([]);
+    const signatureSecret = process.env.ORACLE_WEBHOOK_SECRET;
     const expectedAuth = process.env.HELIUS_WEBHOOK_AUTH;
-    if (!expectedAuth) {
-        console.error("❌ HELIUS_WEBHOOK_AUTH not set — refusing all webhook requests");
-        return res.status(500).send("Server misconfigured");
-    }
-    if (authHeader !== expectedAuth) {
-        console.warn(`⚠️  Unauthorized webhook attempt from ${req.ip}`);
+
+    let authMode: "hmac" | "authorization" | null = null;
+
+    if (signatureSecret && validateWebhookSignature(rawBody, req.headers, signatureSecret)) {
+        authMode = "hmac";
+    } else if (expectedAuth && validateWebhookAuthHeader(req.headers, expectedAuth)) {
+        authMode = "authorization";
+    } else {
+        if (!signatureSecret && !expectedAuth) {
+            console.error("❌ Neither ORACLE_WEBHOOK_SECRET nor HELIUS_WEBHOOK_AUTH is set — refusing all webhook requests");
+            return res.status(500).send("Server misconfigured");
+        }
+
+        console.warn(`⚠️  Rejected webhook attempt from ${req.ip}: invalid signature/auth header`);
         return res.status(401).send("Unauthorized");
     }
 
-    // Helius sends an array of enriched transactions
-    const transactions = req.body;
+    if (authMode === "authorization") {
+        console.warn("⚠️  Accepted webhook via static Authorization header fallback. Prefer ORACLE_WEBHOOK_SECRET with x-agentid-signature.");
+    }
 
+    let transactions: unknown;
+    try {
+        transactions = parseWebhookPayload(rawBody);
+    } catch {
+        return res.status(400).send("Invalid JSON payload");
+    }
+
+    // Helius sends an array of enriched transactions
     if (!Array.isArray(transactions)) {
         return res.status(400).send("Invalid payload");
     }

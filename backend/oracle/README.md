@@ -5,7 +5,8 @@ Node/Express service that recalculates and writes `reputation_score` back to the
 ## What It Does Today
 
 - Loads the Anchor IDL from `src/idl/agentid_program.json`
-- Verifies a webhook auth header before accepting Helius webhook requests
+- Validates signed webhook bodies when `x-agentid-signature` is present and `ORACLE_WEBHOOK_SECRET` is configured
+- Falls back to a static `Authorization` header for direct Helius delivery when `HELIUS_WEBHOOK_AUTH` is configured
 - Recomputes reputation when it sees `LogAction` or `Rate` program interactions
 - Runs an hourly full sync across all `AgentIdentity` accounts
 - Calls `updateReputation` on-chain using the configured oracle authority
@@ -30,11 +31,14 @@ Copy `.env.example` to `.env` and set:
 ```bash
 ORACLE_PRIVATE_KEY=[12,34,56,...]
 SOLANA_RPC_URL=https://api.devnet.solana.com
+ORACLE_WEBHOOK_SECRET=shared_secret_for_signed_webhooks
 HELIUS_WEBHOOK_AUTH=your_secure_random_string
 PORT=3001
 ```
 
-Additional Helius-related variables may still exist in `.env.example`, but the current server entrypoint only requires the values above to start and process signed webhook requests.
+Use `ORACLE_WEBHOOK_SECRET` when requests are relayed through a signer that sends `x-agentid-signature: sha256=<hex>`.
+
+Use `HELIUS_WEBHOOK_AUTH` when Helius posts directly to the oracle. That fallback is weaker than HMAC signing because it is a static shared bearer value.
 
 ## Development
 
