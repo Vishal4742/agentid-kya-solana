@@ -77,6 +77,10 @@ pub fn process_autonomous_payment(
 
     require!(!treasury.emergency_pause, AgentIdError::TreasuryPaused);
     require!(amount <= treasury.spending_limit_per_tx, AgentIdError::ExceedsPerTxLimit);
+    require!(
+        amount <= ctx.accounts.agent_identity.max_tx_size_usdc,
+        AgentIdError::ExceedsMaxTxLimit
+    );
     if amount > treasury.multisig_required_above {
         return err!(AgentIdError::RequiresMultisig);
     }
@@ -135,3 +139,4 @@ pub fn process_autonomous_payment(
 
     Ok(())
 }
+
