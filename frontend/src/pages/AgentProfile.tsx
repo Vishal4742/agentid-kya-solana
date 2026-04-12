@@ -357,6 +357,7 @@ export default function AgentProfile() {
                 <p className="label-meta">Reputation Score</p>
                 <button onClick={async () => {
                   try {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const acc = await (program.account as any).agentIdentity.fetch(new PublicKey(id!));
                     setAgent(normalizeAccount(id!, acc as Record<string, unknown>));
                     toast.success("Reputation refreshed from chain");
