@@ -57,7 +57,7 @@ describe.skip("x402Middleware Integration Tests", () => {
       connection,
       payer,
       usdcMint,
-      treasury.publicKey,
+      treasury.publicKey
     );
     treasuryTokenAccount = treasuryAta.address;
 
@@ -68,7 +68,7 @@ describe.skip("x402Middleware Integration Tests", () => {
       x402Middleware(1.0, treasury.publicKey.toBase58()),
       (req, res) => {
         res.json({ success: true, payment: res.locals.verifiedPayment });
-      },
+      }
     );
   }, 60000);
 
@@ -91,7 +91,7 @@ describe.skip("x402Middleware Integration Tests", () => {
       connection,
       payer,
       usdcMint,
-      payer.publicKey,
+      payer.publicKey
     );
 
     // Mint 2 USDC to payer (assuming we have mint authority - devnet only)
@@ -105,7 +105,7 @@ describe.skip("x402Middleware Integration Tests", () => {
       payerAta.address,
       treasuryTokenAccount,
       payer.publicKey,
-      1_000_000, // 1 USDC (6 decimals)
+      1_000_000 // 1 USDC (6 decimals)
     );
 
     // Wait for confirmation
@@ -131,7 +131,7 @@ describe.skip("x402Middleware Integration Tests", () => {
       connection,
       payer,
       usdcMint,
-      payer.publicKey,
+      payer.publicKey
     );
 
     const transferSig = await transfer(
@@ -140,7 +140,7 @@ describe.skip("x402Middleware Integration Tests", () => {
       payerAta.address,
       treasuryTokenAccount,
       payer.publicKey,
-      1_000_000,
+      1_000_000
     );
 
     await connection.confirmTransaction(transferSig, "confirmed");
@@ -167,7 +167,7 @@ describe.skip("x402Middleware Integration Tests", () => {
       connection,
       payer,
       usdcMint,
-      payer.publicKey,
+      payer.publicKey
     );
 
     // Transfer only 0.5 USDC (insufficient for 1.0 USDC requirement)
@@ -177,7 +177,7 @@ describe.skip("x402Middleware Integration Tests", () => {
       payerAta.address,
       treasuryTokenAccount,
       payer.publicKey,
-      500_000, // 0.5 USDC
+      500_000 // 0.5 USDC
     );
 
     await connection.confirmTransaction(transferSig, "confirmed");

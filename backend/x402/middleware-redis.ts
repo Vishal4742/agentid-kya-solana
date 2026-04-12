@@ -110,7 +110,7 @@ class RedisReplayStore implements ReplayStore {
     await this.client.setEx(
       `x402:sig:${signature}`,
       ttlSeconds,
-      Date.now().toString(),
+      Date.now().toString()
     );
   }
 
@@ -155,7 +155,7 @@ async function markConsumed(signature: string): Promise<void> {
 
 function getAccountPubkey(
   tx: ParsedTransactionWithMeta,
-  accountIndex: number,
+  accountIndex: number
 ): string | null {
   const key = tx.transaction.message.accountKeys[accountIndex];
   if (!key) return null;
@@ -165,21 +165,21 @@ function getAccountPubkey(
 }
 
 function getRawTokenAmount(
-  balance: { uiTokenAmount: { amount: string } } | undefined,
+  balance: { uiTokenAmount: { amount: string } } | undefined
 ): bigint {
   return BigInt(balance?.uiTokenAmount.amount ?? "0");
 }
 
 function calculateTreasuryUsdcInflow(
   tx: ParsedTransactionWithMeta,
-  treasuryAddress: string,
+  treasuryAddress: string
 ): bigint {
   const treasury = new PublicKey(treasuryAddress).toBase58();
   const preBalances = new Map(
     (tx.meta?.preTokenBalances ?? []).map((balance) => [
       balance.accountIndex,
       balance,
-    ]),
+    ])
   );
 
   let inflow = 0n;
@@ -205,14 +205,14 @@ function calculateTreasuryUsdcInflow(
 
 export const x402Middleware = (
   requiredUsdcAmount: number,
-  treasuryAddress: string,
+  treasuryAddress: string
 ) => {
   const treasury = new PublicKey(treasuryAddress).toBase58();
   const requiredAmountRaw = BigInt(Math.round(requiredUsdcAmount * 1_000_000));
 
   return async (req: Request, res: Response, next: NextFunction) => {
     const paymentSignature = String(
-      req.headers["x-payment-signature"] ?? "",
+      req.headers["x-payment-signature"] ?? ""
     ).trim();
 
     if (!paymentSignature) {

@@ -9,7 +9,7 @@ const PROGRAM_ID = "Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF"; // The AgentI
 
 if (!HELIUS_API_KEY || !WEBHOOK_URL || !HELIUS_WEBHOOK_AUTH) {
   console.error(
-    "❌ Missing HELIUS_API_KEY, WEBHOOK_URL, or HELIUS_WEBHOOK_AUTH in .env",
+    "❌ Missing HELIUS_API_KEY, WEBHOOK_URL, or HELIUS_WEBHOOK_AUTH in .env"
   );
   process.exit(1);
 }
@@ -33,13 +33,13 @@ const registerWebhook = async () => {
           webhookType: "enhanced", // enhanced webhooks provide parsed instruction logs and token transfers
           authHeader: HELIUS_WEBHOOK_AUTH,
         }),
-      },
+      }
     );
 
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(
-        `Helius API Error: ${response.status} ${response.statusText} - ${errorText}`,
+        `Helius API Error: ${response.status} ${response.statusText} - ${errorText}`
       );
     }
 

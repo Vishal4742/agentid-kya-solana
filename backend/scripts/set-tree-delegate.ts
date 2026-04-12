@@ -18,7 +18,7 @@ import { Keypair, PublicKey } from "@solana/web3.js";
 const DEVNET_RPC = "https://api.devnet.solana.com";
 const DEFAULT_WALLET_PATH = "~/.config/solana/id.json";
 const PROGRAM_ID = new PublicKey(
-  "Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF",
+  "Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF"
 );
 const DEFAULT_MERKLE_TREE = "2EtpZX5evXj3hqMPmXgHUA5F2YDvkSn2sXgQkwcPy2sx";
 
@@ -32,18 +32,18 @@ const expandHome = (filePath: string): string => {
 
 const main = async (): Promise<void> => {
   const walletPath = expandHome(
-    process.env.SOLANA_WALLET_PATH ?? DEFAULT_WALLET_PATH,
+    process.env.SOLANA_WALLET_PATH ?? DEFAULT_WALLET_PATH
   );
   const walletBytes = JSON.parse(await fs.readFile(walletPath, "utf8"));
   const walletKeypair = Keypair.fromSecretKey(Uint8Array.from(walletBytes));
   const umi = createUmi(DEVNET_RPC).use(mplBubblegum());
   const payer = createSignerFromKeypair(umi, fromWeb3JsKeypair(walletKeypair));
   const merkleTree = publicKey(
-    process.env.MERKLE_TREE_ADDRESS ?? DEFAULT_MERKLE_TREE,
+    process.env.MERKLE_TREE_ADDRESS ?? DEFAULT_MERKLE_TREE
   );
   const [treeDelegate] = PublicKey.findProgramAddressSync(
     [Buffer.from("program-config")],
-    PROGRAM_ID,
+    PROGRAM_ID
   );
 
   umi.use(signerIdentity(payer));

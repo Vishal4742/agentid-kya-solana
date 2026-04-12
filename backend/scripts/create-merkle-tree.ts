@@ -16,7 +16,7 @@ const ENV_PATH = path.resolve(__dirname, "..", ".env");
 const DEVNET_RPC = "https://api.devnet.solana.com";
 const DEFAULT_WALLET_PATH = "~/.config/solana/id.json";
 const BUBBLEGUM_PROGRAM_ID = new PublicKey(
-  "BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY",
+  "BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY"
 );
 
 const expandHome = (filePath: string): string => {
@@ -52,12 +52,12 @@ const main = async (): Promise<void> => {
   const umi = createUmi(DEVNET_RPC).use(mplBubblegum());
 
   const walletPath = expandHome(
-    process.env.SOLANA_WALLET_PATH ?? DEFAULT_WALLET_PATH,
+    process.env.SOLANA_WALLET_PATH ?? DEFAULT_WALLET_PATH
   );
   const walletBytes = JSON.parse(await fs.readFile(walletPath, "utf8"));
   const payer = createSignerFromKeypair(
     umi,
-    fromWeb3JsKeypair(Keypair.fromSecretKey(Uint8Array.from(walletBytes))),
+    fromWeb3JsKeypair(Keypair.fromSecretKey(Uint8Array.from(walletBytes)))
   );
 
   umi.use(signerIdentity(payer));
@@ -77,7 +77,7 @@ const main = async (): Promise<void> => {
   const treeAddress = merkleTree.publicKey.toString();
   const [treeAuthority] = PublicKey.findProgramAddressSync(
     [new PublicKey(treeAddress).toBuffer()],
-    BUBBLEGUM_PROGRAM_ID,
+    BUBBLEGUM_PROGRAM_ID
   );
 
   await upsertEnvValue("MERKLE_TREE_ADDRESS", treeAddress);

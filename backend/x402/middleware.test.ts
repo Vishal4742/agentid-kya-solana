@@ -53,7 +53,7 @@ describe("x402Middleware", () => {
           required_amount: 1.0,
           treasury: TREASURY,
           currency: "USDC",
-        }),
+        })
       );
       expect(mockNext).not.toHaveBeenCalled();
     });
@@ -183,7 +183,7 @@ describe("x402Middleware", () => {
           error: "Insufficient payment",
           observed_amount: 0.5,
           required_amount: 1.0,
-        }),
+        })
       );
       expect(mockNext).not.toHaveBeenCalled();
     });
@@ -198,7 +198,7 @@ describe("x402Middleware", () => {
       const mockGetParsedTransaction =
         Connection.mock.results[0].value.getParsedTransaction;
       mockGetParsedTransaction.mockRejectedValue(
-        new Error("RPC connection failed"),
+        new Error("RPC connection failed")
       );
 
       const middleware = x402Middleware(1.0, TREASURY);

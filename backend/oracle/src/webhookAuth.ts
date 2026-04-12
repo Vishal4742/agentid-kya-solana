@@ -4,7 +4,7 @@ const SIGNATURE_HEADER = "x-agentid-signature";
 
 function readHeader(
   headers: Record<string, string | string[] | undefined>,
-  name: string,
+  name: string
 ): string | undefined {
   const value = headers[name] ?? headers[name.toLowerCase()];
   return Array.isArray(value) ? value[0] : value;
@@ -17,7 +17,7 @@ export function computeHmacHex(body: Buffer, secret: string): string {
 export function validateWebhookSignature(
   rawBody: Buffer,
   headers: Record<string, string | string[] | undefined>,
-  secret: string,
+  secret: string
 ): boolean {
   if (!secret) {
     return false;
@@ -34,7 +34,7 @@ export function validateWebhookSignature(
   try {
     return crypto.timingSafeEqual(
       Buffer.from(incomingHex, "hex"),
-      Buffer.from(expectedHex, "hex"),
+      Buffer.from(expectedHex, "hex")
     );
   } catch {
     return false;
@@ -43,7 +43,7 @@ export function validateWebhookSignature(
 
 export function validateWebhookAuthHeader(
   headers: Record<string, string | string[] | undefined>,
-  expectedAuth: string,
+  expectedAuth: string
 ): boolean {
   if (!expectedAuth) {
     return false;

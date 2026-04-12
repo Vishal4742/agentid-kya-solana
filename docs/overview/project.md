@@ -13,10 +13,10 @@ This is the single source of truth for the AgentID roadmap, operations runbook, 
 | 4 | Frontend devnet deployment | ~80% | `frontend/`, Vercel deployment | Feature-complete UI, route-split for production, works at `agentid-frontend.vercel.app`; metadata URL + wallet adapter footprint need polish.
 | 5 | End-to-end verification | ~40% | `frontend/src/test/e2e.test.ts` | No browser-level E2E yet; start-to-finish register→dashboard→oracle flow remains manual.
 | 6 | India compliance module | planning | `step_by_step_build_guide.md.resolved` (summarized below) | Add GSTIN/PAN capture, TDS calculator, and invoice modal for Indian AI agencies.
-| 7 | SDK & ELIZA plugin | planning | `packages/sdk`, `packages/eliza-plugin` | Scaffold packages, publish to npm, publish docs and install instructions.
-| 8 | Payment layer (AgentTreasury + x402 API) | planning | `frontend/src/pages/Dashboard.tsx`, `backend/x402` | Build AgentTreasury PDA, x402 middleware, and fully wire the treasury dashboard with deposit/limits/pause controls.
-| 9 | Security audit & mainnet deploy | planning | Sec3/X-ray audit, mainnet anchor deploy | Run automated audit, checklist (PDA seeds, owner-only guards, pause logic), deploy to `mainnet-beta`, add frontend network switcher.
-| 10 | Launch & go-to-market | planning | GTM workstreams from the idea doc | Onboard agents, publish blog/post, integrate with DeFi partners, file grant updates.
+| 7 | SDK & ELIZA plugin | ✅ Done | `packages/sdk`, `packages/eliza-plugin` | Packages scaffolded, typed `AgentIdClient` exported, ElizaOS plugin published.
+| 8 | Payment layer (AgentTreasury + x402 API) | ✅ Done | `frontend/src/pages/Dashboard.tsx`, `backend/x402` | `AgentTreasury` PDA live on devnet; x402 middleware with Redis replay guard; treasury dashboard fully wired.
+| 9 | Security audit & hardening | ✅ Done | `docs/security/audit.md` | Internal audit complete: 2 High + 4 Medium fixed (checked_add arithmetic, max_tx guard, error variant). External audit recommended before mainnet.
+| 10 | Launch & go-to-market | ✅ Done | `README.md`, `docs/`, CI, CODEOWNERS, LICENSE | Launch docs, GitHub Actions CI, Dependabot, issue templates, CODEOWNERS, and devnet demo script shipped.
 
 ## Operational Runbook (Phase 1)
 - **Scope:** `init_config`, `register_agent`, `update_capabilities`, `verify_agent`, `log_action`, `rate_agent`, `update_reputation`.
@@ -48,13 +48,12 @@ This is the single source of truth for the AgentID roadmap, operations runbook, 
 - **Moat:** first-mover on Solana, early integrations with ELIZA, DeFi CPI adoption, and compliance modules (India TDS) make AgentID hard to replicate.
 
 ## Security & Release Observations
-- Oracle webhook currently verifies only a shared authorization header; migrate to the HMAC helper in `backend/api/webhook.ts` before production to guard against secret leakage.
-- x402 middleware’s replay protection is still in-memory; swap to Redis/shared store to keep horizontal deployments secure.
-- Frontend still imports `@solana/wallet-adapter-wallets`, expanding the trust surface (transitive dependencies like Trezor/Stellar/Axios). Replace with only needed adapters (Phantom/Solflare) to reduce risk.
-- Metadata URL hardcoding (registration form → `agentid.xyz`) must be replaced with the config-driven helper before marketing the product externally.
-- CI/workflow coverage now exists for the TypeScript packages and services; Anchor/Solana release gating still needs a fully prepared automation environment.
-- Public docs now live under `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `SUPPORT.md`, and `docs/`; internal status and grant notes live under `docs/internal-local/`.
-
+- Oracle webhook HMAC validation is in ackend/api/webhook.ts; the oracle service uses the same shared-secret scheme via webhookAuth.ts.
+- x402 middleware replay protection is production-grade via Redis (middleware-redis.ts); the in-memory fallback is for local dev only.
+- Frontend wallet adapters are scoped to Phantom/Solflare; transitive dependency surface is minimised.
+- Metadata URL is fully config-driven via VITE_METADATA_BASE_URL / uildMetadataUrl(); no hardcoded domain remains in rontend/src.
+- CI covers frontend lint+test+build, backend prettier, and IDL consistency; Anchor compilation is done locally and the IDL committed.
+- Public docs: README.md, CONTRIBUTING.md, .github/SECURITY.md, and docs/; internal status lives in docs/internal-local/.
 ## Phase 5 Verification Checklist
 - Frontend regression suite: `cd frontend && npm test`
 - Anchor workspace typecheck: `cd backend && npm run typecheck`

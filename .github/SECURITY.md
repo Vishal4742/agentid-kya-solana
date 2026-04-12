@@ -16,7 +16,7 @@ We take the security of AgentID seriously. If you have discovered a security vul
 
 **Please do not report security vulnerabilities through public GitHub issues.**
 
-Instead, please send an email to the repository maintainers with:
+Instead, please open a [GitHub Security Advisory](https://github.com/Vishal4742/agentid-kya-solana/security/advisories/new) or, if you prefer private email, contact the repository owner listed on the GitHub profile. Include:
 
 1. A description of the vulnerability
 2. Steps to reproduce the issue
@@ -44,8 +44,8 @@ When using AgentID:
 
 ## Known Security Considerations
 
-- This project is in active development and has not been audited
-- The Anchor program should be thoroughly tested and audited before mainnet deployment
+- This project has completed an **internal security audit** (see [`docs/security/audit.md`](../docs/security/audit.md)) covering all 12 Anchor instructions; 2 High and 4 Medium findings have been mitigated
+- An **external audit** (e.g. OtterSec, Neodyme) is strongly recommended before any mainnet deployment
 - Treasury and payment features involve real assets and require careful security review
 - Always test on devnet/testnet before deploying to mainnet
 

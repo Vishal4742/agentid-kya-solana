@@ -3,15 +3,17 @@
 # scripts/demo-devnet.sh
 #
 # AgentID KYA — Live Devnet Demo Script
-# Registers an agent identity on Solana devnet and verifies the full flow.
+# Checks wallet balance, derives PDAs, verifies the program is live on devnet,
+# and fetches metadata from the Vercel API.
 #
 # Usage:
 #   bash scripts/demo-devnet.sh
 #
 # Requirements:
-#   - Solana CLI installed and configured for devnet
-#   - Node.js >= 18
-#   - Funded devnet wallet (~1 SOL)
+#   - Solana CLI (>= 1.18) installed and configured for devnet
+#   - Node.js >= 18 with @solana/web3.js available (cd frontend && npm install)
+#   - curl, bc, grep (POSIX)
+#   - Funded devnet wallet (~0.1 SOL for balance check)
 # ─────────────────────────────────────────────────────────────────────────────
 
 set -euo pipefail
@@ -61,7 +63,7 @@ CONFIG_CHECK=$(solana account "$CONFIG_PDA" --url "$RPC" 2>&1 | head -3 || echo 
 if echo "$CONFIG_CHECK" | grep -q "Balance"; then
   echo "  ✅ Config PDA exists on devnet"
 else
-  echo "  ⚠️  Config PDA not found — run init_config first (see DEPLOYMENT.md Step 3)"
+  echo "  ⚠️  Config PDA not found — run init_config first (see docs/operations/deployment.md Step 3)"
 fi
 
 # ── Step 3: Check program is live ─────────────────────────────────────────
@@ -123,7 +125,7 @@ echo ""
 echo "╔══════════════════════════════════════════════════════╗"
 echo "║  Demo complete!                                      ║"
 echo "║  • Program:  $PROGRAM_ID  ║"
-echo "║  • Docs:     README.md  |  DEPLOYMENT.md            ║"
-echo "║  • Audit:    SECURITY_AUDIT.md                      ║"
+echo "║  • Docs:     README.md  |  docs/operations/deployment.md ║"
+echo "║  • Audit:    docs/security/audit.md                  ║"
 echo "╚══════════════════════════════════════════════════════╝"
 echo ""

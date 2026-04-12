@@ -29,11 +29,11 @@ describe("agentid-program", () => {
   before(async () => {
     const sig1 = await provider.connection.requestAirdrop(
       oracle.publicKey,
-      10 * anchor.web3.LAMPORTS_PER_SOL,
+      10 * anchor.web3.LAMPORTS_PER_SOL
     );
     const sig2 = await provider.connection.requestAirdrop(
       rater.publicKey,
-      10 * anchor.web3.LAMPORTS_PER_SOL,
+      10 * anchor.web3.LAMPORTS_PER_SOL
     );
 
     // We delay slightly to let the airdrop confirm
@@ -42,7 +42,7 @@ describe("agentid-program", () => {
 
     [programConfigPda] = anchor.web3.PublicKey.findProgramAddressSync(
       [SEED_PROGRAM_CONFIG],
-      program.programId,
+      program.programId
     );
 
     agentIdentityPda = await ensureAgentRegistered(program, provider);
@@ -57,15 +57,17 @@ describe("agentid-program", () => {
       })
       .rpc();
 
-    const configAccount =
-      await program.account.programConfig.fetch(programConfigPda);
+    const configAccount = await program.account.programConfig.fetch(
+      programConfigPda
+    );
     assert.ok(configAccount.admin.equals(provider.wallet.publicKey));
     assert.ok(configAccount.oracleAuthority.equals(oracle.publicKey));
   });
 
   it("Registers a new agent", async () => {
-    const identityAccount =
-      await program.account.agentIdentity.fetch(agentIdentityPda);
+    const identityAccount = await program.account.agentIdentity.fetch(
+      agentIdentityPda
+    );
     assert.equal(identityAccount.name, "Test Agent");
     assert.equal(identityAccount.verifiedLevel, 0); // Unverified
     assert.equal(identityAccount.reputationScore, 500); // Default
@@ -88,8 +90,9 @@ describe("agentid-program", () => {
       })
       .rpc();
 
-    const identityAccount =
-      await program.account.agentIdentity.fetch(agentIdentityPda);
+    const identityAccount = await program.account.agentIdentity.fetch(
+      agentIdentityPda
+    );
     assert.equal(identityAccount.canTradeDefi, true);
     assert.equal(identityAccount.canPublishContent, false);
     assert.ok(identityAccount.maxTxSizeUsdc.eq(new anchor.BN(1000)));
@@ -97,8 +100,9 @@ describe("agentid-program", () => {
 
   it("Logs an action", async () => {
     // Fetch current total_transactions to compute action PDA
-    let identityAccount =
-      await program.account.agentIdentity.fetch(agentIdentityPda);
+    let identityAccount = await program.account.agentIdentity.fetch(
+      agentIdentityPda
+    );
     let totalTxs = identityAccount.totalTransactions;
 
     const nonceBuffer = Buffer.alloc(8);
@@ -106,7 +110,7 @@ describe("agentid-program", () => {
 
     const [actionPda] = anchor.web3.PublicKey.findProgramAddressSync(
       [SEED_AGENT_ACTION, agentIdentityPda.toBuffer(), nonceBuffer],
-      program.programId,
+      program.programId
     );
 
     const params = {
@@ -131,8 +135,9 @@ describe("agentid-program", () => {
     assert.equal(actionAccount.memo, "Paid 5 USDC for API access");
 
     // Check stats updated
-    identityAccount =
-      await program.account.agentIdentity.fetch(agentIdentityPda);
+    identityAccount = await program.account.agentIdentity.fetch(
+      agentIdentityPda
+    );
     assert.ok(identityAccount.totalTransactions.eq(totalTxs.addn(1)));
   });
 
@@ -146,8 +151,9 @@ describe("agentid-program", () => {
       .signers([rater])
       .rpc();
 
-    const identityAccount =
-      await program.account.agentIdentity.fetch(agentIdentityPda);
+    const identityAccount = await program.account.agentIdentity.fetch(
+      agentIdentityPda
+    );
     assert.equal(identityAccount.ratingCount, 1);
     assert.equal(identityAccount.humanRatingX10, 40); // 4 * 10
   });
@@ -163,8 +169,9 @@ describe("agentid-program", () => {
       .signers([oracle])
       .rpc();
 
-    const identityAccount =
-      await program.account.agentIdentity.fetch(agentIdentityPda);
+    const identityAccount = await program.account.agentIdentity.fetch(
+      agentIdentityPda
+    );
     assert.equal(identityAccount.reputationScore, 800);
   });
 });
@@ -193,19 +200,19 @@ describe("treasury", () => {
     // Airdrop to mint authority
     const sig = await provider.connection.requestAirdrop(
       mintAuthority.publicKey,
-      5 * anchor.web3.LAMPORTS_PER_SOL,
+      5 * anchor.web3.LAMPORTS_PER_SOL
     );
     await provider.connection.confirmTransaction(sig, "confirmed");
 
     // Derive PDAs (agent was registered in the identity suite above)
     [agentIdentityPda] = anchor.web3.PublicKey.findProgramAddressSync(
       [SEED_AGENT_IDENTITY, provider.wallet.publicKey.toBuffer()],
-      program.programId,
+      program.programId
     );
     await ensureAgentRegistered(program, provider);
     [treasuryPda] = anchor.web3.PublicKey.findProgramAddressSync(
       [SEED_AGENT_TREASURY, agentIdentityPda.toBuffer()],
-      program.programId,
+      program.programId
     );
 
     // Create a mock USDC mint
@@ -214,7 +221,7 @@ describe("treasury", () => {
       mintAuthority,
       mintAuthority.publicKey,
       null,
-      6, // 6 decimals like real USDC
+      6 // 6 decimals like real USDC
     );
 
     // Create ATA for the owner (depositor)
@@ -222,7 +229,7 @@ describe("treasury", () => {
       provider.connection,
       mintAuthority,
       usdcMint,
-      provider.wallet.publicKey,
+      provider.wallet.publicKey
     );
 
     // Mint 1000 USDC to owner
@@ -232,7 +239,7 @@ describe("treasury", () => {
       usdcMint,
       ownerUsdcAta,
       mintAuthority,
-      1_000 * 1_000_000,
+      1_000 * 1_000_000
     );
   });
 
@@ -241,7 +248,7 @@ describe("treasury", () => {
       .initializeTreasury(
         new anchor.BN(500 * 1_000_000), // 500 USDC per tx
         new anchor.BN(2000 * 1_000_000), // 2000 USDC per day
-        new anchor.BN(1000 * 1_000_000), // multisig above 1000 USDC
+        new anchor.BN(1000 * 1_000_000) // multisig above 1000 USDC
       )
       .accounts({
         treasury: treasuryPda,
@@ -252,15 +259,16 @@ describe("treasury", () => {
       } as any)
       .rpc();
 
-    const treasuryAccount =
-      await program.account.agentTreasury.fetch(treasuryPda);
+    const treasuryAccount = await program.account.agentTreasury.fetch(
+      treasuryPda
+    );
     assert.ok(treasuryAccount.owner.equals(provider.wallet.publicKey));
     assert.ok(treasuryAccount.usdcMint.equals(usdcMint));
     assert.ok(
-      treasuryAccount.spendingLimitPerTx.eq(new anchor.BN(500 * 1_000_000)),
+      treasuryAccount.spendingLimitPerTx.eq(new anchor.BN(500 * 1_000_000))
     );
     assert.ok(
-      treasuryAccount.spendingLimitPerDay.eq(new anchor.BN(2000 * 1_000_000)),
+      treasuryAccount.spendingLimitPerDay.eq(new anchor.BN(2000 * 1_000_000))
     );
     assert.equal(treasuryAccount.emergencyPause, false);
   });
@@ -271,7 +279,7 @@ describe("treasury", () => {
       mintAuthority,
       usdcMint,
       treasuryPda,
-      true,
+      true
     );
     treasuryUsdcAta = treasuryTokenAccount.address;
 
@@ -287,8 +295,9 @@ describe("treasury", () => {
       } as any)
       .rpc();
 
-    const treasuryAccount =
-      await program.account.agentTreasury.fetch(treasuryPda);
+    const treasuryAccount = await program.account.agentTreasury.fetch(
+      treasuryPda
+    );
     assert.ok(treasuryAccount.totalEarned.eq(new anchor.BN(125 * 1_000_000)));
     assert.ok(treasuryAccount.usdcBalance.eq(new anchor.BN(125 * 1_000_000)));
   });
@@ -298,7 +307,7 @@ describe("treasury", () => {
       .updateSpendingLimits(
         new anchor.BN(250 * 1_000_000), // 250 USDC per tx
         new anchor.BN(1000 * 1_000_000), // 1000 USDC per day
-        new anchor.BN(800 * 1_000_000), // multisig above 800 USDC
+        new anchor.BN(800 * 1_000_000) // multisig above 800 USDC
       )
       .accounts({
         treasury: treasuryPda,
@@ -306,16 +315,17 @@ describe("treasury", () => {
       } as any)
       .rpc();
 
-    const treasuryAccount =
-      await program.account.agentTreasury.fetch(treasuryPda);
-    assert.ok(
-      treasuryAccount.spendingLimitPerTx.eq(new anchor.BN(250 * 1_000_000)),
+    const treasuryAccount = await program.account.agentTreasury.fetch(
+      treasuryPda
     );
     assert.ok(
-      treasuryAccount.spendingLimitPerDay.eq(new anchor.BN(1000 * 1_000_000)),
+      treasuryAccount.spendingLimitPerTx.eq(new anchor.BN(250 * 1_000_000))
     );
     assert.ok(
-      treasuryAccount.multisigRequiredAbove.eq(new anchor.BN(800 * 1_000_000)),
+      treasuryAccount.spendingLimitPerDay.eq(new anchor.BN(1000 * 1_000_000))
+    );
+    assert.ok(
+      treasuryAccount.multisigRequiredAbove.eq(new anchor.BN(800 * 1_000_000))
     );
   });
 
@@ -329,8 +339,9 @@ describe("treasury", () => {
       } as any)
       .rpc();
 
-    const treasuryAccount =
-      await program.account.agentTreasury.fetch(treasuryPda);
+    const treasuryAccount = await program.account.agentTreasury.fetch(
+      treasuryPda
+    );
     assert.equal(treasuryAccount.emergencyPause, true);
   });
 
@@ -344,7 +355,7 @@ describe("treasury", () => {
       provider.connection,
       mintAuthority,
       usdcMint,
-      recipientKeypair.publicKey,
+      recipientKeypair.publicKey
     );
 
     const treasuryTokenAccount = await getOrCreateAssociatedTokenAccount(
@@ -352,7 +363,7 @@ describe("treasury", () => {
       mintAuthority,
       usdcMint,
       treasuryPda,
-      true,
+      true
     );
     const treasuryUsdcAta = treasuryTokenAccount.address;
 
@@ -361,7 +372,7 @@ describe("treasury", () => {
         .autonomousPayment(
           new anchor.BN(1 * 1_000_000), // 1 USDC
           recipientKeypair.publicKey,
-          "test payment",
+          "test payment"
         )
         .accounts({
           treasury: treasuryPda,
@@ -377,7 +388,7 @@ describe("treasury", () => {
 
       // If the transaction succeeds when the treasury is paused, the test should fail.
       assert.fail(
-        "Expected autonomous_payment to throw TreasuryPaused, but it succeeded.",
+        "Expected autonomous_payment to throw TreasuryPaused, but it succeeded."
       );
     } catch (err: any) {
       // Anchor wraps program errors as AnchorError with an error code.
@@ -388,7 +399,7 @@ describe("treasury", () => {
         msg.includes("treasury is paused");
       assert.ok(
         isTreasuryPaused,
-        `Expected TreasuryPaused error, got: ${msg.slice(0, 200)}`,
+        `Expected TreasuryPaused error, got: ${msg.slice(0, 200)}`
       );
     }
   });
@@ -402,8 +413,9 @@ describe("treasury", () => {
       } as any)
       .rpc();
 
-    const treasuryAccount =
-      await program.account.agentTreasury.fetch(treasuryPda);
+    const treasuryAccount = await program.account.agentTreasury.fetch(
+      treasuryPda
+    );
     assert.equal(treasuryAccount.emergencyPause, false);
   });
   it("autonomous_payment succeeds after unpause and updates total_spent", async () => {
@@ -412,7 +424,7 @@ describe("treasury", () => {
       provider.connection,
       mintAuthority,
       usdcMint,
-      recipientKeypair.publicKey,
+      recipientKeypair.publicKey
     );
 
     const treasuryTokenAccount = await getOrCreateAssociatedTokenAccount(
@@ -420,7 +432,7 @@ describe("treasury", () => {
       mintAuthority,
       usdcMint,
       treasuryPda,
-      true,
+      true
     );
     const treasuryUsdcAta = treasuryTokenAccount.address;
 
@@ -428,7 +440,7 @@ describe("treasury", () => {
       .autonomousPayment(
         new anchor.BN(10 * 1_000_000),
         recipientKeypair.publicKey,
-        "integration test payment",
+        "integration test payment"
       )
       .accounts({
         treasury: treasuryPda,
@@ -442,8 +454,9 @@ describe("treasury", () => {
       } as any)
       .rpc();
 
-    const treasuryAccount =
-      await program.account.agentTreasury.fetch(treasuryPda);
+    const treasuryAccount = await program.account.agentTreasury.fetch(
+      treasuryPda
+    );
     assert.ok(treasuryAccount.totalSpent.eq(new anchor.BN(10 * 1_000_000)));
     assert.ok(treasuryAccount.spentToday.eq(new anchor.BN(10 * 1_000_000)));
     assert.ok(treasuryAccount.usdcBalance.lt(new anchor.BN(125 * 1_000_000)));
