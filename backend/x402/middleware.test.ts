@@ -53,7 +53,7 @@ describe("x402Middleware", () => {
           required_amount: 1.0,
           treasury: TREASURY,
           currency: "USDC",
-        })
+        }),
       );
       expect(mockNext).not.toHaveBeenCalled();
     });
@@ -84,7 +84,8 @@ describe("x402Middleware", () => {
 
       // Mock successful transaction verification
       const Connection = require("@solana/web3.js").Connection;
-      const mockGetParsedTransaction = Connection.mock.results[0].value.getParsedTransaction;
+      const mockGetParsedTransaction =
+        Connection.mock.results[0].value.getParsedTransaction;
       mockGetParsedTransaction.mockResolvedValue({
         meta: { err: null, preTokenBalances: [], postTokenBalances: [] },
         transaction: { message: { accountKeys: [] } },
@@ -112,7 +113,8 @@ describe("x402Middleware", () => {
       mockReq.headers = { "x-payment-signature": signature };
 
       const Connection = require("@solana/web3.js").Connection;
-      const mockGetParsedTransaction = Connection.mock.results[0].value.getParsedTransaction;
+      const mockGetParsedTransaction =
+        Connection.mock.results[0].value.getParsedTransaction;
       mockGetParsedTransaction.mockResolvedValue(null);
 
       const middleware = x402Middleware(1.0, TREASURY);
@@ -130,7 +132,8 @@ describe("x402Middleware", () => {
       mockReq.headers = { "x-payment-signature": signature };
 
       const Connection = require("@solana/web3.js").Connection;
-      const mockGetParsedTransaction = Connection.mock.results[0].value.getParsedTransaction;
+      const mockGetParsedTransaction =
+        Connection.mock.results[0].value.getParsedTransaction;
       mockGetParsedTransaction.mockResolvedValue({
         meta: { err: { InstructionError: [0, "CustomError"] } },
         transaction: { message: { accountKeys: [] } },
@@ -153,7 +156,8 @@ describe("x402Middleware", () => {
       mockReq.headers = { "x-payment-signature": signature };
 
       const Connection = require("@solana/web3.js").Connection;
-      const mockGetParsedTransaction = Connection.mock.results[0].value.getParsedTransaction;
+      const mockGetParsedTransaction =
+        Connection.mock.results[0].value.getParsedTransaction;
       mockGetParsedTransaction.mockResolvedValue({
         meta: {
           err: null,
@@ -179,7 +183,7 @@ describe("x402Middleware", () => {
           error: "Insufficient payment",
           observed_amount: 0.5,
           required_amount: 1.0,
-        })
+        }),
       );
       expect(mockNext).not.toHaveBeenCalled();
     });
@@ -191,8 +195,11 @@ describe("x402Middleware", () => {
       mockReq.headers = { "x-payment-signature": signature };
 
       const Connection = require("@solana/web3.js").Connection;
-      const mockGetParsedTransaction = Connection.mock.results[0].value.getParsedTransaction;
-      mockGetParsedTransaction.mockRejectedValue(new Error("RPC connection failed"));
+      const mockGetParsedTransaction =
+        Connection.mock.results[0].value.getParsedTransaction;
+      mockGetParsedTransaction.mockRejectedValue(
+        new Error("RPC connection failed"),
+      );
 
       const middleware = x402Middleware(1.0, TREASURY);
       await middleware(mockReq as Request, mockRes as Response, mockNext);

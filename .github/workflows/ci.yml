@@ -62,35 +62,16 @@ jobs:
   anchor-build:
     name: Anchor - Build Program
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./backend
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Pin Rust toolchain
-        run: |
-          rustup install 1.79.0
-          rustup default 1.79.0
-          rustup component add rustfmt clippy
-
-      - name: Install Solana
+      - name: Install Solana CLI
         run: |
           sh -c "$(curl -sSfL https://release.solana.com/v1.18.18/install)"
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
 
-      - name: Install Anchor CLI
-        run: |
-          cargo install --git https://github.com/coral-xyz/anchor --tag v0.30.1 anchor-cli --locked
-
-      - name: Install dependencies
-        run: yarn install
-
-      - name: Build Anchor program
-        run: anchor build
+      - name: Build Solana program (cargo build-sbf)
+        # Uses Solana's own bundled BPF toolchain — no anchor-cli compilation needed,
+        # which avoids the time-0.3.29 / Rust 1.80 E0282 incompatibility.
+        run: cargo build-sbf --manifest-path backend/programs/agentid-program/Cargo.toml

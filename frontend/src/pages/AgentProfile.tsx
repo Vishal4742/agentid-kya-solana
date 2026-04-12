@@ -297,12 +297,12 @@ export default function AgentProfile() {
           <div className="flex items-center gap-4">
             <Link to="/agents" className="label-meta link-underline">Index / Agents</Link>
             <span className="text-muted-foreground/30">·</span>
-            <span className="font-mono text-[11px] text-muted-foreground/60">{agent.id}</span>
+            <span className="font-mono text-[11px] text-muted-foreground/60">{agent?.id}</span>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success("Link copied!"); }}
               className="label-meta link-underline hover:text-foreground">Share</button>
-            <a href={`https://explorer.solana.com/address/${agent.ownerWallet}?cluster=devnet`}
+            <a href={`https://explorer.solana.com/address/${agent?.ownerWallet}?cluster=devnet`}
               target="_blank" rel="noopener noreferrer"
               className="label-meta link-underline hover:text-foreground">Explorer</a>
           </div>

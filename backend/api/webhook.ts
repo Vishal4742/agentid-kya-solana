@@ -68,7 +68,9 @@ export function validateWebhookSignature(
   secret: string,
 ): boolean {
   if (!secret) {
-    console.error("[oracle] ORACLE_WEBHOOK_SECRET not set — rejecting all webhooks");
+    console.error(
+      "[oracle] ORACLE_WEBHOOK_SECRET not set — rejecting all webhooks",
+    );
     return false;
   }
 
@@ -130,7 +132,10 @@ export async function withRetry<T>(
       if (attempt === maxAttempts) break;
 
       // Exponential backoff: baseDelay * 2^(attempt-1), capped at maxDelay
-      const exponential = Math.min(baseDelayMs * 2 ** (attempt - 1), maxDelayMs);
+      const exponential = Math.min(
+        baseDelayMs * 2 ** (attempt - 1),
+        maxDelayMs,
+      );
       // Add random jitter to avoid thundering herd
       const withJitter = exponential * (1 + (Math.random() * 2 - 1) * jitter);
       const delayMs = Math.round(withJitter);
@@ -160,17 +165,30 @@ export async function withRetry<T>(
  *   res.status(200).json({ ok: true });
  * });
  */
-type RawBodyHandler<Req, Res> = (req: Req, res: Res, rawBody: Buffer) => Promise<void>;
+type RawBodyHandler<Req, Res> = (
+  req: Req,
+  res: Res,
+  rawBody: Buffer,
+) => Promise<void>;
 
-export function requireValidWebhook<Req extends IncomingMessage, Res extends {
-  status(code: number): Res;
-  json(body: unknown): void;
-}>(handler: RawBodyHandler<Req, Res>) {
+export function requireValidWebhook<
+  Req extends IncomingMessage,
+  Res extends {
+    status(code: number): Res;
+    json(body: unknown): void;
+  },
+>(handler: RawBodyHandler<Req, Res>) {
   return async (req: Req, res: Res): Promise<void> => {
     const secret = process.env.ORACLE_WEBHOOK_SECRET ?? "";
     const rawBody = await readRawBody(req);
 
-    if (!validateWebhookSignature(rawBody, req.headers as Record<string, string | undefined>, secret)) {
+    if (
+      !validateWebhookSignature(
+        rawBody,
+        req.headers as Record<string, string | undefined>,
+        secret,
+      )
+    ) {
       res.status(401).json({ error: "Invalid or missing webhook signature" });
       return;
     }
