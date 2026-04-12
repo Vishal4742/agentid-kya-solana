@@ -20,7 +20,18 @@ import {
 
 // ─── Feature flags ────────────────────────────────────────────────────────
 // Keep disabled until the treasury deployment is live on devnet.
-const TREASURY_ENABLED = false;
+const TREASURY_ENABLED = true;
+const DEVNET_USDC_MINT = new PublicKey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU");
+const TOKEN_PROGRAM_ID = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
+
+function deriveAssociatedTokenAddress(owner: PublicKey, mint: PublicKey) {
+  const [ata] = PublicKey.findProgramAddressSync(
+    [owner.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+    ASSOCIATED_TOKEN_PROGRAM_ID,
+  );
+  return ata;
+}
 
 /* ── Mini gauge ── */
 function MiniGauge({ score }: { score: number }) {
@@ -148,6 +159,20 @@ const CHART_TOOLTIP_STYLE = {
   cursor: { stroke: "hsl(220 15% 20%)", strokeWidth: 1 },
 };
 
+type TreasuryNumberLike = {
+  toNumber(): number;
+};
+
+type TreasuryAccountState = {
+  usdcBalance?: TreasuryNumberLike;
+  totalEarned: TreasuryNumberLike;
+  totalSpent: TreasuryNumberLike;
+  spendingLimitPerTx: TreasuryNumberLike;
+  spendingLimitPerDay: TreasuryNumberLike;
+  spentToday: TreasuryNumberLike;
+  emergencyPause: boolean;
+};
+
 /* ── Invoice Modal ── */
 function InvoiceModal({ agent, onClose }: { agent: Agent; onClose: () => void }) {
   const [grossAmount, setGrossAmount] = useState("");
@@ -252,11 +277,16 @@ export default function Dashboard() {
   const [invoiceAgent, setInvoiceAgent] = useState<Agent | null>(null);
   const [spendingLimit, setSpendingLimit] = useState(5000);
   const [perTxLimit, setPerTxLimit] = useState(1000);
+  const [depositAmount, setDepositAmount] = useState("100");
+  const [depositing, setDepositing] = useState(false);
 
   const program = useProgram();
-  const [treasuryData, setTreasuryData] = useState<any>(null);
+  const [treasuryData, setTreasuryData] = useState<TreasuryAccountState | null>(null);
   const [treasuryPda, setTreasuryPda] = useState<PublicKey | null>(null);
   const [treasuryError, setTreasuryError] = useState<string | null>(null);
+  const reputationData = useMemo(() => REPUTATION_DATA, []);
+  const transactionData = useMemo(() => TRANSACTIONS_DATA, []);
+  const volumeData = useMemo(() => VOLUME_DATA, []);
 
   // seed per-tx limit from on-chain max_tx_size_usdc when loaded
   useEffect(() => {
@@ -273,8 +303,8 @@ export default function Dashboard() {
         program.programId
       );
       setTreasuryPda(pda);
-      // @ts-ignore
-      const data = await program.account.agentTreasury.fetch(pda);
+      // @ts-expect-error Anchor account typing is generated loosely from the JSON IDL.
+      const data = await program.account.agentTreasury.fetch(pda) as TreasuryAccountState;
       setTreasuryData(data);
       if (data) {
         setSpendingLimit(data.spendingLimitPerDay.toNumber() / 1_000_000);
@@ -296,9 +326,8 @@ export default function Dashboard() {
   const handleInitTreasury = async () => {
     if (!program || !treasuryPda || !agent || !publicKey) return;
     try {
-      const usdcMint = new PublicKey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"); // devnet USDC
       const owner = new PublicKey(publicKey);
-      // @ts-ignore
+      // @ts-expect-error Anchor method typing is generated loosely from the JSON IDL.
       await program.methods.initializeTreasury(
         new BN(1000 * 1_000_000), // per tx
         new BN(5000 * 1_000_000), // per day
@@ -307,13 +336,14 @@ export default function Dashboard() {
         treasury: treasuryPda,
         agentIdentity: new PublicKey(agent.id),
         owner,
-        usdcMint,
+        usdcMint: DEVNET_USDC_MINT,
         systemProgram: SystemProgram.programId,
       }).rpc();
       toast.success("Treasury Auto-Initialized!");
       fetchTreasury();
-    } catch (e: any) {
-      toast.error(`Init Failed: ${e.message}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(`Init Failed: ${message}`);
     }
   };
 
@@ -322,7 +352,7 @@ export default function Dashboard() {
     try {
       const perTxLimitMicro = Math.round(perTxLimit * 1_000_000);
       const spendingLimitMicro = Math.round(spendingLimit * 1_000_000);
-      // @ts-ignore
+      // @ts-expect-error Anchor method typing is generated loosely from the JSON IDL.
       await program.methods.updateSpendingLimits(
         new BN(perTxLimitMicro),
         new BN(spendingLimitMicro),
@@ -333,8 +363,51 @@ export default function Dashboard() {
       }).rpc();
       toast.success("Spending limits updated on-chain");
       fetchTreasury();
-    } catch (e: any) {
-      toast.error(`Tx Failed: ${e.message}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(`Tx Failed: ${message}`);
+    }
+  };
+
+  const handleDeposit = async () => {
+    if (!program || !publicKey || !treasuryPda) return;
+
+    const parsedAmount = Number(depositAmount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      toast.error("Enter a valid USDC deposit amount");
+      return;
+    }
+
+    const depositor = new PublicKey(publicKey);
+    const depositorUsdc = deriveAssociatedTokenAddress(depositor, DEVNET_USDC_MINT);
+    const treasuryUsdc = deriveAssociatedTokenAddress(treasuryPda, DEVNET_USDC_MINT);
+
+    setDepositing(true);
+
+    try {
+      // @ts-expect-error Anchor method typing is generated loosely from the JSON IDL.
+      await program.methods.deposit(
+        new BN(Math.round(parsedAmount * 1_000_000)),
+      ).accountsStrict({
+        treasury: treasuryPda,
+        depositor,
+        depositorUsdc,
+        treasuryUsdc,
+        usdcMint: DEVNET_USDC_MINT,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      }).rpc();
+
+      toast.success(`Deposited ${parsedAmount.toLocaleString()} USDC on-chain`);
+      await fetchTreasury();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error("Deposit failed", {
+        description: message.includes("AccountNotInitialized")
+          ? "Treasury token account is not ready on devnet yet."
+          : message.slice(0, 120),
+      });
+    } finally {
+      setDepositing(false);
     }
   };
 
@@ -344,7 +417,7 @@ export default function Dashboard() {
     try {
       const identity = new PublicKey(agent.id);
       const [tPda] = PublicKey.findProgramAddressSync([Buffer.from("agent-treasury"), identity.toBuffer()], program.programId);
-      // @ts-ignore
+      // @ts-expect-error Anchor method typing is generated loosely from the JSON IDL.
       await program.methods.emergencyPause(!isCurrentlyPaused).accountsStrict({
         treasury: tPda,
         owner: new PublicKey(publicKey),
@@ -354,7 +427,7 @@ export default function Dashboard() {
       if (isCurrentlyPaused) { newSet.delete(agent.id); toast.success(`${agent.name} resumed on-chain`); }
       else { newSet.add(agent.id); toast(`${agent.name} paused on-chain`, { icon: "⏸️" }); }
       setPausedAgents(newSet);
-    } catch (e: any) {
+    } catch {
       toast.error(`Pause Tx Failed. Has treasury been initialized?`);
     }
   };
@@ -385,10 +458,6 @@ export default function Dashboard() {
   // The local-only togglePause was removed during the P1 dashboard audit (March 2026).
 
   const avgReputation = agent ? agent.reputationScore : 0;
-
-  const reputationData = useMemo(() => REPUTATION_DATA, []);
-  const transactionData = useMemo(() => TRANSACTIONS_DATA, []);
-  const volumeData = useMemo(() => VOLUME_DATA, []);
 
   return (
     <div className="min-h-screen bg-background px-6 lg:px-10 pb-16">
@@ -603,6 +672,31 @@ export default function Dashboard() {
                         </div>
                       </div>
                     )}
+                  </div>
+                  <div className="border border-border/60 bg-secondary/10 p-4 mb-6">
+                    <div className="flex items-center justify-between gap-4 mb-3">
+                      <label htmlFor="treasury-deposit" className="label-meta">Deposit USDC</label>
+                      <span className="font-mono text-[11px] text-muted-foreground/60">Derived from wallet + treasury ATAs</span>
+                    </div>
+                    <div className="flex gap-3">
+                      <input
+                        id="treasury-deposit"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={depositAmount}
+                        onChange={(event) => setDepositAmount(event.target.value)}
+                        className="w-full bg-background border border-border px-3 py-2 font-mono text-sm text-foreground focus:outline-none focus:border-green/50 transition-colors"
+                        placeholder="100"
+                      />
+                      <button
+                        onClick={handleDeposit}
+                        disabled={!treasuryData || depositing}
+                        className="btn-outline shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {depositing ? "Depositing..." : "Deposit"}
+                      </button>
+                    </div>
                   </div>
                   <div className="space-y-6">
                     <div>

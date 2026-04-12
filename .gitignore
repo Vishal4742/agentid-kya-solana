@@ -1,20 +1,85 @@
+# Dependencies
 node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Build outputs
 .next/
 out/
 build/
 dist/
-.DS_Store
+target/
+.anchor/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Environment variables
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env*.local
+
+# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+lerna-debug.log*
+oracle*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# Solana
+test-ledger/
+.anchor/
+keypairs/
+*.keypair
+
+# Vercel
 .vercel
+
+# Temporary files
 tmp/
-target/
-*.sh
-*.log
+temp/
+*.tmp
+*.resolved
+*.local.md
+docs/internal-local/
+scripts/internal-local/
+
+# Local repo notes
+notes/
+scratch/
+
+# Rust
+Cargo.lock
+**/*.rs.bk
+
+# macOS
+.AppleDouble
+.LSOverride
+
+GRANT_APPLICATION_READINESS.md
+
+# Project logs directory
+logs/
+
