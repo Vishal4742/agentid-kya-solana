@@ -50,9 +50,14 @@ describe("security — verify_agent fail-closed", () => {
     try {
       await program.methods
         .initConfig()
-        .accounts({ admin: provider.wallet.publicKey, oracle: oracle.publicKey })
+        .accounts({
+          admin: provider.wallet.publicKey,
+          oracle: oracle.publicKey,
+        })
         .rpc();
-    } catch (_) { /* already initialized — ok */ }
+    } catch (_) {
+      /* already initialized — ok */
+    }
 
     agentIdentityPda = await ensureAgentRegistered(program, provider, {
       name: "SecurityTestAgent",
@@ -66,7 +71,8 @@ describe("security — verify_agent fail-closed", () => {
       gstin: "",
       panHash: ZERO_PAN_HASH,
       serviceCategory: 0,
-      metadataUri: "https://agentid-kya-solana.vercel.app/metadata/SecurityTestAgent.json",
+      metadataUri:
+        "https://agentid-kya-solana.vercel.app/metadata/SecurityTestAgent.json",
     });
   });
 
@@ -126,7 +132,8 @@ describe("security — verify_agent fail-closed", () => {
 
   it("log_action rejects a non-owner caller with UnauthorizedLogAction", async () => {
     const SEED_AGENT_ACTION = Buffer.from("agent-action");
-    const identityAccount = await program.account.agentIdentity.fetch(agentIdentityPda);
+    const identityAccount =
+      await program.account.agentIdentity.fetch(agentIdentityPda);
     const totalTxs = identityAccount.totalTransactions;
 
     const nonceBuffer = Buffer.alloc(8);
@@ -161,7 +168,7 @@ describe("security — verify_agent fail-closed", () => {
       const isExpectedError =
         msg.includes("UnauthorizedLogAction") ||
         msg.includes("2003") || // ConstraintRaw from require_keys_eq
-        msg.includes("6011");   // custom error code for UnauthorizedLogAction
+        msg.includes("6011"); // custom error code for UnauthorizedLogAction
       assert.ok(
         isExpectedError,
         `Expected UnauthorizedLogAction or ConstraintRaw, got: ${msg.slice(0, 200)}`,
@@ -173,7 +180,8 @@ describe("security — verify_agent fail-closed", () => {
 
   it("log_action succeeds when called by the identity owner", async () => {
     const SEED_AGENT_ACTION = Buffer.from("agent-action");
-    const identityAccount = await program.account.agentIdentity.fetch(agentIdentityPda);
+    const identityAccount =
+      await program.account.agentIdentity.fetch(agentIdentityPda);
     const totalTxs = identityAccount.totalTransactions;
 
     const nonceBuffer = Buffer.alloc(8);

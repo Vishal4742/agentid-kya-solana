@@ -1,17 +1,28 @@
-import { Connection, Keypair, PublicKey, Transaction, SystemProgram } from "@solana/web3.js";
-import { createMint, getOrCreateAssociatedTokenAccount, mintTo, transfer } from "@solana/spl-token";
+import {
+  Connection,
+  Keypair,
+  PublicKey,
+  Transaction,
+  SystemProgram,
+} from "@solana/web3.js";
+import {
+  createMint,
+  getOrCreateAssociatedTokenAccount,
+  mintTo,
+  transfer,
+} from "@solana/spl-token";
 import { x402Middleware } from "./middleware";
 import express, { Express } from "express";
 import request from "supertest";
 
 /**
  * Integration tests for x402 middleware with actual Solana devnet transactions
- * 
+ *
  * WARNING: These tests require:
  * 1. Solana devnet to be accessible
  * 2. A funded payer wallet
  * 3. USDC devnet mint setup
- * 
+ *
  * Run with: INTEGRATION=true npm test -- integration.test.ts
  */
 
@@ -46,7 +57,7 @@ describe.skip("x402Middleware Integration Tests", () => {
       connection,
       payer,
       usdcMint,
-      treasury.publicKey
+      treasury.publicKey,
     );
     treasuryTokenAccount = treasuryAta.address;
 
@@ -57,7 +68,7 @@ describe.skip("x402Middleware Integration Tests", () => {
       x402Middleware(1.0, treasury.publicKey.toBase58()),
       (req, res) => {
         res.json({ success: true, payment: res.locals.verifiedPayment });
-      }
+      },
     );
   }, 60000);
 
@@ -80,7 +91,7 @@ describe.skip("x402Middleware Integration Tests", () => {
       connection,
       payer,
       usdcMint,
-      payer.publicKey
+      payer.publicKey,
     );
 
     // Mint 2 USDC to payer (assuming we have mint authority - devnet only)
@@ -94,7 +105,7 @@ describe.skip("x402Middleware Integration Tests", () => {
       payerAta.address,
       treasuryTokenAccount,
       payer.publicKey,
-      1_000_000 // 1 USDC (6 decimals)
+      1_000_000, // 1 USDC (6 decimals)
     );
 
     // Wait for confirmation
@@ -120,7 +131,7 @@ describe.skip("x402Middleware Integration Tests", () => {
       connection,
       payer,
       usdcMint,
-      payer.publicKey
+      payer.publicKey,
     );
 
     const transferSig = await transfer(
@@ -129,7 +140,7 @@ describe.skip("x402Middleware Integration Tests", () => {
       payerAta.address,
       treasuryTokenAccount,
       payer.publicKey,
-      1_000_000
+      1_000_000,
     );
 
     await connection.confirmTransaction(transferSig, "confirmed");
@@ -156,7 +167,7 @@ describe.skip("x402Middleware Integration Tests", () => {
       connection,
       payer,
       usdcMint,
-      payer.publicKey
+      payer.publicKey,
     );
 
     // Transfer only 0.5 USDC (insufficient for 1.0 USDC requirement)
@@ -166,7 +177,7 @@ describe.skip("x402Middleware Integration Tests", () => {
       payerAta.address,
       treasuryTokenAccount,
       payer.publicKey,
-      500_000 // 0.5 USDC
+      500_000, // 0.5 USDC
     );
 
     await connection.confirmTransaction(transferSig, "confirmed");
@@ -184,13 +195,13 @@ describe.skip("x402Middleware Integration Tests", () => {
 
 /**
  * Example usage for manual testing:
- * 
+ *
  * 1. Get devnet USDC from faucet:
  *    https://spl-token-faucet.com/?token-name=USDC-Dev
- * 
+ *
  * 2. Send USDC to treasury:
  *    spl-token transfer 4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU 1 <TREASURY_ADDRESS> --url devnet
- * 
+ *
  * 3. Use transaction signature as X-Payment-Signature header:
  *    curl -H "X-Payment-Signature: <TX_SIG>" http://localhost:3000/protected
  */

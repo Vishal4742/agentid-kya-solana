@@ -68,7 +68,8 @@ describe("identity hardening", () => {
       canPublishContent: true,
       canAnalyzeData: true,
       maxTxSizeUsdc: new anchor.BN(50),
-      metadataUri: "https://agentid-kya-solana.vercel.app/metadata/hardened-agent.json",
+      metadataUri:
+        "https://agentid-kya-solana.vercel.app/metadata/hardened-agent.json",
     });
   });
 
@@ -182,7 +183,8 @@ describe("identity hardening", () => {
   });
 
   it("log_action rejects unknown action types", async () => {
-    const identity = await program.account.agentIdentity.fetch(hardenedIdentityPda);
+    const identity =
+      await program.account.agentIdentity.fetch(hardenedIdentityPda);
     const actionPda = deriveActionPda(
       hardenedIdentityPda,
       identity.totalTransactions,
@@ -213,7 +215,8 @@ describe("identity hardening", () => {
   });
 
   it("log_action rejects oversized memos", async () => {
-    const identity = await program.account.agentIdentity.fetch(hardenedIdentityPda);
+    const identity =
+      await program.account.agentIdentity.fetch(hardenedIdentityPda);
     const actionPda = deriveActionPda(
       hardenedIdentityPda,
       identity.totalTransactions,
@@ -244,7 +247,8 @@ describe("identity hardening", () => {
   });
 
   it("hardened registration persists the expected identity state", async () => {
-    const identity = await program.account.agentIdentity.fetch(hardenedIdentityPda);
+    const identity =
+      await program.account.agentIdentity.fetch(hardenedIdentityPda);
     assert.equal(identity.name, "Hardened Agent");
     assert.equal(identity.model, "GPT-4");
     assert.ok(identity.owner.equals(hardenedOwner.publicKey));
