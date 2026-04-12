@@ -122,7 +122,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Derive agentId hex for image URL
     const [pda] = PublicKey.findProgramAddressSync(
       [SEED_PREFIX, acc.owner.toBytes()],
-      programPubkey,
+      programPubkey
     );
     const pdaHex = Buffer.from(pda.toBytes()).toString("hex");
 
@@ -178,7 +178,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     res.setHeader(
       "Cache-Control",
-      "public, s-maxage=300, stale-while-revalidate=60",
+      "public, s-maxage=300, stale-while-revalidate=60"
     );
     res.setHeader("Access-Control-Allow-Origin", "*");
     return res.status(200).json(metadata);

@@ -11,14 +11,14 @@ import {
 function deriveActionPda(
   identityPda: anchor.web3.PublicKey,
   totalTransactions: anchor.BN,
-  programId: anchor.web3.PublicKey,
+  programId: anchor.web3.PublicKey
 ) {
   const nonceBuffer = Buffer.alloc(8);
   nonceBuffer.writeBigUInt64LE(BigInt(totalTransactions.toString()));
 
   return anchor.web3.PublicKey.findProgramAddressSync(
     [Buffer.from("agent-action"), identityPda.toBuffer(), nonceBuffer],
-    programId,
+    programId
   )[0];
 }
 
@@ -26,7 +26,7 @@ function expectNamedError(error: unknown, names: string[]) {
   const message = error instanceof Error ? error.message : String(error);
   assert.ok(
     names.some((name) => message.includes(name)),
-    `Expected one of ${names.join(", ")}, got: ${message.slice(0, 240)}`,
+    `Expected one of ${names.join(", ")}, got: ${message.slice(0, 240)}`
   );
 }
 
@@ -54,7 +54,7 @@ describe("identity hardening", () => {
     ]) {
       const sig = await provider.connection.requestAirdrop(
         signer.publicKey,
-        2 * anchor.web3.LAMPORTS_PER_SOL,
+        2 * anchor.web3.LAMPORTS_PER_SOL
       );
       await provider.connection.confirmTransaction(sig, "confirmed");
     }
@@ -79,7 +79,7 @@ describe("identity hardening", () => {
         .registerAgent(
           buildRegisterParams(invalidWalletOwner.publicKey, {
             agentWallet: anchor.web3.PublicKey.default,
-          }),
+          })
         )
         .accounts({
           owner: invalidWalletOwner.publicKey,
@@ -100,7 +100,7 @@ describe("identity hardening", () => {
         .registerAgent(
           buildRegisterParams(emptyMetadataOwner.publicKey, {
             metadataUri: "   ",
-          }),
+          })
         )
         .accounts({
           owner: emptyMetadataOwner.publicKey,
@@ -124,7 +124,7 @@ describe("identity hardening", () => {
             canSendPayments: false,
             canPublishContent: false,
             canAnalyzeData: false,
-          }),
+          })
         )
         .accounts({
           owner: noCapabilitiesOwner.publicKey,
@@ -145,7 +145,7 @@ describe("identity hardening", () => {
         .registerAgent(
           buildRegisterParams(badCategoryOwner.publicKey, {
             serviceCategory: 9,
-          }),
+          })
         )
         .accounts({
           owner: badCategoryOwner.publicKey,
@@ -183,12 +183,13 @@ describe("identity hardening", () => {
   });
 
   it("log_action rejects unknown action types", async () => {
-    const identity =
-      await program.account.agentIdentity.fetch(hardenedIdentityPda);
+    const identity = await program.account.agentIdentity.fetch(
+      hardenedIdentityPda
+    );
     const actionPda = deriveActionPda(
       hardenedIdentityPda,
       identity.totalTransactions,
-      program.programId,
+      program.programId
     );
 
     try {
@@ -215,12 +216,13 @@ describe("identity hardening", () => {
   });
 
   it("log_action rejects oversized memos", async () => {
-    const identity =
-      await program.account.agentIdentity.fetch(hardenedIdentityPda);
+    const identity = await program.account.agentIdentity.fetch(
+      hardenedIdentityPda
+    );
     const actionPda = deriveActionPda(
       hardenedIdentityPda,
       identity.totalTransactions,
-      program.programId,
+      program.programId
     );
 
     try {
@@ -247,8 +249,9 @@ describe("identity hardening", () => {
   });
 
   it("hardened registration persists the expected identity state", async () => {
-    const identity =
-      await program.account.agentIdentity.fetch(hardenedIdentityPda);
+    const identity = await program.account.agentIdentity.fetch(
+      hardenedIdentityPda
+    );
     assert.equal(identity.name, "Hardened Agent");
     assert.equal(identity.model, "GPT-4");
     assert.ok(identity.owner.equals(hardenedOwner.publicKey));

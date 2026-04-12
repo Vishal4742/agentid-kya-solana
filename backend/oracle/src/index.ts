@@ -65,15 +65,15 @@ const [configPda] = PublicKey.findProgramAddressSync([CONFIG_SEED], PROGRAM_ID);
  * Formula: min(totalEarned_usdc / 100_000, 1) * 150
  */
 async function computeVolumeScore(
-  agentIdentityPda: PublicKey,
+  agentIdentityPda: PublicKey
 ): Promise<number> {
   try {
     const [treasuryPda] = PublicKey.findProgramAddressSync(
       [TREASURY_SEED, agentIdentityPda.toBytes()],
-      PROGRAM_ID,
+      PROGRAM_ID
     );
     const treasury = await (program.account as any).agentTreasury.fetch(
-      treasuryPda,
+      treasuryPda
     );
     // totalEarned is stored in lamport-like USDC micro-units (6 decimals)
     const totalEarnedUsdc = Number(treasury.totalEarned) / 1_000_000;
@@ -106,20 +106,20 @@ app.post("/webhook", async (req, res) => {
   } else {
     if (!signatureSecret && !expectedAuth) {
       console.error(
-        "❌ Neither ORACLE_WEBHOOK_SECRET nor HELIUS_WEBHOOK_AUTH is set — refusing all webhook requests",
+        "❌ Neither ORACLE_WEBHOOK_SECRET nor HELIUS_WEBHOOK_AUTH is set — refusing all webhook requests"
       );
       return res.status(500).send("Server misconfigured");
     }
 
     console.warn(
-      `⚠️  Rejected webhook attempt from ${req.ip}: invalid signature/auth header`,
+      `⚠️  Rejected webhook attempt from ${req.ip}: invalid signature/auth header`
     );
     return res.status(401).send("Unauthorized");
   }
 
   if (authMode === "authorization") {
     console.warn(
-      "⚠️  Accepted webhook via static Authorization header fallback. Prefer ORACLE_WEBHOOK_SECRET with x-agentid-signature.",
+      "⚠️  Accepted webhook via static Authorization header fallback. Prefer ORACLE_WEBHOOK_SECRET with x-agentid-signature."
     );
   }
 
@@ -136,7 +136,7 @@ app.post("/webhook", async (req, res) => {
   }
 
   console.log(
-    `\n🔔 Received ${transactions.length} transaction(s) from Helius`,
+    `\n🔔 Received ${transactions.length} transaction(s) from Helius`
   );
 
   for (const tx of transactions) {
@@ -234,15 +234,21 @@ app.post("/webhook", async (req, res) => {
           scoreRating +
           scoreLongevity +
           scoreVolume +
-          scoreVerification,
+          scoreVerification
       );
       const newScore = Math.min(Math.max(totalScore, 0), 1000);
 
       console.log(
-        `   └─ Computed Score: ${newScore} (Success: ${Math.round(scoreSuccess)}, Rating: ${Math.round(scoreRating)}, Longevity: ${Math.round(scoreLongevity)}, Volume: ${Math.round(scoreVolume)}, Verif: ${scoreVerification})`,
+        `   └─ Computed Score: ${newScore} (Success: ${Math.round(
+          scoreSuccess
+        )}, Rating: ${Math.round(scoreRating)}, Longevity: ${Math.round(
+          scoreLongevity
+        )}, Volume: ${Math.round(scoreVolume)}, Verif: ${scoreVerification})`
       );
       console.log(
-        `   └─ Calling update_reputation(${newScore}) for ${agentIdentityPda.toBase58().slice(0, 8)}...`,
+        `   └─ Calling update_reputation(${newScore}) for ${agentIdentityPda
+          .toBase58()
+          .slice(0, 8)}...`
       );
 
       // 4. Update the computed score on-chain
@@ -309,7 +315,7 @@ cron.schedule("0 * * * *", async () => {
           scoreRating +
           scoreLongevity +
           scoreVolume +
-          scoreVerification,
+          scoreVerification
       );
       const newScore = Math.min(Math.max(totalScore, 0), 1000);
 
@@ -319,7 +325,9 @@ cron.schedule("0 * * * *", async () => {
       }
 
       console.log(
-        `   └─ Updating ${agentData.name} (${agentIdentityPda.toBase58().slice(0, 8)}): ${agentData.reputationScore} ➡️ ${newScore}`,
+        `   └─ Updating ${agentData.name} (${agentIdentityPda
+          .toBase58()
+          .slice(0, 8)}): ${agentData.reputationScore} ➡️ ${newScore}`
       );
 
       try {

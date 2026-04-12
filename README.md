@@ -36,7 +36,7 @@ AgentID is an open-source, on-chain identity and trust layer for AI agents on So
 
 ### 1. Clone & install
 ```bash
-git clone https://github.com/your-org/agentid-kya-solana.git
+git clone https://github.com/Vishal4742/agentid-kya-solana.git
 cd agentid-kya-solana
 cd frontend && npm install && cd ..
 cd backend && yarn install && cd ..
@@ -56,11 +56,11 @@ bash scripts/demo-devnet.sh
 ```
 
 This script will:
-1. Check your wallet balance
-2. Derive your agent identity PDA
-3. Register the agent on-chain
-4. Verify the identity PDA exists
-5. Fetch metadata from the API
+1. Check your wallet balance and Solana CLI config
+2. Derive your agent identity PDA from the program
+3. Check whether the config PDA and identity PDA exist on-chain
+4. Log the treasury PDA and spending limits from the program
+5. Fetch metadata from the Vercel metadata API
 
 ### 4. Run the frontend
 ```bash
@@ -167,7 +167,7 @@ cd backend/x402 && npm run test:integration
 
 An internal security audit was completed on 2026-04-12. See [docs/security/audit.md](./docs/security/audit.md) for findings and mitigations.
 
-**Report a vulnerability:** Follow [SECURITY.md](./SECURITY.md). Do not disclose critical vulnerabilities publicly.
+**Report a vulnerability:** Follow [SECURITY.md](./.github/SECURITY.md). Do not disclose critical vulnerabilities publicly.
 
 ---
 

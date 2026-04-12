@@ -83,7 +83,7 @@ vercel env add ORACLE_WEBHOOK_SECRET
 vercel --prod
 ```
 
-Update `METADATA_API_BASE` in `frontend/src/test/e2e.test.ts` and `frontend/src/lib/config.ts` with the deployed URL.
+After deploying, set `VITE_METADATA_BASE_URL` in `frontend/.env.local` (and the corresponding Vercel project env var) to the deployed URL. Frontend requests are built by `buildMetadataUrl()` via this env variable.
 
 ---
 
@@ -120,9 +120,9 @@ cd frontend
 # Copy and fill in environment variables
 cp .env.example .env.local
 # Edit .env.local:
-#   VITE_SOLANA_RPC_URL=https://api.devnet.solana.com
+#   VITE_SOLANA_RPC_ENDPOINT=https://api.devnet.solana.com
 #   VITE_PROGRAM_ID=Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF
-#   VITE_METADATA_API_BASE=https://agentid-metadata-api.vercel.app
+#   VITE_METADATA_BASE_URL=https://agentid-metadata-api.vercel.app
 
 npm install
 npm run build
@@ -172,9 +172,9 @@ All 30 tests should pass. The demo script confirms the program is live and agent
 
 | Variable | Required | Description |
 |---|---|---|
-| `VITE_SOLANA_RPC_URL` | ✅ | Solana RPC endpoint |
+| `VITE_SOLANA_RPC_ENDPOINT` | ✅ | Solana RPC endpoint |
 | `VITE_PROGRAM_ID` | ✅ | Deployed program address |
-| `VITE_METADATA_API_BASE` | ✅ | Metadata API base URL |
+| `VITE_METADATA_BASE_URL` | ✅ | Metadata API base URL |
 
 ---
 

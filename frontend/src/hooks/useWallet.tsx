@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * useWallet.tsx — Real Solana wallet adapter integration
  *

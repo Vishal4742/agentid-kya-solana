@@ -39,7 +39,7 @@ export async function readRawBody(req: IncomingMessage): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     req.on("data", (chunk: Buffer | string) =>
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)),
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
     );
     req.on("end", () => resolve(Buffer.concat(chunks)));
     req.on("error", reject);
@@ -65,11 +65,11 @@ export function computeHmacHex(body: Buffer, secret: string): string {
 export function validateWebhookSignature(
   rawBody: Buffer,
   headers: Record<string, string | string[] | undefined>,
-  secret: string,
+  secret: string
 ): boolean {
   if (!secret) {
     console.error(
-      "[oracle] ORACLE_WEBHOOK_SECRET not set — rejecting all webhooks",
+      "[oracle] ORACLE_WEBHOOK_SECRET not set — rejecting all webhooks"
     );
     return false;
   }
@@ -86,7 +86,7 @@ export function validateWebhookSignature(
   try {
     return crypto.timingSafeEqual(
       Buffer.from(incomingHex, "hex"),
-      Buffer.from(expectedHex, "hex"),
+      Buffer.from(expectedHex, "hex")
     );
   } catch {
     // Buffer lengths differ — invalid hex or truncated header
@@ -112,7 +112,7 @@ export function validateWebhookSignature(
  */
 export async function withRetry<T>(
   fn: () => Promise<T>,
-  options: RetryOptions = {},
+  options: RetryOptions = {}
 ): Promise<T> {
   const {
     maxAttempts = 3,
@@ -134,7 +134,7 @@ export async function withRetry<T>(
       // Exponential backoff: baseDelay * 2^(attempt-1), capped at maxDelay
       const exponential = Math.min(
         baseDelayMs * 2 ** (attempt - 1),
-        maxDelayMs,
+        maxDelayMs
       );
       // Add random jitter to avoid thundering herd
       const withJitter = exponential * (1 + (Math.random() * 2 - 1) * jitter);
@@ -142,7 +142,7 @@ export async function withRetry<T>(
 
       console.warn(
         `[oracle] Attempt ${attempt}/${maxAttempts} failed. Retrying in ${delayMs}ms...`,
-        err instanceof Error ? err.message : String(err),
+        err instanceof Error ? err.message : String(err)
       );
 
       await new Promise((resolve) => setTimeout(resolve, delayMs));
@@ -168,7 +168,7 @@ export async function withRetry<T>(
 type RawBodyHandler<Req, Res> = (
   req: Req,
   res: Res,
-  rawBody: Buffer,
+  rawBody: Buffer
 ) => Promise<void>;
 
 export function requireValidWebhook<
@@ -176,7 +176,7 @@ export function requireValidWebhook<
   Res extends {
     status(code: number): Res;
     json(body: unknown): void;
-  },
+  }
 >(handler: RawBodyHandler<Req, Res>) {
   return async (req: Req, res: Res): Promise<void> => {
     const secret = process.env.ORACLE_WEBHOOK_SECRET ?? "";
@@ -186,7 +186,7 @@ export function requireValidWebhook<
       !validateWebhookSignature(
         rawBody,
         req.headers as Record<string, string | undefined>,
-        secret,
+        secret
       )
     ) {
       res.status(401).json({ error: "Invalid or missing webhook signature" });

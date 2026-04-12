@@ -145,7 +145,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         { trait_type: "Registration Date", value: registeredDate },
         {
           trait_type: "Max USDC per Tx",
-          value: `$${usdcFormatter.format(acc.maxTxSizeUsdc.toNumber() / 1_000_000)}`,
+          value: `$${usdcFormatter.format(
+            acc.maxTxSizeUsdc.toNumber() / 1_000_000
+          )}`,
         },
         {
           trait_type: "Total Transactions",
@@ -158,7 +160,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               ? `${Math.round(
                   (acc.successfulTransactions.toNumber() /
                     acc.totalTransactions.toNumber()) *
-                    100,
+                    100
                 )}%`
               : "N/A",
         },
@@ -176,7 +178,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Cache for 5 minutes (reputation changes hourly)
     res.setHeader(
       "Cache-Control",
-      "public, s-maxage=300, stale-while-revalidate=60",
+      "public, s-maxage=300, stale-while-revalidate=60"
     );
     res.setHeader("Access-Control-Allow-Origin", "*");
     return res.status(200).json(metadata);

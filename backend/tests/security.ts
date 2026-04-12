@@ -32,18 +32,18 @@ describe("security — verify_agent fail-closed", () => {
     for (const kp of [oracle, nonOwner]) {
       const sig = await provider.connection.requestAirdrop(
         kp.publicKey,
-        2 * anchor.web3.LAMPORTS_PER_SOL,
+        2 * anchor.web3.LAMPORTS_PER_SOL
       );
       await provider.connection.confirmTransaction(sig, "confirmed");
     }
 
     [programConfigPda] = anchor.web3.PublicKey.findProgramAddressSync(
       [SEED_PROGRAM_CONFIG],
-      program.programId,
+      program.programId
     );
     [agentIdentityPda] = anchor.web3.PublicKey.findProgramAddressSync(
       [SEED_AGENT_IDENTITY, provider.wallet.publicKey.toBuffer()],
-      program.programId,
+      program.programId
     );
 
     // Bootstrap: init config + register agent (reuse existing PDAs from other suite if already present)
@@ -123,7 +123,7 @@ describe("security — verify_agent fail-closed", () => {
         msg.includes("0x177a"); // 6010 in hex
       assert.ok(
         isExpectedError,
-        `Expected InvalidActionType, got: ${msg.slice(0, 200)}`,
+        `Expected InvalidActionType, got: ${msg.slice(0, 200)}`
       );
     }
   });
@@ -132,8 +132,9 @@ describe("security — verify_agent fail-closed", () => {
 
   it("log_action rejects a non-owner caller with UnauthorizedLogAction", async () => {
     const SEED_AGENT_ACTION = Buffer.from("agent-action");
-    const identityAccount =
-      await program.account.agentIdentity.fetch(agentIdentityPda);
+    const identityAccount = await program.account.agentIdentity.fetch(
+      agentIdentityPda
+    );
     const totalTxs = identityAccount.totalTransactions;
 
     const nonceBuffer = Buffer.alloc(8);
@@ -141,7 +142,7 @@ describe("security — verify_agent fail-closed", () => {
 
     const [actionPda] = anchor.web3.PublicKey.findProgramAddressSync(
       [SEED_AGENT_ACTION, agentIdentityPda.toBuffer(), nonceBuffer],
-      program.programId,
+      program.programId
     );
 
     try {
@@ -171,7 +172,10 @@ describe("security — verify_agent fail-closed", () => {
         msg.includes("6011"); // custom error code for UnauthorizedLogAction
       assert.ok(
         isExpectedError,
-        `Expected UnauthorizedLogAction or ConstraintRaw, got: ${msg.slice(0, 200)}`,
+        `Expected UnauthorizedLogAction or ConstraintRaw, got: ${msg.slice(
+          0,
+          200
+        )}`
       );
     }
   });
@@ -180,8 +184,9 @@ describe("security — verify_agent fail-closed", () => {
 
   it("log_action succeeds when called by the identity owner", async () => {
     const SEED_AGENT_ACTION = Buffer.from("agent-action");
-    const identityAccount =
-      await program.account.agentIdentity.fetch(agentIdentityPda);
+    const identityAccount = await program.account.agentIdentity.fetch(
+      agentIdentityPda
+    );
     const totalTxs = identityAccount.totalTransactions;
 
     const nonceBuffer = Buffer.alloc(8);
@@ -189,7 +194,7 @@ describe("security — verify_agent fail-closed", () => {
 
     const [actionPda] = anchor.web3.PublicKey.findProgramAddressSync(
       [SEED_AGENT_ACTION, agentIdentityPda.toBuffer(), nonceBuffer],
-      program.programId,
+      program.programId
     );
 
     await program.methods
@@ -237,7 +242,7 @@ describe("security — verify_agent fail-closed", () => {
         msg.includes("already exists");
       assert.ok(
         isExpectedError,
-        `Expected account-already-exists error, got: ${msg.slice(0, 200)}`,
+        `Expected account-already-exists error, got: ${msg.slice(0, 200)}`
       );
     }
   });

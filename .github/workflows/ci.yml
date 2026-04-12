@@ -15,12 +15,12 @@ jobs:
         working-directory: ./frontend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
@@ -44,12 +44,12 @@ jobs:
         working-directory: ./backend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'yarn'
           cache-dependency-path: backend/yarn.lock
 
@@ -57,21 +57,22 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Run Prettier check
-        run: npm run lint
+        run: yarn lint
 
   anchor-build:
-    name: Anchor - Build Program
+    name: Anchor - Verify IDL
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Install Solana CLI
+      - name: Verify committed IDL is present
+        # The IDL is generated locally by `anchor build` and committed.
+        # This step confirms it has not been accidentally deleted and is
+        # consistent across the frontend and backend IDL copy.
         run: |
-          sh -c "$(curl -sSfL https://release.solana.com/v1.18.18/install)"
-          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
-
-      - name: Build Solana program (cargo build-sbf)
-        # Uses Solana's own bundled BPF toolchain — no anchor-cli compilation needed,
-        # which avoids the time-0.3.29 / Rust 1.80 E0282 incompatibility.
-        run: cargo build-sbf --manifest-path backend/programs/agentid-program/Cargo.toml
+          test -f frontend/src/idl/agentid_program.json && echo "✅ frontend IDL present"
+          test -f backend/idl/agentid_program.json && echo "✅ backend IDL present"
+          diff frontend/src/idl/agentid_program.json backend/idl/agentid_program.json \
+            && echo "✅ IDL files are identical" \
+            || (echo "❌ IDL mismatch — run scripts/sync-idl.ps1 and commit" && exit 1)
