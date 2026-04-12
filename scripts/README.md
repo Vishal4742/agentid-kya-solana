@@ -2,76 +2,48 @@
 
 This directory contains utility scripts for development, deployment, and testing.
 
-## Available Scripts
+## demo-devnet.sh
 
-### demo-devnet.sh
 Demonstrates the AgentID registration flow on Solana devnet.
 
-**Usage:**
-`ash
+```bash
 bash scripts/demo-devnet.sh
-`
+```
 
-**What it does:**
+What it does:
 1. Checks wallet balance on devnet
-2. Derives agent identity PDA
+2. Derives the agent identity PDA
 3. Registers the agent on-chain
 4. Verifies the identity PDA exists
 5. Fetches metadata from the API
 
-**Prerequisites:**
+Prerequisites:
 - Solana CLI configured for devnet
 - Funded devnet wallet
-- .env files configured (see root README)
+- `.env` files configured
 
----
+## sync-idl.ps1
 
-### sync-idl.ps1
-Synchronizes the Anchor IDL (Interface Definition Language) between local and deployed program.
+Synchronizes the Anchor IDL between the local workspace and consumers.
 
-**Usage (PowerShell):**
-`powershell
+```powershell
 .\scripts\sync-idl.ps1
-`
+```
 
-**What it does:**
-- Fetches the current IDL from deployed Anchor program
-- Syncs type definitions with frontend and SDK packages
-- Ensures all consumers have up-to-date program interface
+What it does:
+- Fetches or copies the latest program interface
+- Syncs generated types for frontend and SDK consumers
+- Keeps the local toolchain aligned with the deployed program shape
 
-**Prerequisites:**
+Prerequisites:
 - PowerShell 7+
 - Anchor CLI installed
-- Connected wallet has access to deployed program
-
----
 
 ## Adding New Scripts
 
-When adding new scripts:
+When adding a new script:
 
-1. Use clear, descriptive names (e.g., deploy-mainnet.sh, 	est-integration.sh)
-2. Add a header comment explaining the script's purpose
-3. Document prerequisites and usage in this README
-4. Make scripts executable: chmod +x scripts/script-name.sh
-5. Test on both Unix-like systems and Windows (use .sh for bash, .ps1 for PowerShell)
-
-## Script Conventions
-
-- **Bash scripts** (.sh): Use for cross-platform, Unix-compatible tasks
-- **PowerShell scripts** (.ps1): Use for Windows-specific or complex automation
-- **Node.js scripts**: Add to package.json scripts section instead
-
----
-
-## Troubleshooting
-
-If scripts fail:
-
-1. Check prerequisites are installed: solana --version, nchor --version, 
-ode --version
-2. Ensure environment variables are set: Check .env and .env.local files
-3. Review script output for specific errors
-4. Check wallet balance and permissions: solana balance
-
-For issues, open a GitHub issue or see [SUPPORT.md](../SUPPORT.md).
+1. Use a descriptive name.
+2. Document usage and prerequisites here.
+3. Prefer `.sh` for bash-oriented tasks and `.ps1` for PowerShell-specific workflows.
+4. Keep scripts executable and test them before relying on them in docs.

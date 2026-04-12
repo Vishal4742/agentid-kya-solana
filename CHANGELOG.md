@@ -9,12 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Project structure and professional documentation improvements
-- CODE_OF_CONDUCT.md for community guidelines
+- CHANGELOG.md for release tracking
+- Simplified CONTRIBUTING.md for solo developers
 - scripts/README.md for script documentation
-- CHANGELOG.md tracking releases
 
 ### Changed
-- Improved .gitignore to exclude logs/ directory and build artifacts
+- Improved `.gitignore` to exclude logs/ directory and build artifacts
 
 ## [1.0.0] - 2026-04-12
 
@@ -43,14 +43,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 When releasing a new version:
 
-1. Update version in `package.json` files (frontend, backend, packages/sdk, packages/eliza-plugin)
-2. Update this CHANGELOG.md with changes under a new version header
-3. Create a git tag: `git tag -a v1.x.x -m "Release v1.x.x"`
-4. Push tag: `git push origin v1.x.x`
-5. Create a GitHub Release with changelog excerpt
+1. Update version in `package.json` files.
+2. Update `CHANGELOG.md` with changes under a new version header.
+3. Create a git tag: `git tag -a v1.x.x -m "Release v1.x.x"`.
+4. Push the tag: `git push origin v1.x.x`.
+5. Create a GitHub Release with the changelog excerpt.
 
 ## Notes
 
 - **Devnet Program**: [`Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF`](https://explorer.solana.com/address/Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF?cluster=devnet)
-- For security issues, see [SECURITY.md](./SECURITY.md)
 - For contribution guidelines, see [CONTRIBUTING.md](./CONTRIBUTING.md)
