@@ -65,11 +65,18 @@ pub fn process_log_action(ctx: Context<LogAction>, params: LogActionParams) -> R
     action.bump              = ctx.bumps.action;
 
     // Update identity stats
-    identity.total_transactions += 1;
+    identity.total_transactions = identity
+        .total_transactions
+        .checked_add(1)
+        .ok_or(AgentIdError::ArithmeticOverflow)?;
     if params.success {
-        identity.successful_transactions += 1;
+        identity.successful_transactions = identity
+            .successful_transactions
+            .checked_add(1)
+            .ok_or(AgentIdError::ArithmeticOverflow)?;
     }
     identity.last_active = now;
 
     Ok(())
 }
+
