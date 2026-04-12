@@ -3,9 +3,9 @@
 ## Project Structure & Module Organization
 - `frontend/`: Vite + React + TypeScript UI. Main code lives in `src/components`, `src/pages`, `src/hooks`, `src/lib`, and `src/test`.
 - `backend/`: Solana Anchor workspace. Program source is in `programs/agentid-program/src`; Anchor tests live in `tests`; serverless metadata API lives in `api/metadata`.
-- The Anchor program now exposes 10 instructions, including the treasury suite: `initialize_treasury`, `autonomous_payment`, `deposit`, `update_spending_limits`, and `emergency_pause`.
+- The Anchor program currently exposes 12 instructions: `init_config`, `register_agent`, `update_capabilities`, `verify_agent`, `log_action`, `rate_agent`, `update_reputation`, `initialize_treasury`, `autonomous_payment`, `update_spending_limits`, `emergency_pause`, and `deposit`.
 - `packages/sdk` and `packages/eliza-plugin`: publishable TypeScript packages with source in `src/` and compiled output in `dist/`.
-- Root docs such as `MASTER_BUILD_GUIDE.md` and `TASKS.md` describe product and build context; avoid committing generated files from `dist/`, `target/`, or `node_modules/`.
+- `PROJECT.md` is the canonical project-facing doc; `AGENTS.md` holds repo instructions. Avoid committing generated files from `dist/`, `target/`, or `node_modules/`.
 
 ## Build, Test, and Development Commands
 - Frontend:
@@ -25,8 +25,9 @@
   anchor test
   npm run lint
   ```
+- IDL sync after backend changes: `pwsh ./scripts/sync-idl.ps1`
 - Metadata API: `cd backend/api && npm install && npm run dev`
-- Packages: `cd packages/sdk && npm run build`, `cd packages/eliza-plugin && npm run build`
+- Packages: `cd packages/sdk && npm install && npm run build && npm test`, `cd packages/eliza-plugin && npm install && npm run build`
 
 ## Coding Style & Naming Conventions
 - Use TypeScript for app and package code, Rust for Anchor program logic.

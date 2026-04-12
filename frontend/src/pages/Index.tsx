@@ -16,6 +16,8 @@ const fadeUp = {
   visible: (i = 0) => ({ opacity: 1, y: 0, transition: { delay: i * 0.08, duration: 0.55, ease: [0.19, 1, 0.22, 1] } }),
 };
 
+const hoverEase = "cubic-bezier(0.19, 1, 0.22, 1)";
+
 function useClock() {
   const [time, setTime] = useState("");
   useEffect(() => {
@@ -138,9 +140,11 @@ export default function Index() {
                   <span className="font-mono text-[11px] text-muted-foreground/50 uppercase tracking-widest">{row.date}</span>
 
                   {/* Serif italic title */}
-                  <span className="font-serif italic text-2xl lg:text-3xl leading-tight text-foreground tracking-[-0.01em]
-                    transition-transform duration-300 ease-[cubic-bezier(0.19,1,0.22,1)]
-                    group-hover:translate-x-2.5">
+                  <span
+                    className="font-serif italic text-2xl lg:text-3xl leading-tight text-foreground tracking-[-0.01em]
+                    transition-transform duration-300 group-hover:translate-x-2.5"
+                    style={{ transitionTimingFunction: hoverEase }}
+                  >
                     {row.title}
                   </span>
 
@@ -253,7 +257,12 @@ export default function Index() {
                 className="group grid grid-cols-[60px_1fr_auto] gap-4 py-6 items-baseline hover:opacity-80 transition-opacity">
                 <span className={`font-mono text-[11px] uppercase tracking-widest ${item.color}`}>{item.layer}</span>
                 <div>
-                  <span className="font-serif italic text-2xl tracking-[-0.01em] group-hover:translate-x-2 inline-block transition-transform duration-300 ease-[cubic-bezier(0.19,1,0.22,1)]">{item.label}</span>
+                  <span
+                    className="font-serif italic text-2xl tracking-[-0.01em] group-hover:translate-x-2 inline-block transition-transform duration-300"
+                    style={{ transitionTimingFunction: hoverEase }}
+                  >
+                    {item.label}
+                  </span>
                   <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed max-w-xl">{item.desc}</p>
                 </div>
                 <div className="flex gap-1.5 flex-wrap justify-end">
@@ -292,7 +301,10 @@ export default function Index() {
                     {agent.id.replace("agent-", "").padStart(3, "0")}
                   </span>
                   <div>
-                    <span className="font-serif italic text-xl group-hover:translate-x-2 inline-block transition-transform duration-300 ease-[cubic-bezier(0.19,1,0.22,1)]">
+                    <span
+                      className="font-serif italic text-xl group-hover:translate-x-2 inline-block transition-transform duration-300"
+                      style={{ transitionTimingFunction: hoverEase }}
+                    >
                       {agent.name}
                     </span>
                     <div className="flex items-center gap-3 mt-0.5">
