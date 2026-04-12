@@ -27,8 +27,13 @@ pub fn process_rate_agent(ctx: Context<RateAgent>, rating: u8) -> Result<()> {
     // Rolling average stored as rating * 10 to avoid floats
     // new_avg = (old_total + new_rating*10) / (count+1)
     let old_total = identity.human_rating_x10 as u64 * identity.rating_count as u64;
-    identity.rating_count += 1;
-    let new_total = old_total + (rating as u64 * 10);
+    identity.rating_count = identity
+        .rating_count
+        .checked_add(1)
+        .ok_or(AgentIdError::ArithmeticOverflow)?;
+    let new_total = old_total
+        .checked_add(rating as u64 * 10)
+        .ok_or(AgentIdError::ArithmeticOverflow)?;
     identity.human_rating_x10 = (new_total / identity.rating_count as u64) as u16;
 
     emit!(AgentRated {
@@ -48,3 +53,4 @@ pub struct AgentRated {
     pub rating: u8,
     pub new_avg_x10: u16,
 }
+

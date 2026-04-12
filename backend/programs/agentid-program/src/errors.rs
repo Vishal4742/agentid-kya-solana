@@ -74,9 +74,13 @@ pub enum AgentIdError {
     #[msg("Arithmetic overflow or underflow")]
     ArithmeticError,
 
+    #[msg("Arithmetic overflow")]
+    ArithmeticOverflow,
+
     #[msg("Unknown action type — must be 0=DeFiTrade 1=Payment 2=ContentPublish 3=DataQuery")]
     InvalidActionType,
 
     #[msg("Only the identity owner can log actions")]
     UnauthorizedLogAction,
 }
+

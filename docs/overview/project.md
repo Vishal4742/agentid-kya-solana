@@ -52,8 +52,22 @@ This is the single source of truth for the AgentID roadmap, operations runbook, 
 - x402 middleware’s replay protection is still in-memory; swap to Redis/shared store to keep horizontal deployments secure.
 - Frontend still imports `@solana/wallet-adapter-wallets`, expanding the trust surface (transitive dependencies like Trezor/Stellar/Axios). Replace with only needed adapters (Phantom/Solflare) to reduce risk.
 - Metadata URL hardcoding (registration form → `agentid.xyz`) must be replaced with the config-driven helper before marketing the product externally.
-- No CI/workflow files exist (`.github/workflows` absent) and release/secret-rotation docs are outdated; add automated gates as part of the remaining phases to prevent accidental regressions.
+- CI/workflow coverage now exists for the TypeScript packages and services; Anchor/Solana release gating still needs a fully prepared automation environment.
+- Public docs now live under `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `SUPPORT.md`, and `docs/`; internal status and grant notes live under `docs/internal-local/`.
+
+## Phase 5 Verification Checklist
+- Frontend regression suite: `cd frontend && npm test`
+- Anchor workspace typecheck: `cd backend && npm run typecheck`
+- Oracle typecheck: `cd backend && npm run typecheck:oracle`
+- Metadata API typecheck: `cd backend && npm run typecheck:api`
+- Manual devnet smoke flow:
+  1. Open the frontend on port `8080` and load `/agent/:id` for a known PDA.
+  2. Connect a non-owner wallet and submit a rating from the profile page.
+  3. Confirm `human_rating_x10` or `rating_count` changed on-chain.
+  4. Trigger the oracle webhook or hourly sync and confirm `reputation_score` updates.
+  5. If treasury is enabled for the release, initialize treasury, deposit devnet USDC, update limits, pause, and verify paused payments fail.
 
 ## What Was Removed
 - The legacy markdown backlog (`TASKS.md`, `MASTER_BUILD_GUIDE.md`, `PHASE1_IDENTITY_RUNBOOK.md`, `step_by_step_build_guide.md.resolved`, `idea-2-agentid-kya-solana.md`) has been deleted in favor of this single companion file.
 - If you need to reference a deeply detailed runbook or vision piece, this doc now captures the distilled, actionable summary; add more sections here as those narratives evolve.
+- Local-only notes such as `CONTRIBUTING.md` are intentionally excluded from version control and should not be used as the source of truth for roadmap status.
