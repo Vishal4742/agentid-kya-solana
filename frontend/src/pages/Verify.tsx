@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAllAgents } from "@/hooks/useAgents";
-import { truncateWallet } from "@/data/mockAgents";
+import { truncateWallet } from "@/lib/display";
 import { Search, Shield, CheckCircle2, XCircle, Activity, TrendingUp, Zap, Copy, Code2, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 

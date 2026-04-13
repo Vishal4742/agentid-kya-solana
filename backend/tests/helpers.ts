@@ -15,6 +15,7 @@ export const SHARED_MERKLE_TREE = new anchor.web3.PublicKey(
   "2EtpZX5evXj3hqMPmXgHUA5F2YDvkSn2sXgQkwcPy2sx"
 );
 export const ZERO_PAN_HASH = Array.from(Buffer.alloc(32));
+export const ONE_USDC = 1_000_000;
 
 type RegisterOverrides = Partial<{
   name: string;
@@ -82,13 +83,13 @@ export function buildRegisterParams(
     canSendPayments: params?.canSendPayments ?? true,
     canPublishContent: params?.canPublishContent ?? true,
     canAnalyzeData: params?.canAnalyzeData ?? true,
-    maxTxSizeUsdc: params?.maxTxSizeUsdc ?? new anchor.BN(100),
+    maxTxSizeUsdc: params?.maxTxSizeUsdc ?? new anchor.BN(100 * ONE_USDC),
     gstin: params?.gstin ?? "27ABCDE1234F1Z5",
     panHash: params?.panHash ?? ZERO_PAN_HASH,
     serviceCategory: params?.serviceCategory ?? 1,
     metadataUri:
       params?.metadataUri ??
-      "https://agentid-kya-solana.vercel.app/metadata/Test%20Agent.json",
+      "https://agentid-metadata-api.vercel.app/metadata/Test%20Agent.json",
   };
 }
 

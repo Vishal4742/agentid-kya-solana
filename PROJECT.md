@@ -1,59 +1,53 @@
 # AgentID Project Companion
 
-This is the single source of truth for the AgentID roadmap, operations runbook, vision, and ongoing security focus. It replaces the previous multi-document structure (`TASKS.md`, `MASTER_BUILD_GUIDE.md`, `PHASE1_IDENTITY_RUNBOOK.md`, `step_by_step_build_guide.md.resolved`, `idea-2-agentid-kya-solana.md`, etc.) so that every phase, checklist, and narrative note lives in one place.
+This file is the source of truth for roadmap status, release readiness, and the current gap between repo-complete work and live deployment health.
 
 ## Phases & Status
-| Phase | Description | Status | Key documents or code | Notes |
+| Phase | Description | Status | Primary code | Notes |
 | --- | --- | --- | --- | --- |
-| 1 | Anchor identity/reputation/treasury program | ~95% | Anchor program code, IDLs, `backend/tests` | Identity hardening done; confirm `anchor deploy` + `solana program show` on devnet each release.
-| 2 | Merkle tree & Bubblegum cNFT setup | ~90% | `scripts/set-tree-delegate.ts`, shared devnet tree | Reverify tree existence and delegate, and confirm non-admin wallet registration succeeds.
-| 3a | Metadata API deployment | ~85% | `backend/api/metadata`, Vercel project | API exists but registration page still hardcodes the host; update before production.
-| 3b | Oracle service | ~75% | `backend/oracle`, Helius webhook registration | Works but currently checks a shared header; align with the HMAC helper in `backend/api/webhook.ts` for stronger auth.
-| 3c | x402 middleware | ~60% | `backend/x402/*` | Code there, but replay protection still relies on an in-memory map; move to Redis/shared store for production.
-| 4 | Frontend devnet deployment | ~80% | `frontend/`, Vercel deployment | Feature-complete UI, route-split for production, works at `agentid-frontend.vercel.app`; metadata URL + wallet adapter footprint need polish.
-| 5 | End-to-end verification | ~40% | `frontend/src/test/e2e.test.ts` | No browser-level E2E yet; start-to-finish register→dashboard→oracle flow remains manual.
-| 6 | India compliance module | planning | `step_by_step_build_guide.md.resolved` (summarized below) | Add GSTIN/PAN capture, TDS calculator, and invoice modal for Indian AI agencies.
-| 7 | SDK & ELIZA plugin | planning | `packages/sdk`, `packages/eliza-plugin` | Scaffold packages, publish to npm, publish docs and install instructions.
-| 8 | Payment layer (AgentTreasury + x402 API) | planning | `frontend/src/pages/Dashboard.tsx`, `backend/x402` | Build AgentTreasury PDA, x402 middleware, and fully wire the treasury dashboard with deposit/limits/pause controls.
-| 9 | Security audit & mainnet deploy | planning | Sec3/X-ray audit, mainnet anchor deploy | Run automated audit, checklist (PDA seeds, owner-only guards, pause logic), deploy to `mainnet-beta`, add frontend network switcher.
-| 10 | Launch & go-to-market | planning | GTM workstreams from the idea doc | Onboard agents, publish blog/post, integrate with DeFi partners, file grant updates.
+| 1 | Anchor identity and reputation protocol | Complete in repo | `backend/programs/agentid-program`, `backend/tests` | `anchor test` passes locally and covers identity, verification, logging, rating, reputation, and treasury flows. |
+| 2 | Merkle tree and Bubblegum credential path | Complete in repo | shared tree setup, registration flow | Registration is wired to the shared tree and local verification clones required Bubblegum/compression dependencies. |
+| 3a | Metadata API | Complete in repo | `backend/api/metadata` | Metadata URL generation is config-driven and no longer depends on a dead frontend URL. |
+| 3b | Oracle service | Complete in repo | `backend/oracle`, `backend/api/webhook.ts` | HMAC-compatible webhook validation exists; deployed secret wiring still needs live verification after redeploy. |
+| 3c | x402 middleware | Complete in repo | `backend/x402` | Redis replay protection with in-memory fallback is implemented and tested. |
+| 4 | Frontend app | Complete in repo | `frontend/` | Register, verify, dashboard, and profile pages read real on-chain state. |
+| 5 | End-to-end verification | Complete locally | `frontend/src/test/e2e.test.ts`, `backend/tests` | Frontend tests/build, SDK tests, x402 tests, API typecheck, and `anchor test` are green locally. |
+| 6 | India compliance layer | In progress | `frontend/src/lib/indiaCompliance.ts`, dashboard invoice flow | Helpers and invoice UI exist, but this is not yet a full compliance product surface. |
+| 7 | SDK and ELIZA plugin | Complete in repo | `packages/sdk`, `packages/eliza-plugin` | Typed SDK and plugin are implemented and tested. |
+| 8 | Payment layer (treasury + x402 adoption) | In progress | `frontend/src/pages/Dashboard.tsx`, `backend/x402`, `packages/sdk` | Treasury instructions, dashboard controls, x402 middleware, and SDK treasury helpers exist. Remaining work is product-level adoption and live treasury smoke validation. |
+| 9 | Security audit and mainnet readiness | Planned | `docs/security/audit.md` | Internal audit is done; external audit and mainnet preparation remain open. |
+| 10 | Launch and GTM | Planned | docs/demo scripts | Defer until live deployments are healthy again. |
 
-## Operational Runbook (Phase 1)
-- **Scope:** `init_config`, `register_agent`, `update_capabilities`, `verify_agent`, `log_action`, `rate_agent`, `update_reputation`.
-- **Exit criteria:** Anchor tests pass locally, devnet IDLs synced, metadata API reachable, oracle configured, shared Merkle tree delegates mint authority, manual non-admin registrations verified.
-- **Prerequisites:** Solana/Anchor/Node tooling, funded devnet wallet, metadata API deployed or locally reachable, oracle signer available.
-- **Devnet deployment checklist:**
-  1. Confirm `backend/target/idl/agentid_program.json` matches the build and resync to frontend/api/sdk consumers.
-  2. Verify metadata endpoints return valid JSON and the frontend registration form points to the live host.
- 3. Confirm oracle authority in `ProgramConfig`, ensure shared Merkle tree exists or create with `scripts/create-merkle-tree.ts`.
- 4. Deploy on devnet, set the tree delegate with `scripts/set-tree-delegate.ts`, and perform a manual non-admin registration.
- 5. Verify the `AgentIdentity` PDA, metadata URI, `verify_agent`, `rate_agent`, and oracle `update_reputation` behaviors.
-- **Operational checks after deployment:** validation of input guards in `register_agent`/`update_capabilities`, owner-only enforcement of `log_action`, fail-closed `verify_agent`, etc.
-- **Recovery steps:** restore metadata endpoint, rotate oracle signer if mismatched, rebuild/resync IDLs, re-run delegate script, and test on devnet if local Bubblegum fails.
-- **Release gate:** only mark Phase 1 done once local Anchor tests pass, manual devnet registration works, metadata API is live, oracle signer is validated, shared tree delegate exists, and IDLs are synced.
+## What Is Actually Verified
+- `cd frontend && npm test`
+- `cd frontend && npm run build`
+- `cd packages/sdk && npm test`
+- `cd packages/eliza-plugin && npm run build`
+- `cd backend/x402 && npm test`
+- `cd backend/api && npx tsc --noEmit`
+- `cd backend && anchor test`
 
-## Future Phases & Go-To-Market
-- **Phase 6 (India compliance):** capture GSTIN+PAN fields, build TDS calculation utility, add invoice preview modal with TDS deduction and receipt cNFT capabilities.
-- **Phase 7 (SDK + ELIZA plugin):** scaffold `packages/sdk` and `packages/eliza-plugin`, implement `AgentIdClient` (register, verify, rate, etc.), export typed constants, and ship tutorials/docs plus npm publishing.
-- **Phase 8 (Payment layer):** add `AgentTreasury` PDA with spending limits, deposit, pause, and autonomous payment instructions; create Express/HTTP x402 middleware that gates API endpoints via USDC micropayments; fully wire the treasury dashboard sliders, buttons, and stats.
-- **Phase 9 (Security audit + mainnet):** submit Anchor program to Sec3 X-ray (free audit), verify PDA seeds/permissions/emergency pause, deploy to `mainnet-beta`, add a frontend network switcher with explorer links.
-- **Phase 10 (Launch & GTM):** register live agents, contact Indian AI agencies, post on ai16z/ELIZA channels, tweet/demo, build DeFi integrations (Jupiter/Kamino/Raydium), publish blog, and file grant milestones.
-- **Timeline note:** the idea doc envisioned a 5-week MVP culminating in identity + reputation + payment + SDK + docs; the current phase list continues that flow through GTM and grants.
+## What Is Not Automatically Proven Yet
+- Redeployed frontend health
+- Redeployed metadata API health
+- Oracle webhook delivery against deployed secrets
+- Live treasury initialization/deposit/pause/payment flow after redeploy
 
-## Vision & Architecture
-- **Problem:** AI agents on Solana execute trades, payments, and invoices without verifiable identity; existing KYA solutions are off-chain and Ethereum-centric, leaving India’s compliance-heavy agencies unsupported.
-- **Unique insight:** Solana is the only chain fast and cheap enough for real-time credential verification; AgentID provides soul-bound credentials, reputation scoring, and payment capability (x402) where DeFi protocols can trust agents.
-- **Layered architecture:** Identity registry → reputation engine → payment layer → SDK/plugin. Each layer builds on the previous, from register + credential minting to ELIZA plugin + developer tooling.
-- **Stack:** Anchor programs (Rust), Vite/React frontend, Metaplex Bubblegum for cNFTs, x402 payment protocol, Helius webhooks/oracle, off-chain utilities for Indian compliance (GSTIN/PAN/TDS), and eventual npm packages for SDK/plugin.
-- **Moat:** first-mover on Solana, early integrations with ELIZA, DeFi CPI adoption, and compliance modules (India TDS) make AgentID hard to replicate.
+## Phase 8 Current Truth
+Implemented already:
+- `AgentTreasury` initialization, deposit, spending-limit updates, pause, and autonomous payment instructions
+- Treasury dashboard controls in the frontend
+- Redis-backed x402 middleware with tests and integration documentation
+- First paid serverless route for treasury snapshots at `backend/api/api/premium/treasury/[agentId].ts`
+- SDK treasury reads and control methods
+- SDK treasury deposit helper added in this pass
 
-## Security & Release Observations
-- Oracle webhook currently verifies only a shared authorization header; migrate to the HMAC helper in `backend/api/webhook.ts` before production to guard against secret leakage.
-- x402 middleware’s replay protection is still in-memory; swap to Redis/shared store to keep horizontal deployments secure.
-- Frontend still imports `@solana/wallet-adapter-wallets`, expanding the trust surface (transitive dependencies like Trezor/Stellar/Axios). Replace with only needed adapters (Phantom/Solflare) to reduce risk.
-- Metadata URL hardcoding (registration form → `agentid.xyz`) must be replaced with the config-driven helper before marketing the product externally.
-- No CI/workflow files exist (`.github/workflows` absent) and release/secret-rotation docs are outdated; add automated gates as part of the remaining phases to prevent accidental regressions.
+Still open:
+1. Run live treasury smoke checks after redeploy: initialize treasury, deposit devnet USDC, update limits, pause/unpause, and confirm expected payment failures/successes.
+2. Improve payment-facing telemetry so treasury activity is visible without explorer-only debugging.
+3. Decide whether additional paid endpoints should live in the metadata API deployment or a dedicated API service.
 
-## What Was Removed
-- The legacy markdown backlog (`TASKS.md`, `MASTER_BUILD_GUIDE.md`, `PHASE1_IDENTITY_RUNBOOK.md`, `step_by_step_build_guide.md.resolved`, `idea-2-agentid-kya-solana.md`) has been deleted in favor of this single companion file.
-- If you need to reference a deeply detailed runbook or vision piece, this doc now captures the distilled, actionable summary; add more sections here as those narratives evolve.
+## Release Guidance
+- Treat “complete in repo” and “live complete” as different states.
+- Keep `anchor test` green before any devnet deploy; it now validates the real local registration/treasury path using cloned devnet dependencies.
+- After redeploy, rerun a live smoke flow before claiming phase 5 or phase 8 complete externally.

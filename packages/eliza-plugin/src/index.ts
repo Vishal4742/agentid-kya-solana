@@ -50,6 +50,17 @@ export interface ElizaActionDefinition {
   handler: (runtime: ElizaRuntime, message?: ElizaMessage) => Promise<string>;
 }
 
+function getAgentAppBase(runtime: ElizaRuntime): string | null {
+  const configuredBase =
+    runtime.getSetting("AGENTID_APP_URL") ?? runtime.getSetting("FRONTEND_BASE");
+
+  if (!configuredBase) {
+    return null;
+  }
+
+  return configuredBase.replace(/\/+$/, "");
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /**
@@ -131,9 +142,12 @@ export const agentIdPlugin: ElizaPlugin = {
         const identity: AgentIdentity | null = await client.getAgentIdentity(runtime.agentWallet);
 
         if (!identity) {
+          const appBase = getAgentAppBase(runtime);
           return (
             "This agent has no AgentID credential. " +
-            "Register at https://agentid-kya-solana.vercel.app/register"
+            (appBase
+              ? `Register at ${appBase}/register`
+              : "Register through your deployed AgentID frontend.")
           );
         }
 

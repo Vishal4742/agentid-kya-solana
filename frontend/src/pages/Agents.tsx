@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useAllAgents } from "@/hooks/useAgents";
 import type { Agent } from "@/data/mockAgents";
-import { formatRelativeTime } from "@/data/mockAgents";
+import { formatRelativeTime } from "@/lib/display";
 import { useTextScramble } from "@/hooks/useTextScramble";
 import { Search, ChevronDown, X, RefreshCw } from "lucide-react";
 import { Sk } from "@/components/Skeleton";

@@ -13,8 +13,13 @@ import { describe, it, expect } from "vitest";
 import { PublicKey } from "@solana/web3.js";
 import {
   BUBBLEGUM_PROGRAM_ID,
+  DEVNET_USDC_MINT,
   SPL_NOOP_PROGRAM_ID,
   SPL_ACCOUNT_COMPRESSION_ID,
+  SPL_ASSOCIATED_TOKEN_PROGRAM_ID,
+  SPL_TOKEN_PROGRAM_ID,
+  deriveAssociatedTokenAccount,
+  deriveTreasuryPda,
   deriveTreeAuthority,
 } from "../src/index.js";
 
@@ -32,6 +37,12 @@ describe("exported program address constants", () => {
 
   it("SPL_ACCOUNT_COMPRESSION_ID is a valid base58 public key", () => {
     expect(() => new PublicKey(SPL_ACCOUNT_COMPRESSION_ID)).not.toThrow();
+  });
+
+  it("well-known payment constants are valid public keys", () => {
+    expect(() => new PublicKey(DEVNET_USDC_MINT)).not.toThrow();
+    expect(() => new PublicKey(SPL_TOKEN_PROGRAM_ID)).not.toThrow();
+    expect(() => new PublicKey(SPL_ASSOCIATED_TOKEN_PROGRAM_ID)).not.toThrow();
   });
 });
 
@@ -61,6 +72,34 @@ describe("deriveTreeAuthority()", () => {
 
   it("throws on invalid base58 input", () => {
     expect(() => deriveTreeAuthority("not-a-valid-pubkey!")).toThrow();
+  });
+});
+
+describe("treasury PDA helpers", () => {
+  const OWNER = new PublicKey("11111111111111111111111111111112");
+
+  it("deriveTreasuryPda returns a stable treasury PDA for an identity PDA", () => {
+    const [identityPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("agent-identity"), OWNER.toBytes()],
+      new PublicKey("Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF"),
+    );
+
+    const [treasuryA] = deriveTreasuryPda(identityPda);
+    const [treasuryB] = deriveTreasuryPda(identityPda);
+
+    expect(treasuryA.toBase58()).toBe(treasuryB.toBase58());
+    expect(treasuryA.toBase58()).not.toBe(identityPda.toBase58());
+  });
+
+  it("deriveAssociatedTokenAccount returns a deterministic ATA", () => {
+    const ataA = deriveAssociatedTokenAccount(OWNER, DEVNET_USDC_MINT);
+    const ataB = deriveAssociatedTokenAccount(
+      OWNER.toBase58(),
+      DEVNET_USDC_MINT,
+    );
+
+    expect(ataA.toBase58()).toBe(ataB.toBase58());
+    expect(() => new PublicKey(ataA.toBase58())).not.toThrow();
   });
 });
 
@@ -190,7 +229,7 @@ describe("RegisterAgentParams required fields", () => {
         dataAnalysis: false,
         maxUsdcTx: 500,
       },
-      metadataUri: "https://agentid-kya-solana.vercel.app/metadata/TestAgent.json",
+      metadataUri: "https://agentid-metadata-api.vercel.app/metadata/TestAgent.json",
       merkleTree: "11111111111111111111111111111112",
       treeAuthority: "11111111111111111111111111111112",
     };

@@ -3,13 +3,19 @@
   "functions": {
     "api/metadata/[slug].ts": {
       "runtime": "@vercel/node@3.2.24"
+    },
+    "api/premium/treasury/[agentId].ts": {
+      "runtime": "@vercel/node@3.2.24"
     }
   },
   "rewrites": [
     {
       "source": "/metadata/:slug",
       "destination": "/api/metadata/:slug"
+    },
+    {
+      "source": "/premium/treasury/:agentId",
+      "destination": "/api/premium/treasury/:agentId"
     }
   ]
 }
-

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWallet } from "@/hooks/useWallet";
 import { useMyAgent } from "@/hooks/useAgents";
-import { truncateWallet, formatRelativeTime } from "@/data/mockAgents";
+import { truncateWallet, formatRelativeTime } from "@/lib/display";
 import type { Agent } from "@/data/mockAgents";
 import { toast } from "sonner";
 import { Shield, Activity, AlertTriangle, Wallet, ExternalLink, Play, Pause, Plus, FileText, X } from "lucide-react";

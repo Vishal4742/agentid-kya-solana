@@ -1,6 +1,12 @@
 import type { IncomingMessage, ServerResponse } from "http";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { Program, AnchorProvider, Idl } from "@coral-xyz/anchor";
+import {
+  ACTIVE_RPC_URL,
+  buildAgentExternalUrl,
+  buildAgentImageUrl,
+  buildMetadataUrlByName,
+} from "./_shared";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const idl = require("../idl/agentid_program.json") as Idl;
 
@@ -13,15 +19,8 @@ type VercelResponse = ServerResponse & {
   setHeader(name: string, value: string): VercelResponse;
 };
 
-const ACTIVE_RPC_URL =
-  process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
 const PROGRAM_ID = (idl as unknown as { address: string }).address;
 const SEED_PREFIX = Buffer.from("agent-identity");
-
-// Frontend base URL — no custom domain needed.
-// Set FRONTEND_BASE in Vercel env vars once you know your deployment URL.
-const FRONTEND_BASE =
-  process.env.FRONTEND_BASE ?? "https://agentid-kya-solana.vercel.app";
 
 const FRAMEWORKS = ["ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"];
 const VERIFIED_LEVELS = [
@@ -53,7 +52,7 @@ function buildReadonlyProvider(connection: Connection): AnchorProvider {
  * GET /api/metadata/[agentName]
  * Returns Metaplex-compatible JSON for the named agent.
  * The agent name is the same string stored in AgentIdentity.name.
- * This allows the Register wizard to set metadataUri = `${FRONTEND_BASE}/metadata/${name}.json`
+ * This allows the Register wizard to set metadataUri = `${METADATA_BASE}/metadata/${name}.json`
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "GET")
@@ -98,8 +97,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         symbol: "AGID",
         description:
           "Soul-bound AI agent credential on AgentID Protocol (Solana).",
-        image: `${FRONTEND_BASE}/nft/placeholder.png`,
-        external_url: `${FRONTEND_BASE}/agent/${encodeURIComponent(agentName)}`,
+        image: buildAgentImageUrl("/nft/placeholder.png"),
+        external_url: buildAgentExternalUrl(
+          `/agent/${encodeURIComponent(agentName)}`,
+          buildMetadataUrlByName(agentName)
+        ),
         attributes: [
           { trait_type: "Agent Name", value: agentName },
           { trait_type: "Status", value: "Pending on-chain verification" },
@@ -140,8 +142,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       description:
         "Soul-bound AI agent identity credential on the AgentID Protocol (Solana). " +
         "Non-transferable. Represents verified identity, reputation, and capabilities.",
-      image: `${FRONTEND_BASE}/nft/${pdaHex}.png`,
-      external_url: `${FRONTEND_BASE}/agent/${pda.toBase58()}`,
+      image: buildAgentImageUrl(`/nft/${pdaHex}.png`),
+      external_url: buildAgentExternalUrl(
+        `/agent/${pda.toBase58()}`,
+        buildMetadataUrlByName(acc.name)
+      ),
       attributes: [
         { trait_type: "Agent Name", value: acc.name },
         { trait_type: "Framework", value: framework },

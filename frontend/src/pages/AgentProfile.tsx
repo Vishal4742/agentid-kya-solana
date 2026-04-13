@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useWallet } from "@/hooks/useWallet";
 import { useProgram } from "@/hooks/useProgram";
 import { useAllAgents } from "@/hooks/useAgents";
-import { truncateWallet, formatRelativeTime } from "@/data/mockAgents";
+import { truncateWallet, formatRelativeTime } from "@/lib/display";
 import type { Agent } from "@/data/mockAgents";
 import { PublicKey } from "@solana/web3.js";
 import { toast } from "sonner";
@@ -130,20 +130,119 @@ function SidebarSkeleton() {
 }
 
 const ACTIVITY_ICONS: Record<string, React.FC<{ className?: string }>> = {
-  defi_trade: TrendingUp, payment: Zap, content: Activity, audit: Shield, registration: CheckCircle2,
+  defi_trade: TrendingUp, payment: Zap, content: Activity, data_query: Shield, audit: Shield, registration: CheckCircle2,
 };
 
 const FRAMEWORKS = ["ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"] as const;
 const VERIFIED_LEVELS = ["Unverified", "EmailVerified", "KYBVerified", "Audited"] as const;
+const SERVICE_CATEGORIES = [
+  "Information Technology Services",
+  "Financial Services",
+  "Consulting Services",
+  "Marketing & Advertising",
+  "Research & Development",
+] as const;
 
-function normalizeAccount(pubkey: string, acc: Record<string, unknown>): Agent {
+type ActionRecord = {
+  publicKey: PublicKey;
+  account: {
+    actionType: number;
+    success: boolean;
+    usdcTransferred: { toNumber(): number };
+    timestamp: { toNumber(): number };
+    memo: string;
+  };
+};
+
+type TreasuryRecord = {
+  totalEarned: { toNumber(): number };
+  emergencyPause: boolean;
+};
+
+function mapActionType(actionType: number): Agent["activity"][number]["type"] {
+  switch (actionType) {
+    case 0:
+      return "defi_trade";
+    case 1:
+      return "payment";
+    case 2:
+      return "content";
+    case 3:
+      return "data_query";
+    default:
+      return "audit";
+  }
+}
+
+function buildActionDescription(action: ActionRecord["account"]): string {
+  const memo = action.memo?.trim();
+  if (memo) return memo;
+
+  switch (action.actionType) {
+    case 0:
+      return "DeFi transaction executed on-chain";
+    case 1:
+      return "Autonomous payment executed";
+    case 2:
+      return "Content publication logged on-chain";
+    case 3:
+      return "Data query recorded on-chain";
+    default:
+      return "On-chain agent action recorded";
+  }
+}
+
+function formatUsdcAmount(microUsdc: number): string {
+  return microUsdc <= 0 ? "" : `${(microUsdc / 1_000_000).toLocaleString()} USDC`;
+}
+
+async function fetchOptionalTreasury(
+  program: ReturnType<typeof useProgram>,
+  treasuryPda: PublicKey,
+): Promise<TreasuryRecord | null> {
+  const treasuryClient = (program?.account as { agentTreasury?: { fetch(pubkey: PublicKey): Promise<TreasuryRecord> } } | undefined)?.agentTreasury;
+  if (!treasuryClient) return null;
+
+  try {
+    return await treasuryClient.fetch(treasuryPda);
+  } catch {
+    return null;
+  }
+}
+
+async function fetchOptionalActions(
+  program: ReturnType<typeof useProgram>,
+  identityPubkey: PublicKey,
+): Promise<ActionRecord[]> {
+  const actionClient = (program?.account as {
+    agentAction?: { all(filters?: Array<{ memcmp: { offset: number; bytes: string } }>): Promise<ActionRecord[]> };
+  } | undefined)?.agentAction;
+  if (!actionClient) return [];
+
+  try {
+    return await actionClient.all([
+      { memcmp: { offset: 8, bytes: identityPubkey.toBase58() } },
+    ]);
+  } catch {
+    return [];
+  }
+}
+
+function normalizeAccount(
+  pubkey: string,
+  acc: Record<string, unknown>,
+  treasury: TreasuryRecord | null = null,
+  actions: ActionRecord[] = [],
+): Agent {
   const caps = acc as {
     framework: number; model: string; verifiedLevel: number;
     reputationScore: number; registeredAt: { toNumber(): number };
     lastActive: { toNumber(): number }; owner: { toBase58(): string };
     maxTxSizeUsdc: { toNumber(): number };
     canTradeDefi: boolean; canSendPayments: boolean;
+    canPublishContent: boolean; canAnalyzeData: boolean;
     name: string; gstin: string;
+    serviceCategory?: number;
     credentialNft: { toBase58(): string } | null;
     totalTransactions: { toNumber(): number };
     successfulTransactions: { toNumber(): number };
@@ -166,7 +265,9 @@ function normalizeAccount(pubkey: string, acc: Record<string, unknown>): Agent {
   const daysSinceReg = (Date.now() / 1000 - regAt) / (60 * 60 * 24);
   const scoreLongevity = Math.min(Math.max(daysSinceReg, 0) / 365, 1) * 150;
 
-  const scoreVolume = 0; // Phase 8 feature
+  const scoreVolume = treasury
+    ? Math.min((treasury.totalEarned.toNumber() / 1_000_000) / 100_000, 1) * 150
+    : 0;
   let scoreVerification = 0;
   if (verLevel === 1) scoreVerification = 50;
   if (verLevel === 2) scoreVerification = 100;
@@ -180,6 +281,24 @@ function normalizeAccount(pubkey: string, acc: Record<string, unknown>): Agent {
       ? caps.credentialNft.toBase58()
       : undefined;
 
+  const activity = [
+    {
+      id: `${pubkey}-registration`,
+      type: "registration" as const,
+      description: "AgentID credential minted on Solana",
+      timestamp: new Date(regAt * 1000).toISOString(),
+      status: "success" as const,
+    },
+    ...actions.map(({ publicKey, account }) => ({
+      id: publicKey.toBase58(),
+      type: mapActionType(account.actionType),
+      description: buildActionDescription(account),
+      amount: formatUsdcAmount(account.usdcTransferred?.toNumber?.() ?? 0) || undefined,
+      timestamp: new Date(account.timestamp.toNumber() * 1000).toISOString(),
+      status: account.success ? "success" as const : "failed" as const,
+    })),
+  ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
   return {
     id: pubkey,
     name: caps.name,
@@ -190,9 +309,11 @@ function normalizeAccount(pubkey: string, acc: Record<string, unknown>): Agent {
     registeredAt: new Date(regAt * 1000).toISOString(),
     lastActive: new Date((caps.lastActive?.toNumber?.() ?? 0) * 1000).toISOString(),
     ownerWallet: caps.owner?.toBase58?.() ?? "",
-    totalTxValue: "—",
-    paused: false,
-    activity: [],
+    totalTxValue: treasury
+      ? `$${(treasury.totalEarned.toNumber() / 1_000_000).toLocaleString()}`
+      : "—",
+    paused: treasury?.emergencyPause ?? false,
+    activity,
     reputationBreakdown: { 
       transactions: totalTx, 
       uptime: displayUptime, 
@@ -206,12 +327,16 @@ function normalizeAccount(pubkey: string, acc: Record<string, unknown>): Agent {
     capabilities: {
       defiTrading: caps.canTradeDefi ?? false,
       paymentSending: caps.canSendPayments ?? false,
-      contentPublishing: false,
-      dataAnalysis: false,
+      contentPublishing: caps.canPublishContent ?? false,
+      dataAnalysis: caps.canAnalyzeData ?? false,
       maxUsdcTx: (caps.maxTxSizeUsdc?.toNumber?.() ?? 0) / 1_000_000,
     },
     indiaCompliance: caps.gstin
-      ? { gstin: caps.gstin, tdsRate: 10, serviceCategory: "Information Technology Services" }
+      ? {
+        gstin: caps.gstin,
+        tdsRate: caps.serviceCategory === 1 ? 2 : 10,
+        serviceCategory: SERVICE_CATEGORIES[caps.serviceCategory ?? 0] ?? SERVICE_CATEGORIES[0],
+      }
       : null,
     avatarSeed: caps.name,
     credentialNft,
@@ -242,10 +367,33 @@ export default function AgentProfile() {
 
     (async () => {
       try {
-        const pubkey = new PublicKey(id);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const acc = await (program.account as any).agentIdentity.fetch(pubkey);
-        if (active) setAgent(normalizeAccount(id, acc as Record<string, unknown>));
+        const identityPubkey = new PublicKey(id);
+        const identityPromise = (program.account as { agentIdentity: { fetch(pubkey: PublicKey): Promise<Record<string, unknown>> } })
+          .agentIdentity
+          .fetch(identityPubkey);
+        const programId = (program as { programId?: PublicKey }).programId;
+        const [identity, treasuryResult, actionsResult] = await Promise.all([
+          identityPromise,
+          programId
+            ? fetchOptionalTreasury(
+              program,
+              PublicKey.findProgramAddressSync(
+                [Buffer.from("agent-treasury"), identityPubkey.toBytes()],
+                programId,
+              )[0],
+            )
+            : Promise.resolve(null),
+          programId ? fetchOptionalActions(program, identityPubkey) : Promise.resolve([]),
+        ]);
+
+        if (active) {
+          setAgent(normalizeAccount(
+            id,
+            identity,
+            treasuryResult,
+            actionsResult,
+          ));
+        }
       } catch {
         if (active) setNotFound(true);
       } finally {
@@ -312,7 +460,20 @@ export default function AgentProfile() {
       const refreshed = await (program.account as { agentIdentity: { fetch(pubkey: PublicKey): Promise<Record<string, unknown>> } })
         .agentIdentity
         .fetch(identity);
-      setAgent(normalizeAccount(id, refreshed));
+      const programId = (program as { programId?: PublicKey }).programId;
+      const [treasury, actions] = await Promise.all([
+        programId
+          ? fetchOptionalTreasury(
+            program,
+            PublicKey.findProgramAddressSync(
+              [Buffer.from("agent-treasury"), identity.toBytes()],
+              programId,
+            )[0],
+          )
+          : Promise.resolve(null),
+        programId ? fetchOptionalActions(program, identity) : Promise.resolve([]),
+      ]);
+      setAgent(normalizeAccount(id, refreshed, treasury, actions));
       setRated(true);
       toast.success(`Rated ${rating} ⭐ — submitted on-chain`);
     } catch (error) {
@@ -398,9 +559,24 @@ export default function AgentProfile() {
                 <p className="label-meta">Reputation Score</p>
                 <button onClick={async () => {
                   try {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const acc = await (program.account as any).agentIdentity.fetch(new PublicKey(id!));
-                    setAgent(normalizeAccount(id!, acc as Record<string, unknown>));
+                    const identityPubkey = new PublicKey(id!);
+                    const programId = (program as { programId?: PublicKey }).programId;
+                    const [identity, treasury, actions] = await Promise.all([
+                      (program.account as { agentIdentity: { fetch(pubkey: PublicKey): Promise<Record<string, unknown>> } })
+                        .agentIdentity
+                        .fetch(identityPubkey),
+                      programId
+                        ? fetchOptionalTreasury(
+                          program,
+                          PublicKey.findProgramAddressSync(
+                            [Buffer.from("agent-treasury"), identityPubkey.toBytes()],
+                            programId,
+                          )[0],
+                        )
+                        : Promise.resolve(null),
+                      programId ? fetchOptionalActions(program, identityPubkey) : Promise.resolve([]),
+                    ]);
+                    setAgent(normalizeAccount(id!, identity, treasury, actions));
                     toast.success("Reputation refreshed from chain");
                   } catch (e) {
                     toast.error("Failed to refresh");

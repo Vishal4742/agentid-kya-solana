@@ -4,7 +4,6 @@ import {
   CheckCircle2, XCircle, Globe, Code2, Layers, Activity,
   Star, Shield, Zap, ArrowRight, ChevronRight, Clock, AlertTriangle, FileX
 } from "lucide-react";
-import { MOCK_AGENTS } from "@/data/mockAgents";
 import AsciiCanvas from "@/components/AsciiCanvas";
 import ScrambleText from "@/components/ScrambleText";
 import CornerTelemetry from "@/components/CornerTelemetry";

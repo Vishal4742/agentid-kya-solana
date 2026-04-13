@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWallet } from "@/hooks/useWallet";
-import { truncateWallet } from "@/data/mockAgents";
+import { truncateWallet } from "@/lib/display";
 import { Menu, X, Copy, LogOut, Zap } from "lucide-react";
 import { toast } from "sonner";
 
