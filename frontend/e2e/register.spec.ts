@@ -1,4 +1,4 @@
-import { expect, test } from "playwright/test";
+import { expect, test } from "@playwright/test";
 
 test("register page loads without crashing", async ({ page }) => {
   await page.goto("/register");
