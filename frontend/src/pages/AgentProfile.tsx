@@ -343,6 +343,12 @@ export default function AgentProfile() {
           </div>
         </div>
 
+        <div className="mb-8">
+          <h2 className="font-serif italic text-3xl sm:text-4xl tracking-[-0.02em] text-foreground">
+            Agent Profile
+          </h2>
+        </div>
+
         {/* Hero — skeleton or real */}
         {loading ? <HeroSkeleton /> : (
           <div className="grid lg:grid-cols-3 gap-0 border-b border-border mb-0">

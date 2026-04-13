@@ -134,6 +134,12 @@ export default function Agents() {
           <span className="font-mono text-[11px] text-muted-foreground/50">{time}</span>
         </div>
 
+        <div className="mb-8">
+          <h1 className="font-serif italic text-4xl sm:text-5xl tracking-[-0.02em] text-foreground">
+            Registered Agents
+          </h1>
+        </div>
+
         {/* Toolbar */}
         <div className="space-y-4 mb-8">
           <div className="relative">
