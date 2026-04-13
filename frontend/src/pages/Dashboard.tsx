@@ -11,8 +11,8 @@ import { Slider } from "@/components/ui/slider";
 import { Sk } from "@/components/Skeleton";
 import { calculateTDS, generateInvoice, getSectionLabel } from "@/lib/indiaCompliance";
 import { useProgram } from "@/hooks/useProgram";
-import { PublicKey, SystemProgram } from "@solana/web3.js";
-import { BN } from "@coral-xyz/anchor";
+import { PublicKey, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
+import { AnchorProvider, BN } from "@coral-xyz/anchor";
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -31,6 +31,26 @@ function deriveAssociatedTokenAddress(owner: PublicKey, mint: PublicKey) {
     ASSOCIATED_TOKEN_PROGRAM_ID,
   );
   return ata;
+}
+
+function createAssociatedTokenAccountIx(
+  payer: PublicKey,
+  ata: PublicKey,
+  owner: PublicKey,
+  mint: PublicKey,
+) {
+  return new TransactionInstruction({
+    programId: ASSOCIATED_TOKEN_PROGRAM_ID,
+    keys: [
+      { pubkey: payer, isSigner: true, isWritable: true },
+      { pubkey: ata, isSigner: false, isWritable: true },
+      { pubkey: owner, isSigner: false, isWritable: false },
+      { pubkey: mint, isSigner: false, isWritable: false },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+    ],
+    data: Buffer.alloc(0),
+  });
 }
 
 /* ── Mini gauge ── */
@@ -381,10 +401,28 @@ export default function Dashboard() {
     const depositor = new PublicKey(publicKey);
     const depositorUsdc = deriveAssociatedTokenAddress(depositor, DEVNET_USDC_MINT);
     const treasuryUsdc = deriveAssociatedTokenAddress(treasuryPda, DEVNET_USDC_MINT);
+    const provider = program.provider as AnchorProvider;
 
     setDepositing(true);
 
     try {
+      const treasuryUsdcInfo = await provider.connection.getAccountInfo(treasuryUsdc);
+
+      if (!treasuryUsdcInfo) {
+        const createAtaTx = new Transaction().add(
+          createAssociatedTokenAccountIx(
+            depositor,
+            treasuryUsdc,
+            treasuryPda,
+            DEVNET_USDC_MINT,
+          ),
+        );
+
+        await provider.sendAndConfirm(createAtaTx, [], {
+          commitment: "confirmed",
+        });
+      }
+
       // @ts-expect-error Anchor method typing is generated loosely from the JSON IDL.
       await program.methods.deposit(
         new BN(Math.round(parsedAmount * 1_000_000)),
@@ -403,7 +441,7 @@ export default function Dashboard() {
       const message = error instanceof Error ? error.message : String(error);
       toast.error("Deposit failed", {
         description: message.includes("AccountNotInitialized")
-          ? "Treasury token account is not ready on devnet yet."
+          ? "Treasury or wallet USDC token account is still missing on devnet."
           : message.slice(0, 120),
       });
     } finally {

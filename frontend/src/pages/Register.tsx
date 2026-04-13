@@ -22,6 +22,7 @@ const [TREE_AUTHORITY] = PublicKey.findProgramAddressSync(
   MPL_BUBBLEGUM_PROGRAM
 );
 const PROGRAM_CONFIG_SEED = new TextEncoder().encode("program-config");
+const AGENT_IDENTITY_SEED = new TextEncoder().encode("agent-identity");
 
 const STEPS = ["Basic Info", "Capabilities", "India Compliance", "Register Agent"];
 const FRAMEWORKS = ["ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"];
@@ -86,10 +87,23 @@ export default function Register() {
       const panHash = Array.from({ length: 32 }, () => 0);
       // service_category u8 enum
       const serviceCategory = form.skipIndia ? 0 : SERVICE_CATEGORIES.indexOf(form.serviceCategory);
+      const [identityPda] = PublicKey.findProgramAddressSync(
+        [AGENT_IDENTITY_SEED, agentWallet.toBytes()],
+        program.programId,
+      );
       const [treeDelegate] = PublicKey.findProgramAddressSync(
         [PROGRAM_CONFIG_SEED],
         program.programId,
       );
+
+      const existingIdentity = await program.provider.connection.getAccountInfo(identityPda);
+      if (existingIdentity) {
+        toast.error("This wallet already has a registered agent", {
+          description: `Existing identity: ${identityPda.toBase58().slice(0, 8)}…${identityPda.toBase58().slice(-8)}`,
+        });
+        setMinting(false);
+        return;
+      }
 
       const tx = await program.methods
         .registerAgent({
@@ -124,7 +138,15 @@ export default function Register() {
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
+      const lower = msg.toLowerCase();
+      const friendly =
+        lower.includes("custom program error: 0x0") || lower.includes("already in use")
+          ? "This wallet may already have an agent identity. Try the existing profile instead of registering again."
+          : msg;
       toast.error("Transaction failed", { description: msg.slice(0, 120) });
+      if (friendly !== msg) {
+        toast.error("Likely cause", { description: friendly.slice(0, 120) });
+      }
     } finally {
       setMinting(false);
     }
