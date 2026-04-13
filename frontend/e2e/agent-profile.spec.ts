@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "playwright/test";
 
 const KNOWN_AGENT_PDA =
   "8DLr8MYie8VHBiLkFcoE6YHtNeKdgz5PWy5tpSV3iqZA";
