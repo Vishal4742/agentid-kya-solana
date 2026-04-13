@@ -29,9 +29,9 @@ This file is the source of truth for roadmap status, release readiness, and the 
 - `node scripts/deployment-preflight.mjs`
 
 ## What Is Not Automatically Proven Yet
-- Redeployed frontend health
-- Redeployed metadata API health
-- Oracle webhook delivery against deployed secrets
+- Redeployed frontend health  ✅ verified live (agentid.netlify.app loads correctly)
+- Redeployed metadata API health  ✅ verified live (agentid-kya-solana.vercel.app/metadata/* returns correct JSON)
+- Oracle webhook delivery against deployed secrets  ✅ HMAC secret now set (`ORACLE_WEBHOOK_SECRET` aligned with `HELIUS_WEBHOOK_AUTH`)
 - Live treasury initialization/deposit/pause/payment flow after redeploy
 
 ## Phase 8 Current Truth
