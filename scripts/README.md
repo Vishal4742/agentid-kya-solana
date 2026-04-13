@@ -39,6 +39,20 @@ Prerequisites:
 - PowerShell 7+
 - Anchor CLI installed
 
+## deployment-preflight.mjs
+
+Checks that the repo contains the expected Netlify, Vercel, and GitHub Actions deployment inputs.
+
+```bash
+node scripts/deployment-preflight.mjs
+```
+
+What it does:
+- Confirms the hosting config files exist
+- Checks the example env files for required keys
+- Warns when local env files are missing or still contain placeholders
+- Prints the external secrets that still need to be set in Netlify, Vercel, and GitHub Actions
+
 ## Adding New Scripts
 
 When adding a new script:

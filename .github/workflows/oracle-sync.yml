@@ -1,0 +1,38 @@
+name: Oracle Sync
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: backend/oracle
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: backend/oracle/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build oracle sync
+        run: npm run build
+
+      - name: Run oracle sync
+        env:
+          SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
+          ORACLE_PRIVATE_KEY: ${{ secrets.ORACLE_PRIVATE_KEY }}
+          ORACLE_WEBHOOK_SECRET: ${{ secrets.ORACLE_WEBHOOK_SECRET }}
+        run: node dist/sync.js

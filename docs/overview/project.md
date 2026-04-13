@@ -7,7 +7,7 @@ This overview tracks what is complete in the repository, what is locally verifie
 | --- | --- | --- |
 | 1 | Complete in repo | Anchor identity/reputation protocol is implemented and tested. |
 | 2 | Complete in repo | Bubblegum registration path and shared-tree wiring are present. |
-| 3 | Complete in repo | Metadata API, oracle service, and x402 middleware exist in working repo form. |
+| 3 | Complete in repo | Metadata API, Vercel webhook route, GitHub Actions oracle sync, and x402 middleware exist in working repo form. |
 | 4 | Complete in repo | Frontend reads real on-chain state and exposes treasury controls. |
 | 5 | Complete locally | Local verification is green across frontend, SDK, x402, metadata API typecheck, and Anchor tests. |
 | 6 | In progress | India-compliance helpers/UI exist, but the product surface is still partial. |
@@ -21,11 +21,12 @@ This overview tracks what is complete in the repository, what is locally verifie
 - `cd backend/x402 && npm test`
 - `cd backend/api && npx tsc --noEmit`
 - `cd backend && anchor test`
+- `node scripts/deployment-preflight.mjs`
 
 ## Live Verification Still Required
 1. Redeploy the frontend.
 2. Redeploy the metadata API.
-3. Confirm oracle webhook delivery with the deployed secrets.
+3. Confirm oracle webhook delivery with the deployed Vercel secrets.
 4. Run a live treasury flow on devnet:
    - initialize treasury
    - deposit devnet USDC

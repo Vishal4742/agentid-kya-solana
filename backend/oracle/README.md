@@ -1,15 +1,13 @@
 # AgentID Reputation Oracle
 
-Node/Express service that recalculates and writes `reputation_score` back to the AgentID program.
+Node-based oracle sync package that recalculates and writes `reputation_score` back to the AgentID program.
 
 ## What It Does Today
 
 - Loads the Anchor IDL from `src/idl/agentid_program.json`
-- Validates signed webhook bodies when `x-agentid-signature` is present and `ORACLE_WEBHOOK_SECRET` is configured
-- Falls back to a static `Authorization` header for direct Helius delivery when `HELIUS_WEBHOOK_AUTH` is configured
-- Recomputes reputation when it sees `LogAction` or `Rate` program interactions
-- Runs an hourly full sync across all `AgentIdentity` accounts
+- Runs full reputation syncs across all `AgentIdentity` accounts
 - Calls `updateReputation` on-chain using the configured oracle authority
+- Is designed to run from GitHub Actions rather than as a permanently hosted HTTP service
 
 ## Important Limits
 
@@ -32,20 +30,25 @@ Copy `.env.example` to `.env` and set:
 ORACLE_PRIVATE_KEY=[12,34,56,...]
 SOLANA_RPC_URL=https://api.devnet.solana.com
 ORACLE_WEBHOOK_SECRET=shared_secret_for_signed_webhooks
-HELIUS_WEBHOOK_AUTH=your_secure_random_string
-PORT=3001
+HELIUS_API_KEY=your_helius_api_key
+WEBHOOK_URL=https://your-api-domain.vercel.app/oracle/webhook
 ```
 
-Use `ORACLE_WEBHOOK_SECRET` when requests are relayed through a signer that sends `x-agentid-signature: sha256=<hex>`.
-
-Use `HELIUS_WEBHOOK_AUTH` when Helius posts directly to the oracle. That fallback is weaker than HMAC signing because it is a static shared bearer value.
+Webhook delivery now belongs to the Vercel API route in `backend/api/api/oracle/webhook.ts`.
 
 ## Development
 
 ```bash
 cd backend/oracle
 npm install
-npm run dev
+npm run sync
+```
+
+Register or refresh the Helius webhook target:
+
+```bash
+cd backend/oracle
+npm run register:webhook
 ```
 
 ## Build
@@ -59,5 +62,6 @@ npm start
 ## Operational Notes
 
 - Program ID is resolved from the bundled IDL at runtime
-- The webhook endpoint is `POST /webhook`
-- The oracle must match the `oracle_authority` configured in the on-chain `ProgramConfig` PDA
+- The sync job is intended for `.github/workflows/oracle-sync.yml`
+- The oracle keypair must match the `oracle_authority` configured in the on-chain `ProgramConfig` PDA
+- `HELIUS_API_KEY`, `WEBHOOK_URL`, and `HELIUS_WEBHOOK_AUTH` are only needed for webhook registration, not the scheduled sync job

@@ -74,12 +74,17 @@ This calls the `init_config` instruction, setting you (the deployer) as the admi
 ```bash
 cd backend/api
 
+cp .env.example .env
+# Fill in the values you will also set in Vercel
+
 # Install Vercel CLI if needed
 npm i -g vercel
 
 # Set environment variables on Vercel
 vercel env add SOLANA_RPC_URL
-vercel env add PROGRAM_ID
+vercel env add METADATA_BASE_URL
+vercel env add FRONTEND_BASE
+vercel env add ORACLE_PRIVATE_KEY
 vercel env add ORACLE_WEBHOOK_SECRET
 
 # Deploy
@@ -90,32 +95,46 @@ After deploying, set `VITE_METADATA_BASE_URL` in `frontend/.env.local` (and the 
 
 ---
 
-## 5. Deploy the Oracle Service
+## 5. Configure Oracle Sync (GitHub Actions) + Webhook (Vercel)
 
 ```bash
 cd backend/oracle
 
-# Copy and fill in environment variables
 cp .env.example .env
-# Edit .env:
-#   ORACLE_PRIVATE_KEY=[...bytes...]
-#   ORACLE_WEBHOOK_SECRET=<shared HMAC secret>
-#   HELIUS_API_KEY=<your Helius API key>
-#   WEBHOOK_URL=<your public oracle URL>
-
 npm install
 npm run build
+npm run register:webhook
+```
 
-# Register the Helius webhook
-npm run register-webhook
+The deployment split is now:
 
-# Start the service (or deploy to Railway/Render/Fly.io)
-npm start
+- `frontend` on **Netlify**
+- `backend/api` on **Vercel**
+- Oracle sync on **GitHub Actions**
+- Oracle webhook receiver on the **Vercel API route** `/oracle/webhook`
+
+Create these GitHub Actions secrets for `.github/workflows/oracle-sync.yml`:
+
+- `SOLANA_RPC_URL`
+- `ORACLE_PRIVATE_KEY`
+- `ORACLE_WEBHOOK_SECRET`
+
+Set these Vercel env vars on the `backend/api` project:
+
+- `SOLANA_RPC_URL`
+- `ORACLE_PRIVATE_KEY`
+- `ORACLE_WEBHOOK_SECRET`
+- `HELIUS_WEBHOOK_AUTH` optional fallback
+
+If you register a Helius webhook, point it to:
+
+```text
+https://<your-api-domain>/oracle/webhook
 ```
 
 ---
 
-## 6. Deploy the Frontend (Vercel)
+## 6. Deploy the Frontend (Netlify)
 
 ```bash
 cd frontend
@@ -130,8 +149,18 @@ cp .env.example .env.local
 npm install
 npm run build
 
-# Deploy with Vercel
-vercel --prod
+# Netlify settings
+# Base directory: frontend
+# Build command: npm run build
+# Publish directory: dist
+```
+
+The repo root now includes `netlify.toml`, and SPA routing is handled by `frontend/public/_redirects`.
+
+Before deploying, run the repo preflight:
+
+```bash
+node scripts/deployment-preflight.mjs
 ```
 
 ---
@@ -161,19 +190,29 @@ Frontend tests, API typechecks, x402 tests, SDK tests, and `anchor test` should 
 | Variable | Required | Description |
 |---|---|---|
 | `SOLANA_RPC_URL` | ✅ | Solana RPC endpoint |
-| `PROGRAM_ID` | ✅ | Deployed program address |
 | `REDIS_URL` | Optional | Redis for x402 replay protection |
 | `X402_TREASURY_QUERY_PRICE_USDC` | Optional | Price for the paid treasury snapshot endpoint (`/premium/treasury/:agentId`) |
 
-### `backend/oracle/.env`
+### GitHub Actions Oracle Sync Secrets
 
 | Variable | Required | Description |
 |---|---|---|
 | `ORACLE_PRIVATE_KEY` | ✅ | Oracle wallet as JSON byte array |
-| `ORACLE_WEBHOOK_SECRET` | ✅ | Shared HMAC-SHA256 secret for Helius webhooks |
-| `HELIUS_API_KEY` | ✅ | Helius API key for webhook registration |
-| `WEBHOOK_URL` | ✅ | Public URL of the oracle service |
-| `PORT` | Optional | HTTP server port (default: 3001) |
+| `ORACLE_WEBHOOK_SECRET` | ✅ | Shared HMAC-SHA256 secret for webhook validation |
+| `SOLANA_RPC_URL` | ✅ | Solana RPC endpoint for scheduled sync |
+
+### `backend/api` Vercel env
+
+| Variable | Required | Description |
+|---|---|---|
+| `SOLANA_RPC_URL` | ✅ | Solana RPC endpoint |
+| `METADATA_BASE_URL` | ✅ | Public base URL of the Vercel API deployment |
+| `FRONTEND_BASE` | ✅ | Public base URL of the Netlify frontend |
+| `ORACLE_PRIVATE_KEY` | ✅ | Oracle wallet as JSON byte array |
+| `ORACLE_WEBHOOK_SECRET` | ✅ | Shared HMAC-SHA256 secret for webhook validation |
+| `HELIUS_WEBHOOK_AUTH` | Optional | Static Authorization header fallback |
+| `X402_TREASURY_QUERY_PRICE_USDC` | Optional | Price for the paid treasury snapshot endpoint |
+| `METADATA_PLACEHOLDER_IMAGE` | Optional | Override placeholder image URL served in fallback metadata |
 
 ### `frontend/.env.local`
 
@@ -183,6 +222,17 @@ Frontend tests, API typechecks, x402 tests, SDK tests, and `anchor test` should 
 | `VITE_PROGRAM_ID` | ✅ | Deployed program address |
 | `VITE_METADATA_BASE_URL` | ✅ | Metadata API base URL |
 
+### `backend/oracle/.env`
+
+| Variable | Required | Description |
+|---|---|---|
+| `SOLANA_RPC_URL` | ✅ | Solana RPC endpoint for local sync or webhook registration |
+| `ORACLE_PRIVATE_KEY` | ✅ | Oracle wallet as JSON byte array |
+| `ORACLE_WEBHOOK_SECRET` | Optional | Shared HMAC secret if you relay signed webhook payloads |
+| `HELIUS_WEBHOOK_AUTH` | Optional | Static auth header used for direct Helius webhook delivery |
+| `HELIUS_API_KEY` | Optional | Required for `npm run register:webhook` |
+| `WEBHOOK_URL` | Optional | Required for `npm run register:webhook`; should point to `/oracle/webhook` |
+
 ---
 
 ## 9. Post-Deployment Checklist
@@ -190,8 +240,9 @@ Frontend tests, API typechecks, x402 tests, SDK tests, and `anchor test` should 
 - [ ] `anchor build` passes cleanly
 - [ ] Program deployed to devnet and `init_config` called
 - [ ] Metadata API live and returning JSON for a known agent
-- [ ] Oracle service registered with Helius webhook
-- [ ] Frontend redeployed and connected to devnet
+- [ ] Oracle sync workflow runs successfully in GitHub Actions
+- [ ] `/oracle/webhook` responds from the Vercel API deployment
+- [ ] Frontend redeployed on Netlify and connected to devnet
 - [ ] All 30 frontend tests passing (`npm test`)
 - [ ] `anchor test` passing locally before deploy
 - [ ] `scripts/demo-devnet.sh` completes without errors

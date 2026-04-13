@@ -1,4 +1,8 @@
-import { Connection, ParsedTransactionWithMeta, PublicKey } from "@solana/web3.js";
+import {
+  Connection,
+  ParsedTransactionWithMeta,
+  PublicKey,
+} from "@solana/web3.js";
 
 const SOLANA_RPC_URL =
   process.env.SOLANA_RPC_URL?.trim() || "https://api.devnet.solana.com";

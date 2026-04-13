@@ -9,6 +9,7 @@ import ScrambleText from "@/components/ScrambleText";
 import CornerTelemetry from "@/components/CornerTelemetry";
 import OnboardingModal from "@/components/OnboardingModal";
 import { useEffect, useState } from "react";
+import { MOCK_AGENTS } from "@/data/mockAgents";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },

@@ -9,6 +9,12 @@
 
 AgentID is an open-source, on-chain identity and trust layer for AI agents on Solana. It enables autonomous agents to register verifiable identities (KYA — Know Your Agent), manage USDC treasuries, pay for services via the x402 payment protocol, and accumulate on-chain reputation scores.
 
+The current deployment split is:
+- `frontend` on Netlify
+- `backend/api` on Vercel
+- oracle sync on GitHub Actions
+- webhook delivery on the Vercel API route `/oracle/webhook`
+
 The codebase is currently ahead of the public deployment state: phases 1-5 are locally verified in-repo, while frontend/API/oracle redeploy and live smoke checks still need to be refreshed before treating that same status as live-complete.
 
 ---
@@ -47,9 +53,16 @@ cd backend && yarn install && cd ..
 ### 2. Configure environment
 ```bash
 cp backend/.env.example backend/.env
+cp backend/api/.env.example backend/api/.env
 cp backend/oracle/.env.example backend/oracle/.env
 cp frontend/.env.example frontend/.env.local
 # Edit each file and fill in your values
+```
+
+Run the deployment preflight before connecting Netlify, Vercel, and GitHub Actions:
+
+```bash
+node scripts/deployment-preflight.mjs
 ```
 
 ### 3. Register your first agent (devnet)

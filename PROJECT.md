@@ -8,7 +8,7 @@ This file is the source of truth for roadmap status, release readiness, and the 
 | 1 | Anchor identity and reputation protocol | Complete in repo | `backend/programs/agentid-program`, `backend/tests` | `anchor test` passes locally and covers identity, verification, logging, rating, reputation, and treasury flows. |
 | 2 | Merkle tree and Bubblegum credential path | Complete in repo | shared tree setup, registration flow | Registration is wired to the shared tree and local verification clones required Bubblegum/compression dependencies. |
 | 3a | Metadata API | Complete in repo | `backend/api/metadata` | Metadata URL generation is config-driven and no longer depends on a dead frontend URL. |
-| 3b | Oracle service | Complete in repo | `backend/oracle`, `backend/api/webhook.ts` | HMAC-compatible webhook validation exists; deployed secret wiring still needs live verification after redeploy. |
+| 3b | Oracle service | Complete in repo | `backend/oracle`, `backend/api/api/oracle/webhook.ts`, `.github/workflows/oracle-sync.yml` | Oracle sync runs in GitHub Actions, while webhook delivery is handled by a Vercel API route. |
 | 3c | x402 middleware | Complete in repo | `backend/x402` | Redis replay protection with in-memory fallback is implemented and tested. |
 | 4 | Frontend app | Complete in repo | `frontend/` | Register, verify, dashboard, and profile pages read real on-chain state. |
 | 5 | End-to-end verification | Complete locally | `frontend/src/test/e2e.test.ts`, `backend/tests` | Frontend tests/build, SDK tests, x402 tests, API typecheck, and `anchor test` are green locally. |
@@ -26,6 +26,7 @@ This file is the source of truth for roadmap status, release readiness, and the 
 - `cd backend/x402 && npm test`
 - `cd backend/api && npx tsc --noEmit`
 - `cd backend && anchor test`
+- `node scripts/deployment-preflight.mjs`
 
 ## What Is Not Automatically Proven Yet
 - Redeployed frontend health
