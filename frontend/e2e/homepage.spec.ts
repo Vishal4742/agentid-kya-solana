@@ -7,8 +7,8 @@ test("homepage loads with hero section", async ({ page }) => {
 
 test("navigation has register and agents links", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator('a[href="/register"]')).toBeVisible();
-  await expect(page.locator('a[href="/agents"]')).toBeVisible();
+  await expect(page.locator('a[href="/register"]').first()).toBeVisible();
+  await expect(page.locator('a[href="/agents"]').first()).toBeVisible();
 });
 
 test("agents page loads", async ({ page }) => {
