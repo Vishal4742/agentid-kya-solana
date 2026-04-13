@@ -9,8 +9,9 @@ import { Program, AnchorProvider } from "@coral-xyz/anchor";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import type { AgentidProgram } from "@/idl/agentid_program";
 import IDL from "@/idl/agentid_program.json";
+import { PROGRAM_ID } from "@/lib/config";
 
-export const PROGRAM_ID = "Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF";
+export { PROGRAM_ID };
 
 export function useProgram() {
     const { connection } = useConnection();
@@ -32,6 +33,9 @@ export function useProgram() {
             { commitment: "confirmed" }
         );
 
-        return new Program<AgentidProgram>(IDL as AgentidProgram, provider);
+        return new Program<AgentidProgram>(
+            { ...(IDL as AgentidProgram), address: PROGRAM_ID } as AgentidProgram,
+            provider,
+        );
     }, [connection, wallet.publicKey, wallet.signTransaction, wallet.signAllTransactions]);
 }

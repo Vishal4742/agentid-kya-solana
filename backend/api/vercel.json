@@ -4,6 +4,9 @@
     "api/metadata/[slug].ts": {
       "runtime": "@vercel/node@3.2.24"
     },
+    "api/oracle/webhook.ts": {
+      "runtime": "@vercel/node@3.2.24"
+    },
     "api/premium/treasury/[agentId].ts": {
       "runtime": "@vercel/node@3.2.24"
     }
@@ -16,6 +19,10 @@
     {
       "source": "/premium/treasury/:agentId",
       "destination": "/api/premium/treasury/:agentId"
+    },
+    {
+      "source": "/oracle/webhook",
+      "destination": "/api/oracle/webhook"
     }
   ]
 }

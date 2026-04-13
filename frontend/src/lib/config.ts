@@ -1,5 +1,6 @@
 const DEFAULT_SOLANA_RPC_ENDPOINT = "https://api.devnet.solana.com";
 const DEFAULT_METADATA_BASE_URL = "https://agentid-metadata-api.vercel.app";
+const DEFAULT_PROGRAM_ID = "Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF";
 
 function trimTrailingSlash(value: string): string {
   return value.replace(/\/+$/, "");
@@ -11,6 +12,9 @@ export const SOLANA_RPC_ENDPOINT =
 export const METADATA_BASE_URL = trimTrailingSlash(
   import.meta.env.VITE_METADATA_BASE_URL?.trim() || DEFAULT_METADATA_BASE_URL,
 );
+
+export const PROGRAM_ID =
+  import.meta.env.VITE_PROGRAM_ID?.trim() || DEFAULT_PROGRAM_ID;
 
 export function buildMetadataUrl(agentName: string): string {
   const encodedName = encodeURIComponent(agentName);

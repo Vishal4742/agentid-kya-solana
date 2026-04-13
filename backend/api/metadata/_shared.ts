@@ -13,8 +13,9 @@ function normalizeBaseUrl(value: string | undefined): string | null {
 export const ACTIVE_RPC_URL =
   normalizeBaseUrl(process.env.SOLANA_RPC_URL) ?? DEFAULT_SOLANA_RPC_URL;
 export const METADATA_BASE =
-  normalizeBaseUrl(process.env.METADATA_BASE_URL ?? process.env.METADATA_BASE) ??
-  DEFAULT_METADATA_BASE;
+  normalizeBaseUrl(
+    process.env.METADATA_BASE_URL ?? process.env.METADATA_BASE
+  ) ?? DEFAULT_METADATA_BASE;
 export const FRONTEND_BASE = normalizeBaseUrl(
   process.env.FRONTEND_BASE ?? process.env.PUBLIC_APP_BASE
 );

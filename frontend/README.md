@@ -12,7 +12,6 @@ Vite/React frontend for the AgentID KYA protocol. The app connects directly to t
 
 ## Current Gaps
 
-- The landing page still shows `MOCK_AGENTS` in the live agents section
 - A full cNFT credential mint flow is not wired yet, so `credential_nft` is usually the default pubkey
 - Full production readiness still depends on backend/oracle hardening and treasury/x402 settlement storage
 
@@ -44,6 +43,8 @@ npm run build
 - Program hook: `src/hooks/useProgram.ts`
 - Generated IDL: `src/idl/agentid_program.json`
 - Generated types: `src/idl/agentid_program.ts`
-- Program ID: `Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF`
+- Default program ID: `Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF`
+- Override with `VITE_PROGRAM_ID` for deployment-specific frontend builds
+- Metadata API base is controlled by `VITE_METADATA_BASE_URL`
 
 If the Anchor program changes, regenerate the backend IDL first and then copy the refreshed IDL/types into `frontend/src/idl/` before using new instructions from the UI.

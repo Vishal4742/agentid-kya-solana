@@ -75,7 +75,9 @@ function deriveAssociatedTokenAddress(owner: PublicKey, mint: PublicKey) {
 }
 
 function parseRequiredPrice(): number {
-  const raw = Number(process.env.X402_TREASURY_QUERY_PRICE_USDC ?? DEFAULT_PRICE_USDC);
+  const raw = Number(
+    process.env.X402_TREASURY_QUERY_PRICE_USDC ?? DEFAULT_PRICE_USDC
+  );
   if (!Number.isFinite(raw) || raw <= 0) {
     return DEFAULT_PRICE_USDC;
   }
@@ -102,7 +104,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     identityPubkey = new PublicKey(agentId);
   } catch {
-    return res.status(400).json({ error: "agentId must be a valid base58 public key" });
+    return res
+      .status(400)
+      .json({ error: "agentId must be a valid base58 public key" });
   }
 
   try {
@@ -177,10 +181,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       payment: paymentGate.payment,
     };
 
-    res.setHeader(
-      "Cache-Control",
-      "private, no-store, max-age=0"
-    );
+    res.setHeader("Cache-Control", "private, no-store, max-age=0");
     res.setHeader("Access-Control-Allow-Origin", "*");
     return res.status(200).json(response);
   } catch (error) {

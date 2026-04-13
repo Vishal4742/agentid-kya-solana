@@ -13,7 +13,10 @@ describe("x402Middleware", () => {
   const TREASURY = "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU";
 
   beforeEach(() => {
-    getParsedTransactionSpy = jest.spyOn(Connection.prototype, "getParsedTransaction");
+    getParsedTransactionSpy = jest.spyOn(
+      Connection.prototype,
+      "getParsedTransaction"
+    );
     jsonMock = jest.fn();
     statusMock = jest.fn().mockReturnValue({ json: jsonMock });
 
