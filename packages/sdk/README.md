@@ -85,6 +85,38 @@ await client.logAction({
 });
 ```
 
+### Treasury Methods
+
+The SDK now exposes the core treasury flows used by phase 8:
+
+- `initializeTreasury(usdcMint, spendingLimitPerTx, spendingLimitPerDay, multisigRequiredAbove)`
+- `depositToTreasury(treasuryOwnerPubkey, amountUsdc, usdcMint?)`
+- `getTreasury(ownerPubkey)`
+- `updateSpendingLimits(ownerPubkey, spendingLimitPerTx, spendingLimitPerDay, multisigRequiredAbove)`
+- `emergencyPause(ownerPubkey, paused)`
+- `autonomousPayment(ownerPubkey, recipientUsdcAccount, amountUsdc, memo?)`
+
+Example:
+
+```ts
+import { AgentIdClient, DEVNET_USDC_MINT } from "@agentid/sdk";
+
+await client.initializeTreasury(
+  DEVNET_USDC_MINT,
+  250 * 1_000_000,
+  1_000 * 1_000_000,
+  800 * 1_000_000,
+);
+
+await client.depositToTreasury(
+  wallet.publicKey.toBase58(),
+  25,
+);
+
+const treasury = await client.getTreasury(wallet.publicKey.toBase58());
+console.log(treasury?.usdcBalance);
+```
+
 ## Types
 
 ```ts
@@ -115,11 +147,19 @@ type VerifiedLevel =
 ## Constants
 
 ```ts
-import { PROGRAM_ID, DEVNET_RPC } from "@agentid/sdk";
+import {
+  PROGRAM_ID,
+  DEVNET_RPC,
+  DEVNET_USDC_MINT,
+  deriveAssociatedTokenAccount,
+  deriveTreasuryPda,
+  deriveTreeAuthority,
+} from "@agentid/sdk";
 ```
 
 - `PROGRAM_ID = "Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF"`
 - `DEVNET_RPC = "https://api.devnet.solana.com"`
+- `DEVNET_USDC_MINT = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"`
 
 ## Build
 
@@ -133,4 +173,5 @@ npm run build
 
 - This package assumes the current devnet program/IDL shape and is not version-negotiated.
 - `verifyAgent()` is a client-side helper, not a replacement for on-chain verification in security-sensitive flows.
-- Treasury/x402 flows are not exposed from this package yet.
+- Treasury limit initialization methods currently take raw micro-USDC amounts for parity with the on-chain instruction API.
+- x402 remains a separate middleware package rather than an SDK transport concern.

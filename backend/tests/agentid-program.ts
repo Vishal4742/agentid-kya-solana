@@ -9,7 +9,7 @@ import {
   getOrCreateAssociatedTokenAccount,
   mintTo,
 } from "@solana/spl-token";
-import { ensureAgentRegistered } from "./helpers";
+import { ONE_USDC, ensureAgentRegistered } from "./helpers";
 
 describe("agentid-program", () => {
   // Configure the client to use the local cluster.
@@ -80,7 +80,7 @@ describe("agentid-program", () => {
       canSendPayments: true,
       canPublishContent: false,
       canAnalyzeData: true,
-      maxTxSizeUsdc: new anchor.BN(1000),
+      maxTxSizeUsdc: new anchor.BN(1000 * ONE_USDC),
     };
 
     await program.methods
@@ -95,7 +95,7 @@ describe("agentid-program", () => {
     );
     assert.equal(identityAccount.canTradeDefi, true);
     assert.equal(identityAccount.canPublishContent, false);
-    assert.ok(identityAccount.maxTxSizeUsdc.eq(new anchor.BN(1000)));
+    assert.ok(identityAccount.maxTxSizeUsdc.eq(new anchor.BN(1000 * ONE_USDC)));
   });
 
   it("Logs an action", async () => {

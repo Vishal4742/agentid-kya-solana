@@ -5,6 +5,7 @@ import { AgentidProgram } from "../target/types/agentid_program";
 import {
   buildRegisterParams,
   getRegisterAccounts,
+  ONE_USDC,
   registerAgentForOwner,
 } from "./helpers";
 
@@ -67,9 +68,9 @@ describe("identity hardening", () => {
       canSendPayments: true,
       canPublishContent: true,
       canAnalyzeData: true,
-      maxTxSizeUsdc: new anchor.BN(50),
+      maxTxSizeUsdc: new anchor.BN(50 * ONE_USDC),
       metadataUri:
-        "https://agentid-kya-solana.vercel.app/metadata/hardened-agent.json",
+        "https://agentid-metadata-api.vercel.app/metadata/hardened-agent.json",
     });
   });
 

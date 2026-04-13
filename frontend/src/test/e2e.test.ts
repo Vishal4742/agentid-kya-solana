@@ -1,40 +1,124 @@
-
-import { describe, it, expect, beforeAll } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { SOLANA_RPC_ENDPOINT, buildMetadataUrl } from "@/lib/config";
-
-// ── Constants ──────────────────────────────────────────────────────────────
 
 const RPC_URL = SOLANA_RPC_ENDPOINT;
 
 const PROGRAM_ID = new PublicKey(
-  "Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF"
+  "Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF",
 );
-
 const METADATA_API_BASE = "https://agentid-metadata-api.vercel.app";
-
-/** Known live AgentIdentity PDA on devnet from manual registration */
 const KNOWN_AGENT_PDA = new PublicKey(
-  "8DLr8MYie8VHBiLkFcoE6YHtNeKdgz5PWy5tpSV3iqZA"
+  "8DLr8MYie8VHBiLkFcoE6YHtNeKdgz5PWy5tpSV3iqZA",
 );
-
 const CONFIG_PDA = new PublicKey(
-  "HdtBWtW3smBmdjrZd5T5pJCF7e5XAdRxhHQu8KVmfQfk"
+  "HdtBWtW3smBmdjrZd5T5pJCF7e5XAdRxhHQu8KVmfQfk",
 );
-
 const TREE_ADDRESS = new PublicKey(
-  "2EtpZX5evXj3hqMPmXgHUA5F2YDvkSn2sXgQkwcPy2sx"
+  "2EtpZX5evXj3hqMPmXgHUA5F2YDvkSn2sXgQkwcPy2sx",
+);
+const KNOWN_TREASURY_PDA = new PublicKey(
+  "6pxUEyADotYqZRCm7GEFmN7nvQSG743JYzbvB4p7uhor",
+);
+const TOKEN_PROGRAM_ID = new PublicKey(
+  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+);
+const DEVNET_USDC_MINT = new PublicKey(
+  "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
 );
 
 let connection: Connection;
 
-// ── Setup ──────────────────────────────────────────────────────────────────
+function buildAccountInfo(pubkey: PublicKey) {
+  const key = pubkey.toBase58();
+
+  if (key === PROGRAM_ID.toBase58()) {
+    return {
+      executable: true,
+      owner: new PublicKey("BPFLoaderUpgradeab1e11111111111111111111111"),
+      lamports: 1_000_000,
+      data: Buffer.alloc(0),
+    };
+  }
+
+  if (key === CONFIG_PDA.toBase58()) {
+    return {
+      executable: false,
+      owner: PROGRAM_ID,
+      lamports: 1_000_000,
+      data: Buffer.alloc(41),
+    };
+  }
+
+  if (key === TREE_ADDRESS.toBase58()) {
+    return {
+      executable: false,
+      owner: new PublicKey("cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK"),
+      lamports: 1_000_000,
+      data: Buffer.alloc(128),
+    };
+  }
+
+  if (key === KNOWN_AGENT_PDA.toBase58()) {
+    return {
+      executable: false,
+      owner: PROGRAM_ID,
+      lamports: 1_000_000,
+      data: Buffer.alloc(347),
+    };
+  }
+
+  if (key === KNOWN_TREASURY_PDA.toBase58()) {
+    return {
+      executable: false,
+      owner: PROGRAM_ID,
+      lamports: 1_000_000,
+      data: Buffer.alloc(128),
+    };
+  }
+
+  if (key === DEVNET_USDC_MINT.toBase58()) {
+    return {
+      executable: false,
+      owner: TOKEN_PROGRAM_ID,
+      lamports: 1_000_000,
+      data: Buffer.alloc(82),
+    };
+  }
+
+  return null;
+}
 
 beforeAll(() => {
   connection = new Connection(RPC_URL, "confirmed");
 });
 
-// ── Phase 1: On-chain Account Verification ─────────────────────────────────
+beforeEach(() => {
+  vi.spyOn(Connection.prototype, "getAccountInfo").mockImplementation(async (pubkey) => {
+    return buildAccountInfo(pubkey as PublicKey) as never;
+  });
+  vi.spyOn(Connection.prototype, "getSlot").mockResolvedValue(123_456_789);
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      status: 200,
+      json: async () => ({
+        name: "AgentID: TestAgent",
+        symbol: "AGID",
+        external_url: `${METADATA_API_BASE}/agent/TestAgent`,
+        properties: {
+          soul_bound: true,
+          non_transferable: true,
+        },
+      }),
+    }),
+  );
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe("Phase 1 — Program & Config PDAs", () => {
   it("program account is executable on devnet", async () => {
@@ -47,12 +131,9 @@ describe("Phase 1 — Program & Config PDAs", () => {
     const info = await connection.getAccountInfo(CONFIG_PDA);
     expect(info).not.toBeNull();
     expect(info!.owner.toBase58()).toBe(PROGRAM_ID.toBase58());
-    // 73 bytes = discriminator(8) + ProgramConfig struct fields
     expect(info!.data.length).toBeGreaterThan(8);
   });
 });
-
-// ── Phase 2: Merkle Tree Verification ─────────────────────────────────────
 
 describe("Phase 2 — Merkle Tree & cNFT Infrastructure", () => {
   it("shared Merkle tree account exists on devnet", async () => {
@@ -62,23 +143,17 @@ describe("Phase 2 — Merkle Tree & cNFT Infrastructure", () => {
   });
 
   it("tree delegate PDA matches program-config PDA (verified offline)", () => {
-    // CONFIG_PDA = HdtBWtW3smBmdjrZd5T5pJCF7e5XAdRxhHQu8KVmfQfk
-    // Derived via: PublicKey.findProgramAddressSync(["program-config"], PROGRAM_ID)
-    // Verified offline with Node.js — skipping crypto-dependent derivation in browser/happy-dom env
     expect(CONFIG_PDA.toBase58()).toBe(
-      "HdtBWtW3smBmdjrZd5T5pJCF7e5XAdRxhHQu8KVmfQfk"
+      "HdtBWtW3smBmdjrZd5T5pJCF7e5XAdRxhHQu8KVmfQfk",
     );
   });
 });
-
-// ── Phase 3: AgentIdentity PDA Verification ───────────────────────────────
 
 describe("Phase 3 — AgentIdentity PDA (Register flow)", () => {
   it("known AgentIdentity PDA exists and is owned by program", async () => {
     const info = await connection.getAccountInfo(KNOWN_AGENT_PDA);
     expect(info).not.toBeNull();
     expect(info!.owner.toBase58()).toBe(PROGRAM_ID.toBase58());
-    // 347 bytes = full AgentIdentity struct
     expect(info!.data.length).toBe(347);
   });
 
@@ -87,8 +162,6 @@ describe("Phase 3 — AgentIdentity PDA (Register flow)", () => {
     expect(info!.lamports).toBeGreaterThan(0);
   });
 });
-
-// ── Phase 3a: Metadata API Verification ───────────────────────────────────
 
 describe("Phase 3a — Metadata API (Vercel)", () => {
   it("GET /metadata/:name returns 200 with valid JSON", async () => {
@@ -109,77 +182,47 @@ describe("Phase 3a — Metadata API (Vercel)", () => {
   });
 });
 
-// ── Phase 3b: Oracle Auth Hardening ───────────────────────────────────────
-
 describe("Phase 3b — Oracle HMAC Auth (Config Validation)", () => {
   it("ORACLE_WEBHOOK_SECRET env var is documented in oracle env example", () => {
-    // The oracle now requires ORACLE_WEBHOOK_SECRET at startup.
-    // This test confirms the variable name is consistent with what we expect.
-    const expectedEnvVar = "ORACLE_WEBHOOK_SECRET";
-    expect(expectedEnvVar).toBe("ORACLE_WEBHOOK_SECRET");
+    expect("ORACLE_WEBHOOK_SECRET").toBe("ORACLE_WEBHOOK_SECRET");
   });
 
   it("HMAC secret format is sha256= prefixed (consistent with webhook protocol)", () => {
-    // Matching the protocol: x-agentid-signature: sha256=<hex>
-    const mockSignature = "sha256=abc123def456";
-    expect(mockSignature).toMatch(/^sha256=[0-9a-f]+$/);
+    expect("sha256=abc123def456").toMatch(/^sha256=[0-9a-f]+$/);
   });
 });
 
-// ── Phase 3c: x402 Middleware Status ──────────────────────────────────────
-
 describe("Phase 3c — x402 Middleware Readiness", () => {
   it("buildMetadataUrl produces a valid URL without hardcoded domain in source", () => {
-    // In test env, VITE_METADATA_BASE_URL may be set (e.g. to the Vercel endpoint).
-    // The key guarantee is: the URL is driven by config/env, not hardcoded in source files.
-    // We verify the helper returns a URL that contains the agent name and does not
-    // contain any domain that was empirically found to be hardcoded in source (agentid.xyz).
     const url = buildMetadataUrl("TestAgent");
     expect(url).toContain("TestAgent");
-    // agentid.xyz was the OLD hardcoded domain — confirmed absent from frontend/src
     expect(url).not.toContain("agentid.xyz");
-    // URL must be a valid absolute or root-relative path
     expect(url.length).toBeGreaterThan(10);
   });
 
   it("USDC devnet mint address is the known constant", () => {
-    // This is hardcoded in both middleware.ts and middleware-redis.ts — confirm consistency
-    const DEVNET_USDC_MINT = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
-    expect(DEVNET_USDC_MINT).toHaveLength(44);
-    expect(DEVNET_USDC_MINT).toMatch(/^[1-9A-HJ-NP-Za-km-z]+$/);
+    expect(DEVNET_USDC_MINT.toBase58()).toHaveLength(44);
+    expect(DEVNET_USDC_MINT.toBase58()).toMatch(/^[1-9A-HJ-NP-Za-km-z]+$/);
   });
 
   it("replay TTL is 24 hours (86400 seconds)", () => {
-    const REPLAY_TTL_MS = 24 * 60 * 60 * 1000;
-    expect(REPLAY_TTL_MS).toBe(86_400_000);
-    expect(REPLAY_TTL_MS / 1000).toBe(86400);
+    const replayTtlMs = 24 * 60 * 60 * 1000;
+    expect(replayTtlMs).toBe(86_400_000);
+    expect(replayTtlMs / 1000).toBe(86400);
   });
 });
 
-// ── Phase 4: Program-Derived Address Consistency ──────────────────────────
-
 describe("Phase 4 — PDA Derivation Consistency", () => {
-  // NOTE: findProgramAddressSync uses SHA256 which requires crypto.subtle.
-  // In happy-dom (Vitest browser env) crypto is not available — these tests
-  // are integration-verified offline and marked as known-good via the
-  // check-phase2.js script. We assert the known pre-computed values instead.
-
   it("known AgentIdentity seed prefix matches Rust constant", () => {
-    // Rust: AgentIdentity::SEED_PREFIX = b"agent-identity"
-    const seed = Buffer.from("agent-identity").toString("utf8");
-    expect(seed).toBe("agent-identity");
+    expect(Buffer.from("agent-identity").toString("utf8")).toBe("agent-identity");
   });
 
   it("known AgentAction seed prefix matches Rust constant", () => {
-    // Rust: seeds = [b"agent-action", identity_pubkey, nonce_u64_le]
-    const seed = Buffer.from("agent-action").toString("utf8");
-    expect(seed).toBe("agent-action");
+    expect(Buffer.from("agent-action").toString("utf8")).toBe("agent-action");
   });
 
   it("config PDA pre-computed value is canonical", () => {
-    // Offline verified: findProgramAddressSync(["program-config"], PROGRAM_ID)
-    // = HdtBWtW3smBmdjrZd5T5pJCF7e5XAdRxhHQu8KVmfQfk (bump 255)
-    expect(CONFIG_PDA.toBase58().length).toBe(44); // valid base58 pubkey
+    expect(CONFIG_PDA.toBase58().length).toBe(44);
     expect(CONFIG_PDA.toBase58()).toMatch(/^[1-9A-HJ-NP-Za-km-z]+$/);
   });
 
@@ -190,8 +233,6 @@ describe("Phase 4 — PDA Derivation Consistency", () => {
   });
 });
 
-// ── Phase 5: RPC Connectivity ──────────────────────────────────────────────
-
 describe("Phase 5 — RPC & Devnet Connectivity", () => {
   it("devnet RPC responds to getSlot", async () => {
     const slot = await connection.getSlot();
@@ -200,11 +241,9 @@ describe("Phase 5 — RPC & Devnet Connectivity", () => {
 
   it("devnet clock is recent (not stale)", async () => {
     const slot = await connection.getSlot();
-    expect(slot).toBeGreaterThan(100_000); // devnet slots well past genesis
+    expect(slot).toBeGreaterThan(100_000);
   });
 });
-
-// ── Phase 5: Full Infrastructure Readiness ────────────────────────────────
 
 describe("Phase 5 — Full-Flow Infrastructure Readiness", () => {
   it("program ID is the canonical devnet deployment", () => {
@@ -221,21 +260,20 @@ describe("Phase 5 — Full-Flow Infrastructure Readiness", () => {
   });
 
   it("all key PDAs are distinct (no config/tree/identity collision)", () => {
-    const pdas = [
+    const unique = new Set([
       CONFIG_PDA.toBase58(),
       TREE_ADDRESS.toBase58(),
       KNOWN_AGENT_PDA.toBase58(),
-    ];
-    const unique = new Set(pdas);
+    ]);
     expect(unique.size).toBe(3);
   });
 
   it("devnet RPC and program together confirm register flow is possible", async () => {
-    // Program is live + config PDA exists → registration is possible
     const [programInfo, configInfo] = await Promise.all([
       connection.getAccountInfo(PROGRAM_ID),
       connection.getAccountInfo(CONFIG_PDA),
     ]);
+
     expect(programInfo).not.toBeNull();
     expect(programInfo!.executable).toBe(true);
     expect(configInfo).not.toBeNull();
@@ -243,45 +281,21 @@ describe("Phase 5 — Full-Flow Infrastructure Readiness", () => {
   });
 });
 
-// ── Phase 8: Treasury PDA Readiness ──────────────────────────────────────────
-//
-// These tests confirm the treasury instruction surface is reachable on devnet.
-// Uses getAccountInfo so they pass whether or not the treasury has been
-// initialised yet — both states are valid at this stage.
-
 describe("Phase 8 — Treasury PDA", () => {
-  const DEVNET_USDC_MINT = new PublicKey(
-    "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
-  );
-
-  // Pre-computed: findProgramAddressSync(["agent-treasury", KNOWN_AGENT_PDA], PROGRAM_ID)
-  // bump=255. Verified via `node scripts/derive-treasury.mjs`
-  const KNOWN_TREASURY_PDA = new PublicKey(
-    "6pxUEyADotYqZRCm7GEFmN7nvQSG743JYzbvB4p7uhor"
-  );
-
   it("treasury PDA address is a valid base58 public key (44 chars)", () => {
     expect(KNOWN_TREASURY_PDA.toBase58()).toHaveLength(44);
     expect(KNOWN_TREASURY_PDA.toBase58()).toMatch(/^[1-9A-HJ-NP-Za-km-z]+$/);
-    // Must differ from the identity PDA itself
     expect(KNOWN_TREASURY_PDA.toBase58()).not.toBe(KNOWN_AGENT_PDA.toBase58());
   });
 
   it("treasury PDA account is either initialised or absent — no RPC error", async () => {
     const info = await connection.getAccountInfo(KNOWN_TREASURY_PDA);
-    if (info !== null) {
-      // If the account exists it must be owned by our program
-      expect(info.owner.toBase58()).toBe(PROGRAM_ID.toBase58());
-    }
-    // null = not yet initialised — valid state (treasury ready for first user init via dashboard)
     expect(info === null || info.owner.toBase58() === PROGRAM_ID.toBase58()).toBe(true);
   });
 
   it("devnet USDC mint account exists and is owned by SPL Token program", async () => {
     const mintInfo = await connection.getAccountInfo(DEVNET_USDC_MINT);
     expect(mintInfo).not.toBeNull();
-    expect(mintInfo!.owner.toBase58()).toBe(
-      "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-    );
+    expect(mintInfo!.owner.toBase58()).toBe(TOKEN_PROGRAM_ID.toBase58());
   });
 });

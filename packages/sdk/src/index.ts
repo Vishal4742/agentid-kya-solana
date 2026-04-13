@@ -17,11 +17,20 @@ export const DEVNET_RPC = "https://api.devnet.solana.com";
 export const BUBBLEGUM_PROGRAM_ID = "BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY";
 export const SPL_NOOP_PROGRAM_ID = "noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV";
 export const SPL_ACCOUNT_COMPRESSION_ID = "cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK";
+export const DEVNET_USDC_MINT = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
+export const SPL_TOKEN_PROGRAM_ID = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
+export const SPL_ASSOCIATED_TOKEN_PROGRAM_ID =
+  "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
 
 const PROGRAM_KEY = new PublicKey(PROGRAM_ID);
 const BUBBLEGUM_KEY = new PublicKey(BUBBLEGUM_PROGRAM_ID);
 const SPL_NOOP_KEY = new PublicKey(SPL_NOOP_PROGRAM_ID);
 const SPL_COMPRESSION_KEY = new PublicKey(SPL_ACCOUNT_COMPRESSION_ID);
+const DEVNET_USDC_MINT_KEY = new PublicKey(DEVNET_USDC_MINT);
+const SPL_TOKEN_PROGRAM_KEY = new PublicKey(SPL_TOKEN_PROGRAM_ID);
+const SPL_ASSOCIATED_TOKEN_PROGRAM_KEY = new PublicKey(
+  SPL_ASSOCIATED_TOKEN_PROGRAM_ID,
+);
 const FRAMEWORKS = ["ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"] as const;
 const VERIFIED_LEVELS = ["Unverified", "EmailVerified", "KYBVerified", "Audited"] as const;
 const SERVICE_CATEGORIES = [
@@ -131,6 +140,16 @@ function deriveProgramConfigPda(): [PublicKey, number] {
   );
 }
 
+function deriveAssociatedTokenAddress(
+  owner: PublicKey,
+  mint: PublicKey,
+): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [owner.toBuffer(), SPL_TOKEN_PROGRAM_KEY.toBuffer(), mint.toBuffer()],
+    SPL_ASSOCIATED_TOKEN_PROGRAM_KEY,
+  );
+}
+
 /**
  * Derive the Bubblegum tree authority PDA for a given Merkle tree.
  * Pass the result as `treeAuthority` in RegisterAgentParams.
@@ -141,6 +160,24 @@ export function deriveTreeAuthority(merkleTree: string): PublicKey {
     BUBBLEGUM_KEY,
   );
   return pda;
+}
+
+export function deriveTreasuryPda(
+  identityPDA: PublicKey,
+): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("agent-treasury"), identityPDA.toBytes()],
+    PROGRAM_KEY,
+  );
+}
+
+export function deriveAssociatedTokenAccount(
+  owner: string | PublicKey,
+  mint: string | PublicKey,
+): PublicKey {
+  const ownerKey = owner instanceof PublicKey ? owner : new PublicKey(owner);
+  const mintKey = mint instanceof PublicKey ? mint : new PublicKey(mint);
+  return deriveAssociatedTokenAddress(ownerKey, mintKey)[0];
 }
 
 function deriveActionPda(identityPda: PublicKey, totalTransactions: bigint): [PublicKey, number] {
@@ -504,6 +541,34 @@ export class AgentIdClient {
     return tx as string;
   }
 
+  async depositToTreasury(
+    treasuryOwnerPubkey: string,
+    amountUsdc: number,
+    usdcMint = DEVNET_USDC_MINT,
+  ): Promise<string> {
+    const owner = this.provider.wallet.publicKey;
+    const identityOwner = new PublicKey(treasuryOwnerPubkey);
+    const [identityPDA] = deriveIdentityPda(identityOwner);
+    const [treasuryPDA] = deriveTreasuryPda(identityPDA);
+    const mintKey = new PublicKey(usdcMint);
+    const depositorUsdc = deriveAssociatedTokenAddress(owner, mintKey)[0];
+    const treasuryUsdc = deriveAssociatedTokenAddress(treasuryPDA, mintKey)[0];
+
+    const tx = await (this.program.methods as any)
+      .deposit(new BN(Math.round(amountUsdc * 1_000_000)))
+      .accountsStrict({
+        treasury: treasuryPDA,
+        depositor: owner,
+        depositorUsdc,
+        treasuryUsdc,
+        usdcMint: mintKey,
+        tokenProgram: SPL_TOKEN_PROGRAM_KEY,
+      })
+      .rpc();
+
+    return tx as string;
+  }
+
   async getTreasury(ownerPubkey: string): Promise<TreasuryInfo | null> {
     try {
       const owner = new PublicKey(ownerPubkey);
@@ -556,15 +621,6 @@ export class AgentIdClient {
 
     return tx as string;
   }
-}
-
-// ─── Treasury helpers ─────────────────────────────────────────────────────────
-
-function deriveTreasuryPda(identityPDA: PublicKey): [PublicKey, number] {
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from("agent-treasury"), identityPDA.toBytes()],
-    PROGRAM_KEY,
-  );
 }
 
 export interface TreasuryInfo {

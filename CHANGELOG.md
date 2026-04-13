@@ -12,9 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CHANGELOG.md for release tracking
 - Simplified CONTRIBUTING.md for solo developers
 - scripts/README.md for script documentation
+- SDK treasury deposit helper and treasury PDA/ATA derivation helpers
+- Phase-status documentation refresh aligned with the verified repo state
 
 ### Changed
 - Improved `.gitignore` to exclude logs/ directory and build artifacts
+- Updated roadmap, deployment, README, and x402 docs to distinguish local verification from live deployment state
 
 ## [1.0.0] - 2026-04-12
 

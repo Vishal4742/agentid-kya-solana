@@ -1,6 +1,12 @@
 import type { IncomingMessage, ServerResponse } from "http";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { Program, AnchorProvider, Idl, utils } from "@coral-xyz/anchor";
+import {
+  ACTIVE_RPC_URL,
+  buildAgentExternalUrl,
+  buildAgentImageUrl,
+  buildMetadataUrlById,
+} from "./_shared";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const idl = require("../idl/agentid_program.json") as Idl;
 
@@ -16,14 +22,6 @@ type VercelResponse = ServerResponse & {
 // ── Constants ──────────────────────────────────────────────────────────────
 // PROGRAM_ID is embedded in the IDL address field
 const PROGRAM_ID = (idl as unknown as { address: string }).address;
-const ACTIVE_RPC_URL =
-  process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
-
-// Frontend base URL — no custom domain needed.
-// Defaults to the auto-generated Vercel preview URL.
-// Set FRONTEND_BASE in Vercel project env vars once you know your deployment URL.
-const FRONTEND_BASE =
-  process.env.FRONTEND_BASE ?? "https://agentid-kya-solana.vercel.app";
 
 const FRAMEWORKS = ["ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"];
 const VERIFIED_LEVELS = [
@@ -124,9 +122,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         "On-chain identity credential for an AI agent on Solana. " +
         "This soul-bound NFT cannot be transferred and represents the agent's " +
         "verified identity, reputation, and authorised capabilities.",
-      image: `${FRONTEND_BASE}/nft/${agentId}.png`,
+      image: buildAgentImageUrl(`/nft/${agentId}.png`),
       animation_url: null,
-      external_url: `${FRONTEND_BASE}/agent/${agentId}`,
+      external_url: buildAgentExternalUrl(
+        `/agent/${match.publicKey.toBase58()}`,
+        buildMetadataUrlById(agentId)
+      ),
       attributes: [
         { trait_type: "Agent Name", value: acc.name },
         { trait_type: "Framework", value: framework },

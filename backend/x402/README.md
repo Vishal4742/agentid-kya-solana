@@ -18,32 +18,32 @@ HTTP 402 Payment Required middleware for Express.js that enforces on-chain USDC 
 
 ### Trade-offs Accepted
 
-- **Replay Store Scaling**: In-memory Map with pruning is simple but doesn't scale horizontally; Redis upgrade path exists
+- **Replay Store Fallback**: Redis is the primary replay store; the in-memory store is only the fallback path for local dev or degraded mode
 - **Coupling**: Payment logic lives with backend; acceptable since x402 is optional supplemental layer
 - **Resource Sharing**: Uses same Express server as other API endpoints; fine for current load
 
 ## Current Implementation Status
 
-### ✅ Completed (60%)
+### ✅ Completed in Repo
 
 - HTTP 402 response format with payment requirements
 - On-chain transaction verification via Solana RPC
 - Treasury USDC inflow calculation from pre/post token balances
-- Replay protection with in-memory Map (24hr TTL, auto-pruning)
+- Redis-backed replay protection with in-memory fallback
 - Express middleware interface with `res.locals.verifiedPayment`
+- Unit tests and integration documentation
 
-### 🔲 Remaining (40%)
+### 🔲 Remaining to close Phase 8
 
-- [ ] Settlement validation rules documentation
-- [ ] Redis replay store for production
-- [ ] Unit and integration tests
-- [ ] API integration guide
+- [x] Adopt the middleware rules in a real protected treasury snapshot route
+- [ ] Run live treasury + x402 smoke verification against redeployed services
+- [ ] Add product-level monitoring for replay-store and RPC health
 
 ## Usage
 
 ```typescript
 import express from 'express';
-import { x402Middleware } from './x402/middleware';
+import { x402Middleware } from './x402';
 
 const app = express();
 
@@ -81,7 +81,7 @@ Environment variables (loaded from `backend/.env`):
 SOLANA_RPC_URL=https://api.devnet.solana.com
 ```
 
-Constants in `middleware.ts`:
+Constants in `middleware-redis.ts`:
 
 - `DEVNET_USDC_MINT`: Devnet USDC mint address
 - `REPLAY_TTL_MS`: 24 hours
@@ -90,6 +90,10 @@ Constants in `middleware.ts`:
 
 ## Deployment Status
 
-**Deprioritized for devnet launch** — x402 is an optional off-chain layer. The canonical payment mechanism is the `autonomous_payment` instruction in the Anchor program.
+x402 is implemented and tested as an optional off-chain payment guard. The next milestone is product adoption: wiring it into one real API endpoint and verifying it against a live treasury after redeploy.
 
-Integration with API endpoints is deferred until post-devnet.
+The first paid route now exists in the metadata API deployment surface:
+
+- `GET /premium/treasury/:agentId`
+
+It returns a paid treasury snapshot for a live `AgentIdentity` PDA and uses x402-style settlement verification against that agent's treasury PDA.

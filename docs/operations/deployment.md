@@ -43,6 +43,9 @@ yarn install
 # Build the program
 anchor build
 
+# Verify the local validator flow before any deploy
+anchor test
+
 # Deploy to devnet (first time)
 anchor deploy --provider.cluster devnet
 
@@ -50,7 +53,7 @@ anchor deploy --provider.cluster devnet
 # Update Anchor.toml and frontend/.env with the new Program ID if it changed
 ```
 
-> **Important:** Immediately after deploying, call `init_config` to claim the program admin. See Step 3.
+> **Important:** `anchor test` now uses a local validator that clones the Bubblegum/compression dependencies it needs from devnet. Keep that green before any deploy. Immediately after deploying, call `init_config` to claim the program admin. See Step 3.
 
 ---
 
@@ -83,7 +86,7 @@ vercel env add ORACLE_WEBHOOK_SECRET
 vercel --prod
 ```
 
-After deploying, set `VITE_METADATA_BASE_URL` in `frontend/.env.local` (and the corresponding Vercel project env var) to the deployed URL. Frontend requests are built by `buildMetadataUrl()` via this env variable.
+After deploying, set `VITE_METADATA_BASE_URL` in `frontend/.env.local` (and the corresponding Vercel project env var) to the deployed URL. Frontend requests are built by `buildMetadataUrl()` via this env variable rather than assuming the frontend host.
 
 ---
 
@@ -140,11 +143,14 @@ vercel --prod
 cd frontend
 npm test
 
+cd ../backend
+anchor test
+
 # Run the live demo script
 bash ../scripts/demo-devnet.sh
 ```
 
-All 30 tests should pass. The demo script confirms the program is live and agents can register.
+Frontend tests, API typechecks, x402 tests, SDK tests, and `anchor test` should all be green before you treat the deployment as healthy. The demo script confirms the program is live and agents can register.
 
 ---
 
@@ -157,6 +163,7 @@ All 30 tests should pass. The demo script confirms the program is live and agent
 | `SOLANA_RPC_URL` | ✅ | Solana RPC endpoint |
 | `PROGRAM_ID` | ✅ | Deployed program address |
 | `REDIS_URL` | Optional | Redis for x402 replay protection |
+| `X402_TREASURY_QUERY_PRICE_USDC` | Optional | Price for the paid treasury snapshot endpoint (`/premium/treasury/:agentId`) |
 
 ### `backend/oracle/.env`
 
@@ -184,8 +191,9 @@ All 30 tests should pass. The demo script confirms the program is live and agent
 - [ ] Program deployed to devnet and `init_config` called
 - [ ] Metadata API live and returning JSON for a known agent
 - [ ] Oracle service registered with Helius webhook
-- [ ] Frontend deployed and connected to devnet
+- [ ] Frontend redeployed and connected to devnet
 - [ ] All 30 frontend tests passing (`npm test`)
+- [ ] `anchor test` passing locally before deploy
 - [ ] `scripts/demo-devnet.sh` completes without errors
 - [ ] Treasury UI visible on dashboard (`TREASURY_ENABLED = true`)
 

@@ -8,7 +8,7 @@ export interface AgentCapabilities {
 
 export interface AgentActivity {
   id: string;
-  type: "defi_trade" | "payment" | "content" | "audit" | "registration";
+  type: "defi_trade" | "payment" | "content" | "data_query" | "audit" | "registration";
   description: string;
   amount?: string;
   timestamp: string;

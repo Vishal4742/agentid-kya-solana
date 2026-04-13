@@ -11,7 +11,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { AgentidProgram } from "../target/types/agentid_program";
 import { assert } from "chai";
-import { ZERO_PAN_HASH, ensureAgentRegistered } from "./helpers";
+import { ONE_USDC, ZERO_PAN_HASH, ensureAgentRegistered } from "./helpers";
 
 describe("security — verify_agent fail-closed", () => {
   const provider = anchor.AnchorProvider.env();
@@ -67,12 +67,12 @@ describe("security — verify_agent fail-closed", () => {
       canSendPayments: true,
       canPublishContent: false,
       canAnalyzeData: false,
-      maxTxSizeUsdc: new anchor.BN(50),
+      maxTxSizeUsdc: new anchor.BN(50 * ONE_USDC),
       gstin: "",
       panHash: ZERO_PAN_HASH,
       serviceCategory: 0,
       metadataUri:
-        "https://agentid-kya-solana.vercel.app/metadata/SecurityTestAgent.json",
+        "https://agentid-metadata-api.vercel.app/metadata/SecurityTestAgent.json",
     });
   });
 

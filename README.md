@@ -1,6 +1,6 @@
 # AgentID — Know Your Agent (KYA) Protocol
 
-> **Live on Solana Devnet** · Open Beta
+> **Devnet program deployed** · **Repo verified locally through phase 5**
 
 [![Devnet Live](https://img.shields.io/badge/Solana-Devnet%20Live-9945FF?logo=solana)](https://explorer.solana.com/address/Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF?cluster=devnet)
 [![Tests](https://img.shields.io/badge/Tests-30%2F30%20Passing-22c55e)](./frontend/src/test/e2e.test.ts)
@@ -9,20 +9,22 @@
 
 AgentID is an open-source, on-chain identity and trust layer for AI agents on Solana. It enables autonomous agents to register verifiable identities (KYA — Know Your Agent), manage USDC treasuries, pay for services via the x402 payment protocol, and accumulate on-chain reputation scores.
 
+The codebase is currently ahead of the public deployment state: phases 1-5 are locally verified in-repo, while frontend/API/oracle redeploy and live smoke checks still need to be refreshed before treating that same status as live-complete.
+
 ---
 
 ## ✨ Features
 
 | Feature | Status |
 |---|---|
-| 🪪 On-chain agent identity (cNFT via Bubblegum) | ✅ Live on devnet |
-| 🔍 Agent verification & reputation scoring | ✅ Live on devnet |
-| 💰 USDC treasury with spending limits | ✅ Live on devnet |
-| 💸 Autonomous payments (x402 protocol) | ✅ Live on devnet |
-| 🔔 Oracle webhooks (HMAC-secured, Helius) | ✅ Live on devnet |
-| 🌐 Metadata API (Vercel serverless) | ✅ Live: `agentid-metadata-api.vercel.app` |
-| 🤖 ElizaOS plugin | ✅ Published (`packages/eliza-plugin`) |
-| 📦 TypeScript SDK | ✅ Published (`packages/sdk`) |
+| 🪪 On-chain agent identity (cNFT via Bubblegum) | ✅ Implemented and tested |
+| 🔍 Agent verification & reputation scoring | ✅ Implemented and tested |
+| 💰 USDC treasury with spending limits | ✅ Implemented and tested |
+| 💸 Autonomous payments + x402 middleware | ✅ Implemented in repo |
+| 🔔 Oracle webhooks (HMAC-secured, Helius) | ✅ Implemented in repo |
+| 🌐 Metadata API (Vercel serverless) | ✅ Implemented; redeploy recommended |
+| 🤖 ElizaOS plugin | ✅ Implemented in `packages/eliza-plugin` |
+| 📦 TypeScript SDK | ✅ Implemented in `packages/sdk` |
 
 ---
 
@@ -139,7 +141,7 @@ agentid-kya-solana/
 # Frontend (Vitest — 30 tests including devnet E2E)
 cd frontend && npm test
 
-# Anchor integration tests (requires localnet)
+# Anchor integration tests (local validator clones required devnet accounts)
 cd backend && anchor test
 
 # x402 middleware unit tests
@@ -155,7 +157,7 @@ cd backend/x402 && npm run test:integration
 
 | Doc | Description |
 |---|---|
-| [docs/overview/project.md](./docs/overview/project.md) | Product overview and feature roadmap |
+| [docs/overview/project.md](./docs/overview/project.md) | Product overview, phase status, and verification checklist |
 | [docs/security/audit.md](./docs/security/audit.md) | Security audit summary and mitigations |
 | [docs/operations/deployment.md](./docs/operations/deployment.md) | Step-by-step deployment guide |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | Contribution guidelines |
@@ -177,7 +179,7 @@ An internal security audit was completed on 2026-04-12. See [docs/security/audit
 |---|---|
 | **Devnet Program** | [`Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF`](https://explorer.solana.com/address/Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF?cluster=devnet) |
 | **Metadata API** | `https://agentid-metadata-api.vercel.app` |
-| **Frontend (devnet)** | Deploy to Vercel via `cd frontend && npm run build` |
+| **Frontend (devnet)** | Redeploy from `frontend/` before claiming live phase-5 completion |
 
 ---
 

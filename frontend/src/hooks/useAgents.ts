@@ -15,6 +15,13 @@ import { useProgram } from "@/hooks/useProgram";
 const FRAMEWORK_NAMES = ["ELIZA", "AutoGen", "CrewAI", "LangGraph", "Custom"] as const;
 const MODEL_NAMES = ["Claude 3.5 Sonnet", "GPT-4o", "Llama 3.1", "Gemini Pro"] as const;
 const VERIFIED_LEVELS = ["Unverified", "EmailVerified", "KYBVerified", "Audited"] as const;
+const SERVICE_CATEGORIES = [
+    "Information Technology Services",
+    "Financial Services",
+    "Consulting Services",
+    "Marketing & Advertising",
+    "Research & Development",
+] as const;
 
 function formatErrorMessage(error: unknown): string {
     if (error instanceof Error && error.message) return error.message;
@@ -45,8 +52,41 @@ type RawIdentity = {
     };
 };
 
+type RawTreasury = {
+    totalEarned: { toNumber(): number };
+    totalSpent: { toNumber(): number };
+    emergencyPause: boolean;
+};
+
+function formatUsdcDisplay(totalMicroUsdc: number): string {
+    return totalMicroUsdc.toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 0,
+    });
+}
+
+async function fetchTreasuryState(
+    program: ReturnType<typeof useProgram>,
+    identityPubkey: PublicKey,
+): Promise<RawTreasury | null> {
+    if (!program) return null;
+
+    const [treasuryPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("agent-treasury"), identityPubkey.toBytes()],
+        program.programId,
+    );
+
+    try {
+        const treasury = await program.account.agentTreasury.fetch(treasuryPda);
+        return treasury as unknown as RawTreasury;
+    } catch {
+        return null;
+    }
+}
+
 /** Shared normaliser — converts on-chain account to the Agent shape used by UI */
-function normalize(raw: RawIdentity) {
+function normalize(raw: RawIdentity, treasury: RawTreasury | null = null) {
     const a = raw.account;
     const regTs = a.registeredAt.toNumber() * 1000;
     const lastTs = a.lastActive.toNumber() * 1000;
@@ -55,9 +95,9 @@ function normalize(raw: RawIdentity) {
     // map stored model string back to known label
     const llmModel = MODEL_NAMES.find((m) => m === a.model) ?? (a.model as typeof MODEL_NAMES[number]);
     const verifiedLevel = VERIFIED_LEVELS[Math.min(a.verifiedLevel, 3)];
-    const totalTxUsd = (a.totalTransactions.toNumber() * maxUsdc * 0.5).toLocaleString("en-US", {
-        style: "currency", currency: "USD", maximumFractionDigits: 0,
-    });
+    const totalTxUsd = treasury
+        ? formatUsdcDisplay(treasury.totalEarned.toNumber() / 1_000_000)
+        : formatUsdcDisplay(a.totalTransactions.toNumber() * maxUsdc * 0.5);
     const ownerWallet = a.owner.toBase58();
     // deterministic "id" — base58 of the PDA pubkey (first 16 chars)
     const id = raw.publicKey.toBase58();
@@ -80,14 +120,14 @@ function normalize(raw: RawIdentity) {
         },
         indiaCompliance: a.gstin?.length === 15 ? {
             gstin: a.gstin,
-            serviceCategory: ["Information Technology Services", "Financial Services", "Consulting Services", "Marketing & Advertising", "Research & Development"][a.serviceCategory] ?? "IT",
+            serviceCategory: SERVICE_CATEGORIES[a.serviceCategory] ?? SERVICE_CATEGORIES[0],
             tdsRate: a.serviceCategory === 1 ? 2 : 10,
         } : undefined,
         registeredAt: new Date(regTs).toISOString(),
         lastActive: new Date(lastTs || Date.now()).toISOString(),
         totalTxValue: totalTxUsd,
         activity: [],
-        paused: false,
+        paused: treasury?.emergencyPause ?? false,
         avatarSeed: a.name,
     };
 }
@@ -109,8 +149,16 @@ export function useAllAgents() {
 
         program.account.agentIdentity
             .all()
-            .then((all) => {
-                if (active) setAgents(all.map((r) => normalize(r as unknown as RawIdentity)));
+            .then(async (all) => {
+                const hydrated = await Promise.all(
+                    all.map(async (record) => {
+                        const normalizedRecord = record as unknown as RawIdentity;
+                        const treasury = await fetchTreasuryState(program, normalizedRecord.publicKey);
+                        return normalize(normalizedRecord, treasury);
+                    }),
+                );
+
+                if (active) setAgents(hydrated);
             })
             .catch((e) => {
                 if (active) setError(formatErrorMessage(e));
@@ -152,8 +200,9 @@ export function useMyAgent(ownerPubkey: string | null) {
         );
         program.account.agentIdentity
             .fetch(pda)
-            .then((acc) => {
-                if (active) setAgent(normalize({ publicKey: pda, account: acc } as unknown as RawIdentity));
+            .then(async (acc) => {
+                const treasury = await fetchTreasuryState(program, pda);
+                if (active) setAgent(normalize({ publicKey: pda, account: acc } as unknown as RawIdentity, treasury));
             })
             .catch((e) => {
                 if (active) {
