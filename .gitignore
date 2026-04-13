@@ -84,3 +84,4 @@ GRANT_APPLICATION_READINESS.md
 logs/
 
 .pr-body.md
+.commit-msg.txt
