@@ -230,6 +230,7 @@ export default function AgentProfile() {
   const [rating, setRating] = useState(0);
   const [hovered, setHovered] = useState(0);
   const [rated, setRated] = useState(false);
+  const [submittingRating, setSubmittingRating] = useState(false);
 
   useEffect(() => {
     if (!program || !id) return;
@@ -281,11 +282,45 @@ export default function AgentProfile() {
     );
   }
 
-  const handleSubmitRating = () => {
+  const handleSubmitRating = async () => {
     if (!connected) { toast.error("Connect wallet to rate agents"); return; }
     if (!rating) { toast.error("Select a star rating first"); return; }
-    setRated(true);
-    toast.success(`Rated ${rating} ⭐ — submitted on-chain`);
+    if (!program || !id) { toast.error("Program unavailable"); return; }
+
+    const rater =
+      program.provider.publicKey ??
+      // Narrow for mocked providers and Anchor wallet-backed providers.
+      (program.provider as { wallet?: { publicKey?: PublicKey } }).wallet?.publicKey;
+
+    if (!rater) { toast.error("Wallet unavailable"); return; }
+    if (agent?.ownerWallet === rater.toBase58()) {
+      toast.error("You cannot rate your own agent");
+      return;
+    }
+
+    setSubmittingRating(true);
+    try {
+      const identity = new PublicKey(id);
+      await (program.methods as { rateAgent(value: number): { accountsStrict(accounts: { identity: PublicKey; rater: PublicKey }): { rpc(): Promise<string> } } })
+        .rateAgent(rating)
+        .accountsStrict({
+          identity,
+          rater,
+        })
+        .rpc();
+
+      const refreshed = await (program.account as { agentIdentity: { fetch(pubkey: PublicKey): Promise<Record<string, unknown>> } })
+        .agentIdentity
+        .fetch(identity);
+      setAgent(normalizeAccount(id, refreshed));
+      setRated(true);
+      toast.success(`Rated ${rating} ⭐ — submitted on-chain`);
+    } catch (error) {
+      console.error("Failed to submit rating", error);
+      toast.error("Rating transaction failed");
+    } finally {
+      setSubmittingRating(false);
+    }
   };
 
   return (
@@ -297,12 +332,12 @@ export default function AgentProfile() {
           <div className="flex items-center gap-4">
             <Link to="/agents" className="label-meta link-underline">Index / Agents</Link>
             <span className="text-muted-foreground/30">·</span>
-            <span className="font-mono text-[11px] text-muted-foreground/60">{agent.id}</span>
+            <span className="font-mono text-[11px] text-muted-foreground/60">{agent?.id}</span>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success("Link copied!"); }}
               className="label-meta link-underline hover:text-foreground">Share</button>
-            <a href={`https://explorer.solana.com/address/${agent.ownerWallet}?cluster=devnet`}
+            <a href={`https://explorer.solana.com/address/${agent?.ownerWallet}?cluster=devnet`}
               target="_blank" rel="noopener noreferrer"
               className="label-meta link-underline hover:text-foreground">Explorer</a>
           </div>
@@ -357,6 +392,7 @@ export default function AgentProfile() {
                 <p className="label-meta">Reputation Score</p>
                 <button onClick={async () => {
                   try {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const acc = await (program.account as any).agentIdentity.fetch(new PublicKey(id!));
                     setAgent(normalizeAccount(id!, acc as Record<string, unknown>));
                     toast.success("Reputation refreshed from chain");
@@ -546,7 +582,9 @@ export default function AgentProfile() {
                     {!connected && (
                       <p className="label-meta text-amber mb-3 flex items-center gap-1.5"><Wallet className="w-3 h-3" /> Connect wallet to submit</p>
                     )}
-                    <button onClick={handleSubmitRating} className="btn-outline w-full justify-center">Submit Rating</button>
+                    <button onClick={handleSubmitRating} disabled={submittingRating} className="btn-outline w-full justify-center disabled:opacity-50">
+                      {submittingRating ? "Submitting..." : "Submit Rating"}
+                    </button>
                   </>
                 )}
               </div>

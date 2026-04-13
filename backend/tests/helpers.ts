@@ -2,10 +2,18 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { AgentidProgram } from "../target/types/agentid_program";
 
-export const BUBBLEGUM_PROGRAM_ID = new anchor.web3.PublicKey("BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY");
-export const SPL_NOOP_PROGRAM_ID = new anchor.web3.PublicKey("noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV");
-export const SPL_ACCOUNT_COMPRESSION_PROGRAM_ID = new anchor.web3.PublicKey("cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK");
-export const SHARED_MERKLE_TREE = new anchor.web3.PublicKey("2EtpZX5evXj3hqMPmXgHUA5F2YDvkSn2sXgQkwcPy2sx");
+export const BUBBLEGUM_PROGRAM_ID = new anchor.web3.PublicKey(
+  "BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY"
+);
+export const SPL_NOOP_PROGRAM_ID = new anchor.web3.PublicKey(
+  "noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV"
+);
+export const SPL_ACCOUNT_COMPRESSION_PROGRAM_ID = new anchor.web3.PublicKey(
+  "cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK"
+);
+export const SHARED_MERKLE_TREE = new anchor.web3.PublicKey(
+  "2EtpZX5evXj3hqMPmXgHUA5F2YDvkSn2sXgQkwcPy2sx"
+);
 export const ZERO_PAN_HASH = Array.from(Buffer.alloc(32));
 
 type RegisterOverrides = Partial<{
@@ -26,21 +34,21 @@ type RegisterOverrides = Partial<{
 
 export function deriveIdentityPda(
   owner: anchor.web3.PublicKey,
-  programId: anchor.web3.PublicKey,
+  programId: anchor.web3.PublicKey
 ): anchor.web3.PublicKey {
   const [identityPda] = anchor.web3.PublicKey.findProgramAddressSync(
     [Buffer.from("agent-identity"), owner.toBuffer()],
-    programId,
+    programId
   );
   return identityPda;
 }
 
 export function deriveProgramConfigPda(
-  programId: anchor.web3.PublicKey,
+  programId: anchor.web3.PublicKey
 ): anchor.web3.PublicKey {
   const [programConfigPda] = anchor.web3.PublicKey.findProgramAddressSync(
     [Buffer.from("program-config")],
-    programId,
+    programId
   );
   return programConfigPda;
 }
@@ -48,7 +56,7 @@ export function deriveProgramConfigPda(
 export function getRegisterAccounts(programId: anchor.web3.PublicKey) {
   const [treeAuthority] = anchor.web3.PublicKey.findProgramAddressSync(
     [SHARED_MERKLE_TREE.toBytes()],
-    BUBBLEGUM_PROGRAM_ID,
+    BUBBLEGUM_PROGRAM_ID
   );
 
   return {
@@ -63,7 +71,7 @@ export function getRegisterAccounts(programId: anchor.web3.PublicKey) {
 
 export function buildRegisterParams(
   owner: anchor.web3.PublicKey,
-  params?: RegisterOverrides,
+  params?: RegisterOverrides
 ) {
   return {
     name: params?.name ?? "Test Agent",
@@ -78,14 +86,16 @@ export function buildRegisterParams(
     gstin: params?.gstin ?? "27ABCDE1234F1Z5",
     panHash: params?.panHash ?? ZERO_PAN_HASH,
     serviceCategory: params?.serviceCategory ?? 1,
-    metadataUri: params?.metadataUri ?? "https://agentid-kya-solana.vercel.app/metadata/Test%20Agent.json",
+    metadataUri:
+      params?.metadataUri ??
+      "https://agentid-kya-solana.vercel.app/metadata/Test%20Agent.json",
   };
 }
 
 export async function registerAgentForOwner(
   program: Program<AgentidProgram>,
   owner: anchor.web3.Keypair,
-  params?: RegisterOverrides,
+  params?: RegisterOverrides
 ): Promise<anchor.web3.PublicKey> {
   const identityPda = deriveIdentityPda(owner.publicKey, program.programId);
 
@@ -104,7 +114,7 @@ export async function registerAgentForOwner(
 export async function ensureAgentRegistered(
   program: Program<AgentidProgram>,
   provider: anchor.AnchorProvider,
-  params?: RegisterOverrides,
+  params?: RegisterOverrides
 ): Promise<anchor.web3.PublicKey> {
   const owner = provider.wallet.publicKey;
   const identityPda = deriveIdentityPda(owner, program.programId);

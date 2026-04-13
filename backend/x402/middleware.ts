@@ -1,11 +1,16 @@
 import { Request, Response, NextFunction } from "express";
-import { Connection, ParsedTransactionWithMeta, PublicKey } from "@solana/web3.js";
+import {
+  Connection,
+  ParsedTransactionWithMeta,
+  PublicKey,
+} from "@solana/web3.js";
 import * as dotenv from "dotenv";
 import path from "path";
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
-const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com";
+const SOLANA_RPC_URL =
+  process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com";
 const DEVNET_USDC_MINT = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
 const REPLAY_TTL_MS = 24 * 60 * 60 * 1000;
 const REPLAY_PRUNE_INTERVAL_MS = 5 * 60 * 1000;
@@ -16,7 +21,10 @@ const consumedSignatures = new Map<string, number>();
 
 function pruneReplayCache(now = Date.now()) {
   for (const [signature, seenAt] of consumedSignatures.entries()) {
-    if (now - seenAt > REPLAY_TTL_MS || consumedSignatures.size > MAX_CONSUMED_SIGNATURES) {
+    if (
+      now - seenAt > REPLAY_TTL_MS ||
+      consumedSignatures.size > MAX_CONSUMED_SIGNATURES
+    ) {
       consumedSignatures.delete(signature);
     }
   }
@@ -28,7 +36,10 @@ const replayPruneTimer = setInterval(() => {
 
 replayPruneTimer.unref();
 
-function getAccountPubkey(tx: ParsedTransactionWithMeta, accountIndex: number): string | null {
+function getAccountPubkey(
+  tx: ParsedTransactionWithMeta,
+  accountIndex: number
+): string | null {
   const key = tx.transaction.message.accountKeys[accountIndex];
   if (!key) return null;
   if (typeof key === "string") return key;
@@ -36,16 +47,23 @@ function getAccountPubkey(tx: ParsedTransactionWithMeta, accountIndex: number): 
   return null;
 }
 
-function getRawTokenAmount(balance: { uiTokenAmount: { amount: string } } | undefined): bigint {
+function getRawTokenAmount(
+  balance: { uiTokenAmount: { amount: string } } | undefined
+): bigint {
   return BigInt(balance?.uiTokenAmount.amount ?? "0");
 }
 
 function calculateTreasuryUsdcInflow(
   tx: ParsedTransactionWithMeta,
-  treasuryAddress: string,
+  treasuryAddress: string
 ): bigint {
   const treasury = new PublicKey(treasuryAddress).toBase58();
-  const preBalances = new Map((tx.meta?.preTokenBalances ?? []).map((balance) => [balance.accountIndex, balance]));
+  const preBalances = new Map(
+    (tx.meta?.preTokenBalances ?? []).map((balance) => [
+      balance.accountIndex,
+      balance,
+    ])
+  );
 
   let inflow = 0n;
   for (const postBalance of tx.meta?.postTokenBalances ?? []) {
@@ -54,8 +72,7 @@ function calculateTreasuryUsdcInflow(
     const tokenAccountPubkey = getAccountPubkey(tx, postBalance.accountIndex);
     const tokenOwner = postBalance.owner ?? null;
     const targetsTreasury =
-      tokenAccountPubkey === treasury ||
-      tokenOwner === treasury;
+      tokenAccountPubkey === treasury || tokenOwner === treasury;
 
     if (!targetsTreasury) continue;
 
@@ -71,13 +88,15 @@ function calculateTreasuryUsdcInflow(
 
 export const x402Middleware = (
   requiredUsdcAmount: number,
-  treasuryAddress: string,
+  treasuryAddress: string
 ) => {
   const treasury = new PublicKey(treasuryAddress).toBase58();
   const requiredAmountRaw = BigInt(Math.round(requiredUsdcAmount * 1_000_000));
 
   return async (req: Request, res: Response, next: NextFunction) => {
-    const paymentSignature = String(req.headers["x-payment-signature"] ?? "").trim();
+    const paymentSignature = String(
+      req.headers["x-payment-signature"] ?? ""
+    ).trim();
 
     if (!paymentSignature) {
       return res.status(402).json({
@@ -105,7 +124,9 @@ export const x402Middleware = (
       });
 
       if (!tx) {
-        return res.status(400).json({ error: "Transaction not found or not confirmed on-chain." });
+        return res
+          .status(400)
+          .json({ error: "Transaction not found or not confirmed on-chain." });
       }
 
       if (tx.meta?.err) {
@@ -136,7 +157,9 @@ export const x402Middleware = (
       next();
     } catch (error) {
       console.error("x402 Verification Error:", error);
-      res.status(500).json({ error: "Failed to verify payment signature on Solana." });
+      res
+        .status(500)
+        .json({ error: "Failed to verify payment signature on Solana." });
     }
   };
 };

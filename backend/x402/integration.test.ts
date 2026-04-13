@@ -1,17 +1,28 @@
-import { Connection, Keypair, PublicKey, Transaction, SystemProgram } from "@solana/web3.js";
-import { createMint, getOrCreateAssociatedTokenAccount, mintTo, transfer } from "@solana/spl-token";
+import {
+  Connection,
+  Keypair,
+  PublicKey,
+  Transaction,
+  SystemProgram,
+} from "@solana/web3.js";
+import {
+  createMint,
+  getOrCreateAssociatedTokenAccount,
+  mintTo,
+  transfer,
+} from "@solana/spl-token";
 import { x402Middleware } from "./middleware";
 import express, { Express } from "express";
 import request from "supertest";
 
 /**
  * Integration tests for x402 middleware with actual Solana devnet transactions
- * 
+ *
  * WARNING: These tests require:
  * 1. Solana devnet to be accessible
  * 2. A funded payer wallet
  * 3. USDC devnet mint setup
- * 
+ *
  * Run with: INTEGRATION=true npm test -- integration.test.ts
  */
 
@@ -184,13 +195,13 @@ describe.skip("x402Middleware Integration Tests", () => {
 
 /**
  * Example usage for manual testing:
- * 
+ *
  * 1. Get devnet USDC from faucet:
  *    https://spl-token-faucet.com/?token-name=USDC-Dev
- * 
+ *
  * 2. Send USDC to treasury:
  *    spl-token transfer 4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU 1 <TREASURY_ADDRESS> --url devnet
- * 
+ *
  * 3. Use transaction signature as X-Payment-Signature header:
  *    curl -H "X-Payment-Signature: <TX_SIG>" http://localhost:3000/protected
  */
