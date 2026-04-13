@@ -1415,11 +1415,16 @@ export type AgentidProgram = {
     },
     {
       "code": 6024,
+      "name": "arithmeticOverflow",
+      "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 6025,
       "name": "invalidActionType",
       "msg": "Unknown action type — must be 0=DeFiTrade 1=Payment 2=ContentPublish 3=DataQuery"
     },
     {
-      "code": 6025,
+      "code": 6026,
       "name": "unauthorizedLogAction",
       "msg": "Only the identity owner can log actions"
     }
