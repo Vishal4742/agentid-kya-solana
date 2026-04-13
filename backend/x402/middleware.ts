@@ -1,3 +1,8 @@
+/**
+ * @deprecated Use the canonical import from "." (index.ts) which delegates to
+ * middleware-redis.ts with Redis-backed replay protection. This file uses
+ * in-memory-only replay protection, which is not safe for horizontally-scaled deployments.
+ */
 import { Request, Response, NextFunction } from "express";
 import {
   Connection,
