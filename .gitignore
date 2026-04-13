@@ -83,3 +83,4 @@ GRANT_APPLICATION_READINESS.md
 # Project logs directory
 logs/
 
+.pr-body.md
