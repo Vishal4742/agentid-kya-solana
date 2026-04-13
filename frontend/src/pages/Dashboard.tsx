@@ -406,9 +406,41 @@ export default function Dashboard() {
     setDepositing(true);
 
     try {
-      const treasuryUsdcInfo = await provider.connection.getAccountInfo(treasuryUsdc);
+      // Check both ATAs in parallel
+      const [depositorUsdcInfo, treasuryUsdcInfo] = await Promise.all([
+        provider.connection.getAccountInfo(depositorUsdc),
+        provider.connection.getAccountInfo(treasuryUsdc),
+      ]);
 
+      // Ensure wallet has devnet USDC before proceeding
+      if (!depositorUsdcInfo) {
+        toast.error("No devnet USDC found in wallet", {
+          description: (
+            "Your wallet has no USDC token account on devnet. " +
+            "Get free USDC from https://faucet.circle.com — select Devnet and paste your wallet address."
+          ),
+          duration: 8000,
+        });
+        setDepositing(false);
+        return;
+      }
+
+      // Check depositor has enough USDC balance
+      const tokenBalance = await provider.connection.getTokenAccountBalance(depositorUsdc);
+      const balanceMicro = Number(tokenBalance.value.amount);
+      const requiredMicro = Math.round(parsedAmount * 1_000_000);
+      if (balanceMicro < requiredMicro) {
+        toast.error("Insufficient USDC balance", {
+          description: `You have ${(balanceMicro / 1_000_000).toFixed(2)} USDC but tried to deposit ${parsedAmount}. Get more from https://faucet.circle.com`,
+          duration: 8000,
+        });
+        setDepositing(false);
+        return;
+      }
+
+      // Auto-create treasury ATA if missing
       if (!treasuryUsdcInfo) {
+        toast.info("Creating treasury token account…");
         const createAtaTx = new Transaction().add(
           createAssociatedTokenAccountIx(
             depositor,
@@ -417,15 +449,12 @@ export default function Dashboard() {
             DEVNET_USDC_MINT,
           ),
         );
-
-        await provider.sendAndConfirm(createAtaTx, [], {
-          commitment: "confirmed",
-        });
+        await provider.sendAndConfirm(createAtaTx, [], { commitment: "confirmed" });
       }
 
       // @ts-expect-error Anchor method typing is generated loosely from the JSON IDL.
       await program.methods.deposit(
-        new BN(Math.round(parsedAmount * 1_000_000)),
+        new BN(requiredMicro),
       ).accountsStrict({
         treasury: treasuryPda,
         depositor,
@@ -440,9 +469,10 @@ export default function Dashboard() {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       toast.error("Deposit failed", {
-        description: message.includes("AccountNotInitialized")
-          ? "Treasury or wallet USDC token account is still missing on devnet."
-          : message.slice(0, 120),
+        description: message.includes("AccountNotInitialized") || message.includes("account not found")
+          ? "A required token account is still missing. Get devnet USDC from https://faucet.circle.com"
+          : message.slice(0, 160),
+        duration: 8000,
       });
     } finally {
       setDepositing(false);
