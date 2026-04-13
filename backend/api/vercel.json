@@ -11,6 +11,16 @@
       "runtime": "@vercel/node@3.2.24"
     }
   },
+  "env": {
+    "SOLANA_RPC_URL": "@solana_rpc_url",
+    "METADATA_BASE_URL": "@metadata_base_url",
+    "FRONTEND_BASE": "@frontend_base",
+    "ORACLE_PRIVATE_KEY": "@oracle_private_key",
+    "ORACLE_WEBHOOK_SECRET": "@oracle_webhook_secret",
+    "HELIUS_WEBHOOK_AUTH": "@helius_webhook_auth",
+    "X402_TREASURY_QUERY_PRICE_USDC": "@x402_treasury_query_price_usdc",
+    "METADATA_PLACEHOLDER_IMAGE": "@metadata_placeholder_image"
+  },
   "rewrites": [
     {
       "source": "/metadata/:slug",
