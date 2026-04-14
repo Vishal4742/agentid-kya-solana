@@ -93,7 +93,7 @@ jobs:
       - run: cd frontend && npm run dev &
       - run: npx wait-on http://localhost:5173 --timeout 30000
       - run: cd frontend && npm run test:e2e -- --reporter=list
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
