@@ -1,54 +1,38 @@
-# AgentID Project Companion
+# Roadmap — AgentID KYA Protocol
 
-This file is the source of truth for roadmap status, release readiness, and the current gap between repo-complete work and live deployment health.
+## Phase Status
 
-## Phases & Status
-| Phase | Description | Status | Primary code | Notes |
-| --- | --- | --- | --- | --- |
-| 1 | Anchor identity and reputation protocol | Complete in repo | `backend/programs/agentid-program`, `backend/tests` | `anchor test` passes locally and covers identity, verification, logging, rating, reputation, and treasury flows. |
-| 2 | Merkle tree and Bubblegum credential path | Complete in repo | shared tree setup, registration flow | Registration is wired to the shared tree and local verification clones required Bubblegum/compression dependencies. |
-| 3a | Metadata API | Complete in repo | `backend/api/metadata` | Metadata URL generation is config-driven and no longer depends on a dead frontend URL. |
-| 3b | Oracle service | Complete in repo | `backend/oracle`, `backend/api/api/oracle/webhook.ts`, `.github/workflows/oracle-sync.yml` | Oracle sync runs in GitHub Actions, while webhook delivery is handled by a Vercel API route. |
-| 3c | x402 middleware | Complete in repo | `backend/x402` | Redis replay protection with in-memory fallback is implemented and tested. |
-| 4 | Frontend app | Complete in repo | `frontend/` | Register, verify, dashboard, and profile pages read real on-chain state. |
-| 5 | End-to-end verification | Complete locally | `frontend/src/test/e2e.test.ts`, `backend/tests` | Frontend tests/build, SDK tests, x402 tests, API typecheck, and `anchor test` are green locally. |
-| 6 | India compliance layer | In progress | `frontend/src/lib/indiaCompliance.ts`, dashboard invoice flow | Helpers and invoice UI exist, but this is not yet a full compliance product surface. |
-| 7 | SDK and ELIZA plugin | Complete in repo | `packages/sdk`, `packages/eliza-plugin` | Typed SDK and plugin are implemented and tested. |
-| 8 | Payment layer (treasury + x402 adoption) | In progress | `frontend/src/pages/Dashboard.tsx`, `backend/x402`, `packages/sdk` | Treasury instructions, dashboard controls, x402 middleware, and SDK treasury helpers exist. Remaining work is product-level adoption and live treasury smoke validation. |
-| 9 | Security audit and mainnet readiness | Planned | `docs/security/audit.md` | Internal audit is done; external audit and mainnet preparation remain open. |
-| 10 | Launch and GTM | Planned | docs/demo scripts | Defer until live deployments are healthy again. |
+| Phase | Description | Status |
+|---|---|---|
+| 1 | On-chain identity and reputation protocol (Anchor) | ✅ Complete |
+| 2 | Compressed NFT identity via Bubblegum | ✅ Complete |
+| 3a | Metadata API (Vercel serverless) | ✅ Live |
+| 3b | Oracle reputation sync (GitHub Actions + Helius webhook) | ✅ Complete |
+| 3c | x402 payment middleware with Redis replay protection | ✅ Complete |
+| 4 | Frontend (Register / Verify / Dashboard / Profile) | ✅ Complete |
+| 5 | End-to-end verification against devnet | ✅ Verified |
+| 6 | India compliance layer (GST/PAN, invoice UI) | 🔄 In Progress |
+| 7 | TypeScript SDK + ElizaOS plugin | ✅ Complete |
+| 8 | Treasury + x402 adoption (live smoke verification) | 🔄 In Progress |
+| 9 | External security audit + mainnet readiness | 📋 Planned |
+| 10 | Launch and go-to-market | 📋 Planned |
 
-## What Is Actually Verified
-- `cd frontend && npm test`
-- `cd frontend && npm run build`
-- `cd packages/sdk && npm test`
-- `cd packages/eliza-plugin && npm run build`
-- `cd backend/x402 && npm test`
-- `cd backend/api && npx tsc --noEmit`
-- `cd backend && anchor test`
-- `node scripts/deployment-preflight.mjs`
+---
 
-## What Is Not Automatically Proven Yet
-- Redeployed frontend health  ✅ verified live (agentid.netlify.app loads correctly)
-- Redeployed metadata API health  ✅ verified live (agentid-kya-solana.vercel.app/metadata/* returns correct JSON)
-- Oracle webhook delivery against deployed secrets  ✅ HMAC secret now set (`ORACLE_WEBHOOK_SECRET` aligned with `HELIUS_WEBHOOK_AUTH`)
-- Live treasury initialization/deposit/pause/payment flow after redeploy
+## Live Deployments
 
-## Phase 8 Current Truth
-Implemented already:
-- `AgentTreasury` initialization, deposit, spending-limit updates, pause, and autonomous payment instructions
-- Treasury dashboard controls in the frontend
-- Redis-backed x402 middleware with tests and integration documentation
-- First paid serverless route for treasury snapshots at `backend/api/api/premium/treasury/[agentId].ts`
-- SDK treasury reads and control methods
-- SDK treasury deposit helper added in this pass
+| Service | URL |
+|---|---|
+| Frontend | <https://agentid.netlify.app> |
+| Metadata API | <https://agentid-kya-solana.vercel.app> |
+| Devnet Program | `Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF` |
 
-Still open:
-1. Run live treasury smoke checks after redeploy: initialize treasury, deposit devnet USDC, update limits, pause/unpause, and confirm expected payment failures/successes.
-2. Improve payment-facing telemetry so treasury activity is visible without explorer-only debugging.
-3. Decide whether additional paid endpoints should live in the metadata API deployment or a dedicated API service.
+---
 
-## Release Guidance
-- Treat “complete in repo” and “live complete” as different states.
-- Keep `anchor test` green before any devnet deploy; it now validates the real local registration/treasury path using cloned devnet dependencies.
-- After redeploy, rerun a live smoke flow before claiming phase 5 or phase 8 complete externally.
+## What's Next
+
+- Complete Phase 8: live treasury smoke test on devnet
+- Phase 9: external security audit before mainnet
+- Phase 10: public launch
+
+See [docs/overview/project.md](./docs/overview/project.md) for a full technical breakdown of each phase.

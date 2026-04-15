@@ -75,10 +75,13 @@ app.get('/api/premium-data',
 
 ## Configuration
 
-Environment variables (loaded from `backend/.env`):
+Environment variables (set in `backend/x402/.env`):
 
 ```bash
 SOLANA_RPC_URL=https://api.devnet.solana.com
+REDIS_URL=redis://localhost:6379     # Falls back to in-memory if not set
+X402_TREASURY_PUBKEY=<AgentTreasury PDA address>
+X402_PRICE_LAMPORTS=1000000          # 1 USDC (6 decimals)
 ```
 
 Constants in `middleware-redis.ts`:
@@ -87,6 +90,68 @@ Constants in `middleware-redis.ts`:
 - `REPLAY_TTL_MS`: 24 hours
 - `REPLAY_PRUNE_INTERVAL_MS`: 5 minutes
 - `MAX_CONSUMED_SIGNATURES`: 100,000 signatures
+
+---
+
+## Redis Setup
+
+Redis is used as the replay-protection store. If `REDIS_URL` is not set, the middleware falls back to an in-memory store (local dev only — not safe for production).
+
+```bash
+# macOS
+brew install redis && brew services start redis
+
+# Ubuntu / WSL
+sudo apt install redis-server && redis-server --daemonize yes
+
+# Verify Redis is running
+redis-cli ping   # Should return: PONG
+```
+
+Then set in your `.env`:
+```bash
+REDIS_URL=redis://localhost:6379
+```
+
+> ⚠️ In production (Vercel / Railway / Render), use a managed Redis instance (e.g., Upstash). The in-memory fallback does **not** persist across serverless cold starts.
+
+---
+
+## 402 Response Format
+
+When a request arrives without payment, the middleware returns:
+
+```http
+HTTP/1.1 402 Payment Required
+Content-Type: application/json
+
+{
+  "error": "Payment required",
+  "payment": {
+    "treasury": "Tx72udP7...",
+    "amount": 1.0,
+    "currency": "USDC",
+    "network": "solana-devnet"
+  }
+}
+```
+
+The client should send USDC to the `treasury` address on-chain, then retry with `X-Payment-Signature: <tx_sig>`.
+
+---
+
+## Running Tests
+
+```bash
+cd backend/x402
+npm install
+
+# Unit tests (no network required)
+npm test
+
+# Integration test (requires funded devnet wallet and SOLANA_RPC_URL)
+npm run test:integration
+```
 
 ## Deployment Status
 
