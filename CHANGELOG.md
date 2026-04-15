@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ USDC treasury with spending limits - Live on devnet
 - ✅ Autonomous payments (x402 protocol) - Live on devnet
 - ✅ Oracle webhooks (HMAC-secured, Helius) - Live on devnet
-- ✅ Metadata API (Vercel serverless) - Live at `agentid-metadata-api.vercel.app`
+- ✅ Metadata API (Vercel serverless) - Live at `agentid-kya-solana.vercel.app`
 - ✅ ElizaOS plugin (`packages/eliza-plugin`) - Published
 - ✅ TypeScript SDK (`packages/sdk`) - Published
 - Monorepo structure with frontend, backend, and packages

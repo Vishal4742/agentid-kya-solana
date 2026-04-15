@@ -121,15 +121,16 @@ identity.rating_count = identity.rating_count
 
 ## 6. Sign-Off
 
-> **Internal audit complete as of 2026-04-12.**  
-> All Critical (0) and High (2) findings have been addressed or operationally mitigated.  
-> Medium (4), Low (2), and Info (5) findings are documented with acceptance rationale.  
-> **Codebase is cleared for continued devnet operation.**  
+> **Internal audit complete as of 2026-04-12.**
+> All Critical (0) and High (2) findings have been addressed or operationally mitigated.
+> Medium (4), Low (2), and Info (5) findings are documented with acceptance rationale.
+> **Codebase is cleared for continued devnet operation.**
 > External paid audit required before any mainnet deployment.
 
 | | |
 |---|---|
-| **Audit Completed By** | Antigravity AI + Codex AI |
+| **Audit Type** | Internal — Structured Code Review |
 | **Date** | 2026-04-12 |
 | **Program ID (devnet)** | `Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF` |
 | **Test Suite** | 30/30 frontend tests passing |
+

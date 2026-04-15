@@ -144,7 +144,7 @@ cp .env.example .env.local
 # Edit .env.local:
 #   VITE_SOLANA_RPC_ENDPOINT=https://api.devnet.solana.com
 #   VITE_PROGRAM_ID=Gv35udP7tnnVcNiCMLKYeyjx1rfkeos4e6cXsFGr4tcF
-#   VITE_METADATA_BASE_URL=https://agentid-metadata-api.vercel.app
+#   VITE_METADATA_BASE_URL=https://agentid-kya-solana.vercel.app
 
 npm install
 npm run build
@@ -246,7 +246,6 @@ Frontend tests, API typechecks, x402 tests, SDK tests, and `anchor test` should 
 - [ ] All 30 frontend tests passing (`npm test`)
 - [ ] `anchor test` passing locally before deploy
 - [ ] `scripts/demo-devnet.sh` completes without errors
-- [ ] Treasury UI visible on dashboard (`TREASURY_ENABLED = true`)
 
 ---
 
