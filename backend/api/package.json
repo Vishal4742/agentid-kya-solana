@@ -11,7 +11,7 @@
     "dependencies": {
         "@coral-xyz/anchor": "^0.30.1",
         "@solana/web3.js": "^1.98.4",
-        "@vercel/node": "^3.2.24"
+        "@vercel/node": "^5.7.12"
     },
     "devDependencies": {
         "typescript": "^5.4.5",
