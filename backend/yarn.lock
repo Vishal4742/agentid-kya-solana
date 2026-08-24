@@ -97,10 +97,10 @@
     "@noble/hashes" "^1.3.1"
     merkletreejs "^0.3.11"
 
-"@metaplex-foundation/mpl-bubblegum@^5.0.2":
-  version "5.0.2"
-  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-bubblegum/-/mpl-bubblegum-5.0.2.tgz#9f0172b789e281c9bd272423ee2d0fd51f0bff8d"
-  integrity sha512-VRkXf9FNRo2Dm1wsiNEn9xW039PjHA757z2Q2H4DwwmI5z/+iKVDNPux6NZPgMg8BJZfUq6nlOlOC/Ipcra5oA==
+"@metaplex-foundation/mpl-bubblegum@^5.1.0":
+  version "5.1.0"
+  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-bubblegum/-/mpl-bubblegum-5.1.0.tgz#b0cb1cd6753fc4dfbe4563864f2f175d39c9be2c"
+  integrity sha512-nr2JAIXV8fIcc04pnnQJWVRr1+XG0eRJkQYcg/iVAgN46waJZrX643PwTBpFx3X/r2iCMOmqBEF8S4l94bV99Q==
   dependencies:
     "@metaplex-foundation/digital-asset-standard-api" "^2.0.0"
     "@metaplex-foundation/mpl-account-compression" "^0.0.1"
