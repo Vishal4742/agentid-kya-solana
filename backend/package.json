@@ -9,7 +9,7 @@
     "@metaplex-foundation/mpl-bubblegum": "^5.1.0",
     "@metaplex-foundation/umi": "^1.6.0",
     "@metaplex-foundation/umi-bundle-defaults": "^1.2.0",
-    "@metaplex-foundation/umi-web3js-adapters": "^1.5.1"
+    "@metaplex-foundation/umi-web3js-adapters": "^1.6.0"
   },
   "devDependencies": {
     "@solana/spl-token": "^0.4.15",
