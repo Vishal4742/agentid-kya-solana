@@ -19,7 +19,7 @@
   "devDependencies": {
     "@agentid/sdk": "file:../sdk",
     "@solana/web3.js": "^1.98.4",
-    "@types/node": "^20.0.0",
+    "@types/node": "^26.6.6",
     "rimraf": "^5.0.0",
     "typescript": "^5.0.0"
   }
